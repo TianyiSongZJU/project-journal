@@ -1,0 +1,89 @@
+{
+  "durationSeconds": 180.06205391700001,
+  "warmupSeconds": 15,
+  "runs": [
+    {
+      "mode": "off",
+      "metrics": {
+        "core": {
+          "cpuSeconds": 0.00059625,
+          "oneCoreCPUPercent": 0.00033113584291049057,
+          "maxResidentMiB": 12.953125,
+          "maxFootprintMiB": 5.328765869140625,
+          "packageIdleWakeups": 1,
+          "interruptWakeups": 7,
+          "diskReadBytes": 0,
+          "diskWrittenBytes": 0
+        },
+        "native": {
+          "cpuSeconds": 0.004495,
+          "oneCoreCPUPercent": 0.0024963616165746836,
+          "maxResidentMiB": 16.3125,
+          "maxFootprintMiB": 5.2038116455078125,
+          "packageIdleWakeups": 1,
+          "interruptWakeups": 11,
+          "diskReadBytes": 0,
+          "diskWrittenBytes": 0
+        }
+      },
+      "stats": {
+        "fileBatches": 0,
+        "filesChecked": 0,
+        "scans": 1,
+        "writes": 0,
+        "activitySamples": 0,
+        "startedAt": "2026-10-23T11:07:34Z",
+        "watching": 1,
+        "status": "监听中",
+        "titleAccess": false
+      },
+      "nativeReady": [
+        "READY 87032 titleAccess=true"
+      ],
+      "observerErrors": false
+    },
+    {
+      "mode": "on",
+      "metrics": {
+        "core": {
+          "cpuSeconds": 0.013934499999999999,
+          "oneCoreCPUPercent": 0.007738721011381519,
+          "maxResidentMiB": 13.078125,
+          "maxFootprintMiB": 5.578742980957031,
+          "packageIdleWakeups": 1,
+          "interruptWakeups": 256,
+          "diskReadBytes": 69632,
+          "diskWrittenBytes": 16384
+        },
+        "native": {
+          "cpuSeconds": 0.03658420833333333,
+          "oneCoreCPUPercent": 0.02031755583005673,
+          "maxResidentMiB": 18.390625,
+          "maxFootprintMiB": 6.406913757324219,
+          "packageIdleWakeups": 0,
+          "interruptWakeups": 17,
+          "diskReadBytes": 32768,
+          "diskWrittenBytes": 0
+        }
+      },
+      "stats": {
+        "fileBatches": 0,
+        "filesChecked": 0,
+        "scans": 1,
+        "writes": 2,
+        "activitySamples": 12,
+        "startedAt": "2026-10-23T11:07:34Z",
+        "watching": 1,
+        "status": "监听中",
+        "titleAccess": true
+      },
+      "nativeReady": [
+        "READY 87034 titleAccess=true"
+      ],
+      "observerErrors": false
+    }
+  ],
+  "cpuUnit": "Mach absolute ticks, converted using mach_timebase_info",
+  "machTimebaseNumer": 125,
+  "machTimebaseDenom": 3
+}
