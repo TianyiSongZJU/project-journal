@@ -28,10 +28,31 @@ export function fileRuns(files,start,end){
  }
  return runs.map(run=>{const grouped=fileSlots(run.items.map(f=>({...f,at:run.at})),run.at,run.at+15)[0];const by=new Map();for(const f of run.items){const id=f.path||((f.projectId||'')+'/'+f.name);if(!by.has(id))by.set(id,{first:f.at,last:f.at});const x=by.get(id);x.first=Math.min(x.first,f.at);x.last=Math.max(x.last,f.at)};const bounds=[...by.values()];grouped.files.forEach((f,i)=>Object.assign(f,bounds[i]));return {...run,files:grouped.files}});
 }
-// Stable application columns; gaps always start a new visual run.
+// Decide locally first; the daily ranking only stabilizes horizontal column order.
 export function applicationRuns(activities,start,end){
- const slots=activitySlots(activities,start,end),usage=new Map();for(const s of slots)for(const a of s.apps)usage.set(a.app,(usage.get(a.app)||0)+a.seconds);
- const names=[...usage].sort((a,b)=>b[1]-a[1]).map(([app])=>app),major=names.slice(0,3),columns=[...major,...(names.length>3?['其他']:[])],runs=[];
- columns.forEach((app,lane)=>{let current=null;for(const slot of slots){const apps=slot.apps.filter(a=>app==='其他'?!major.includes(a.app):a.app===app);if(!apps.length){current=null;continue}if(!current||current.end!==slot.at){current={app,lane,start:slot.at,end:slot.at,seconds:0,slots:[],apps:new Map()};runs.push(current)}current.end=slot.at+15;current.seconds+=apps.reduce((n,a)=>n+a.seconds,0);const seconds=apps.reduce((n,a)=>n+a.seconds,0),total=slot.apps.reduce((n,a)=>n+a.seconds,0),denominator=Math.max(900,total),before=columns.slice(0,lane).reduce((n,name)=>n+slot.apps.filter(a=>name==='其他'?!major.includes(a.app):a.app===name).reduce((n,a)=>n+a.seconds,0),0);current.slots.push({at:slot.at,seconds,left:before/denominator*100,width:seconds/denominator*100});for(const a of apps)current.apps.set(a.app,(current.apps.get(a.app)||0)+a.seconds)}});
+ const slots=activitySlots(activities,start,end),usage=new Map();
+ for(const slot of slots){
+  const total=slot.apps.reduce((n,a)=>n+a.seconds,0);
+  slot.shown=new Set(slot.apps.filter((a,i)=>i===0||a.seconds>=Math.max(900,total)*.2).map(a=>a.app));
+  for(const a of slot.apps)usage.set(a.app,(usage.get(a.app)||0)+a.seconds);
+ }
+ // Keep a small rank fluctuation connected only where that application was observed.
+ // An empty quarter or a substantial competing application always breaks the run.
+ const initial=slots.map(slot=>new Set(slot.shown));
+ for(let i=1;i<slots.length-1;i++){
+  const slot=slots[i];
+  if(slots[i-1].at+15!==slot.at||slot.at+15!==slots[i+1].at)continue;
+  for(const a of slot.apps)if(!slot.shown.has(a.app)&&initial[i-1].has(a.app)&&initial[i+1].has(a.app)&&slot.apps.every(b=>b.app===a.app||b.seconds<180))slot.shown.add(a.app);
+ }
+ const major=[...usage].filter(([app])=>slots.some(slot=>slot.shown.has(app))).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).map(([app])=>app),hasOther=slots.some(slot=>slot.apps.some(a=>!slot.shown.has(a.app))),columns=[...major,...(hasOther?['其他']:[])],runs=[];
+ const shownApps=(slot,lane)=>slot.apps.filter(a=>lane===major.length?!slot.shown.has(a.app):slot.shown.has(a.app)&&a.app===major[lane]);
+ columns.forEach((app,lane)=>{let current=null;for(const slot of slots){
+  const apps=shownApps(slot,lane);if(!apps.length){current=null;continue}
+  if(!current||current.end!==slot.at){current={app,lane,start:slot.at,end:slot.at,seconds:0,slots:[],apps:new Map()};runs.push(current)}
+  current.end=slot.at+15;
+  const seconds=apps.reduce((n,a)=>n+a.seconds,0),total=slot.apps.reduce((n,a)=>n+a.seconds,0),denominator=Math.max(900,total),before=columns.slice(0,lane).reduce((n,_,index)=>n+shownApps(slot,index).reduce((sum,a)=>sum+a.seconds,0),0);
+  current.seconds+=seconds;current.slots.push({at:slot.at,seconds,left:before/denominator*100,width:seconds/denominator*100});
+  for(const a of apps)current.apps.set(a.app,(current.apps.get(a.app)||0)+a.seconds);
+ }});
  return {columns,runs};
 }

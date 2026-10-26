@@ -60,7 +60,12 @@ type Entry struct {
 	Hours      float64 `json:"hours"`
 	Note       string  `json:"note"`
 }
+type AppAliasGroup struct {
+	Name    string   `json:"name"`
+	Aliases []string `json:"aliases"`
+}
 type Settings struct {
+	AppAliases             *[]AppAliasGroup    `json:"appAliases,omitempty"`
 	ProjectPaletteVersion  int                 `json:"projectPaletteVersion,omitempty"`
 	DistributionGroupYear  *bool               `json:"distributionGroupYear,omitempty"`
 	DistributionGroupMonth *bool               `json:"distributionGroupMonth,omitempty"`
@@ -141,6 +146,28 @@ func validate(s State) error {
 			return errors.New("分组名称不能为空、重复或过长")
 		}
 		groups[g] = true
+	}
+	if s.Settings.AppAliases != nil {
+		if len(*s.Settings.AppAliases) > 100 {
+			return errors.New("应用名称分组数量过多")
+		}
+		used := map[string]bool{}
+		for _, group := range *s.Settings.AppAliases {
+			if strings.TrimSpace(group.Name) == "" || len([]rune(group.Name)) > 120 || len(group.Aliases) > 50 {
+				return errors.New("应用名称合并设置无效")
+			}
+			own := map[string]bool{}
+			for _, name := range append([]string{group.Name}, group.Aliases...) {
+				key := strings.TrimSuffix(strings.ToLower(strings.TrimSpace(name)), ".exe")
+				if key == "" || len([]rune(name)) > 120 || used[key] {
+					return errors.New("应用名称不能为空、过长或出现在多个分组")
+				}
+				own[key] = true
+			}
+			for key := range own {
+				used[key] = true
+			}
+		}
 	}
 	for _, p := range s.Projects {
 		if len(p.Group) > 240 {

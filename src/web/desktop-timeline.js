@@ -17,7 +17,7 @@ const labelWidth = text => [...text].reduce((width,char)=>width+(/[\u2e80-\uffff
 function activityDemand(activities,start,end) {
   const slots=activitySlots(activities.map(item=>({...item,app:windowsAppName(item.app)})),start,end);
   if(!slots.length) return 132;
-  return Math.min(360,Math.max(132,...slots.map(slot=>slot.apps.filter((app,index)=>!index||app.percent>=12).slice(0,4).reduce((width,app)=>width+Math.min(124,Math.max(64,labelWidth(app.app.replace(/^Microsoft /,''))+24)),0))));
+  return Math.min(360,Math.max(132,...slots.map(slot=>slot.apps.filter((app,index)=>!index||app.percent>=12).slice(0,4).reduce((width,app)=>width+Math.min(124,Math.max(64,labelWidth(app.app)+24)),0))));
 }
 
 // Size from visible content, rather than stretching application shapes into spare space.
