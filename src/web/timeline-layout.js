@@ -56,3 +56,17 @@ export function applicationRuns(activities,start,end){
  }});
  return {columns,runs};
 }
+
+
+// Thin guides connect disjoint horizontal positions, never filling in active time.
+export function applicationLinks(slots,start,scale){
+ const links=[];
+ for(let i=1;i<slots.length;i++){
+  const a=slots[i-1],b=slots[i];
+  if(a.at+15!==b.at||a.width<=0||b.width<=0)continue;
+  if(Math.min(a.left+a.width,b.left+b.width)-Math.max(a.left,b.left)>.1)continue;
+  const right=b.left>a.left,x1=right?a.left+a.width-Math.min(.35,a.width/2):a.left+Math.min(.35,a.width/2),x2=right?b.left+Math.min(.35,b.width/2):b.left+b.width-Math.min(.35,b.width/2),y=(b.at-start)*scale,pad=Math.min(4,15*scale/4);
+  links.push({at:b.at,path:`M${x1},${y-pad} C${x1},${y} ${x2},${y} ${x2},${y+pad}`});
+ }
+ return links;
+}

@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {activitySlots,fileSlots,fileRuns,applicationRuns} from '../web/timeline-layout.js';
+import {activitySlots,fileSlots,fileRuns,applicationRuns,applicationLinks} from '../web/timeline-layout.js';
 test('dense foreground switches produce at most one label per quarter hour',()=>{
  const activities=Array.from({length:180},(_,i)=>({start:1260+i/3,end:1260+(i+1)/3,app:['Word','ChatGPT','PowerPoint'][i%3],name:'长文件名-'+i,projectId:'a'}));
  const slots=activitySlots(activities,480,1440);assert.equal(slots.length,4);assert.equal(slots.reduce((n,s)=>n+s.hits.length,0),180);assert.ok(slots.every(s=>s.apps.length===3&&s.apps.reduce((n,a)=>n+a.percent,0)===100));
@@ -28,3 +28,9 @@ test('application runs keep stable columns, label continuous use once and split 
 test('area width uses absolute observed minutes and leaves unobserved time blank',()=>{const d=applicationRuns([{app:'A',start:600,end:615,seconds:450},{app:'B',start:600,end:615,seconds:150}],480,1440);const a=d.runs.find(r=>r.app==='A').slots[0],b=d.runs.find(r=>r.app==='其他').slots[0];assert.equal(a.width,50);assert.equal(a.left,0);assert.ok(Math.abs(b.width-100/6)<.001);assert.equal(b.left,50);assert.ok(a.width+b.width<100)});
 
 test('same application evidence uses the maximum across simultaneous devices',()=>{const slots=activitySlots([{start:540,end:555,app:'Word',seconds:360,deviceId:'mac'},{start:540,end:555,app:'Word',seconds:360,deviceId:'windows'}],540,555);assert.equal(slots[0].activeSeconds,360);assert.equal(slots[0].apps[0].seconds,360)});
+
+test('thin connectors join only adjacent displaced blocks and never cover empty quarters',()=>{
+ const slots=[{at:540,left:0,width:25},{at:555,left:70,width:25},{at:570,left:60,width:30},{at:600,left:0,width:20}],before=JSON.stringify(slots),links=applicationLinks(slots,540,1);
+ assert.equal(links.length,1);assert.equal(links[0].at,555);assert.match(links[0].path,/^M/);assert.equal(JSON.stringify(slots),before);
+ assert.equal(applicationLinks(slots,540,.15).length,1);
+});
