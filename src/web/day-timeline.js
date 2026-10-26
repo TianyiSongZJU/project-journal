@@ -55,8 +55,13 @@ export function setupDayTimeline({getState,flushMain,applyEnvelope,toast,esc,get
  window.addEventListener('resize',()=>{hideEvidence();fitPanels();if(active&&!drag)render()});
 
  function showNow(range,scale){
-  clearTimeout(nowTimer);const line=root.querySelector('.dt-now');if(!line)return;line.hidden=true;
-  if(day===today()){const n=new Date(),m=n.getHours()*60+n.getMinutes();if(m>=range.start&&m<=range.end){line.hidden=false;line.style.top=(m-range.start)*scale+'px';line.innerHTML=`<span>${fmt(m)}</span>`;line.setAttribute('aria-label','此刻 '+fmt(m));}}
+  clearTimeout(nowTimer);root.querySelectorAll('.dt-clock time.now-overlap').forEach(el=>el.classList.remove('now-overlap'));const line=root.querySelector('.dt-now');if(!line)return;line.hidden=true;
+  if(day===today()){const n=new Date(),m=n.getHours()*60+n.getMinutes();if(m>=range.start&&m<=range.end){line.hidden=false;line.style.top=(m-range.start)*scale+'px';line.innerHTML=`<span>${fmt(m)}</span>`;line.setAttribute('aria-label','此刻 '+fmt(m));
+   if(isDesktopHost()){
+    const label=line.querySelector('span').getBoundingClientRect();
+    root.querySelectorAll('.dt-clock time').forEach(el=>{const tick=el.getBoundingClientRect();el.classList.toggle('now-overlap',tick.left<label.right&&tick.right>label.left&&tick.top<label.bottom+3&&tick.bottom>label.top-3)});
+   }
+  }}
   if(isDesktopHost()&&active&&!document.hidden)nowTimer=setTimeout(()=>showNow(range,scale),60000-Date.now()%60000+50);
  }
  document.addEventListener('visibilitychange',()=>{clearTimeout(nowTimer);if(active&&!document.hidden){const grid=root.querySelector('.dt-grid');if(grid)showNow({start:Number(grid.dataset.start),end:Number(grid.dataset.end)},Number(grid.dataset.scale));}});

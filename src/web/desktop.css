@@ -308,3 +308,6 @@
   :is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .inspector-time-editor>summary { padding:0 5px; }
   :is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .duration-timeline,:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .inspector-time-editor>summary,:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration)>.time-source-summary>span { gap:3px; }
 }
+
+/* Let the live time replace nearby hour labels instead of overprinting them. */
+:is(.native-windows,.native-mac) .dt-clock time.now-overlap { visibility:hidden; }
