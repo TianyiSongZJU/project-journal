@@ -120,6 +120,7 @@ export function setupClientTimeline({esc}) {
     tracks.forEach((track,index)=>{
       track.style.left=(activityWidth+12+index*filesWidth/tracks.length)+'px';
       track.style.width=filesWidth/tracks.length+'px';
+
     });
     headings.querySelector('.dt-client-file-heading').hidden=!tracks.length;
     fileCaption.hidden=!tracks.length||activityWidth+60>captionGuide.clientWidth;
@@ -129,7 +130,22 @@ export function setupClientTimeline({esc}) {
     headGrid.style.width=grid.getBoundingClientRect().width+'px';
     headGrid.style.gridTemplateColumns=getComputedStyle(grid).gridTemplateColumns;
     scroller.scrollLeft=horizontal;
-    const sync=()=>{ horizontal=scroller.scrollLeft; headings.scrollLeft=horizontal; };
+    const sync=()=>{
+      horizontal=scroller.scrollLeft;headings.scrollLeft=horizontal;
+      // Float along the original stem without leaving its actual revision extent.
+      const viewport=scroller.getBoundingClientRect();
+      tracks.forEach(track=>{
+        const label=track.querySelector('.dt-file-project-name'),host=track.getBoundingClientRect(),height=label.getBoundingClientRect().height;
+        const minimum=Math.max(0,viewport.top+6-host.top),maximum=Math.min(host.height-height,viewport.bottom-6-host.top-height);
+        const blocked=[...track.querySelectorAll('.dt-node-metrics')].map(metrics=>{const r=metrics.getBoundingClientRect();return {start:r.top-host.top-height-2,end:r.bottom-host.top+2};}).sort((a,b)=>a.start-b.start);
+        const gaps=[];let start=minimum;
+        for(const block of blocked){if(block.end<=start)continue;if(block.start>start)gaps.push([start,Math.min(maximum,block.start)]);start=Math.max(start,block.end);if(start>maximum)break;}
+        if(start<=maximum)gaps.push([start,maximum]);
+        const desired=minimum+parseFloat(track.style.getPropertyValue('--file-label-offset')||0),candidates=gaps.filter(([a,b])=>a<=b).map(([a,b])=>Math.min(b,Math.max(a,desired)));
+        label.style.visibility=candidates.length?'visible':'hidden';
+        if(candidates.length){const top=candidates.sort((a,b)=>Math.abs(a-desired)-Math.abs(b-desired))[0];label.style.top=top+'px';}
+      });
+    };
     scroller.addEventListener('scroll',sync,{passive:true});
     sync();
     headings.querySelectorAll('[data-focus-client]').forEach(button=>button.onclick=()=>{

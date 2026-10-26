@@ -20,11 +20,12 @@ const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('no
   const toggleLayout=async target=>{const picker=target.locator('.dt-client-picker');if(!await picker.evaluate(el=>el.open))await picker.locator('summary').click();await target.locator('.dt-client-layout').click();await target.keyboard.press('Escape');};
   const open=async(compare=true)=>{await page.goto(session.url+'/?token='+session.token);await page.waitForFunction(()=>document.querySelector('#save-status')?.textContent==='已保存到本地');await page.locator('#auto-entry').click();await page.locator('#dt-date').fill(date);await page.locator('#dt-date').dispatchEvent('change');await page.locator('.dt-client-picker').waitFor();if(compare)await toggleLayout(page);};
   await open();
-  await page.evaluate(async()=>{const d=await(await fetch('/api/state')).json();d.state.projects=[{id:'a',name:'论文研究',color:'#315c46',note:'',deadlines:[]}];d.state.entries=[{projectId:'a',date:'2026-10-23',kind:'hours',hours:2,note:'已有记录'}];d.state.timelineDays={'2026-10-23':{blocks:[{id:'selected',start:540,end:585,projectId:'a'}],applied:[]}};const res=await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:d.revision,state:d.state})});if(!res.ok)throw Error('fixture write failed');});
+  await page.evaluate(async()=>{const d=await(await fetch('/api/state')).json();d.state.projects=[{id:'a',name:'论文研究',color:'#315c46',note:'',deadlines:[]},{id:'b',name:'项目手记',color:'#a47f85',note:'',deadlines:[]}];d.state.entries=[{projectId:'a',date:'2026-10-23',kind:'hours',hours:2,note:'已有记录'}];d.state.timelineDays={'2026-10-23':{blocks:[{id:'selected',start:540,end:585,projectId:'a'}],applied:[]}};const res=await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:d.revision,state:d.state})});if(!res.ok)throw Error('fixture write failed');});
   const folder=path.join(dir,'activity');fs.mkdirSync(folder,{recursive:true});
   for(const [id,name,app,seconds]of [['mac','MacBook Pro','Safari',600],['win','Windows 主机','Microsoft Word.exe',780],['office','办公室电脑','Microsoft Word.EXE',420]]){
    const evidence={};for(let i=0;i<8;i++){const key=id+'/app-'+i;evidence[key]={id:key,date,projectId:'a',kind:'activity',app:platform==='mac'?app.replace(/\.exe$/i,''):app,name:app,stamp:''+i,seconds,bucketStart:base+(540+i*15)*60,attribution:{filename:seconds}};}
    evidence[id+'/file']={id:id+'/file',date,projectId:'a',kind:'file',name:name+'-文稿.docx',relativePath:name+'/文稿.docx',stamp:id,touches:[{at:base+560*60,stamp:id}]};
+   evidence[id+'/second-file']={id:id+'/second-file',date,projectId:'b',kind:'file',name:name+'-设计.md',relativePath:name+'/设计.md',stamp:id+'b',touches:[{at:base+560*60,stamp:id+'b'}]};
    fs.writeFileSync(path.join(folder,id+'.json'),JSON.stringify({version:1,deviceId:id,deviceName:name,evidence}));
   }
   await open(false);
@@ -58,6 +59,22 @@ const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('no
   const fresh=await restarted.newPage();await fresh.goto(session.url+'/?token='+session.token);await fresh.waitForFunction(()=>document.querySelector('#save-status')?.textContent==='已保存到本地');await fresh.locator('#auto-entry').click();await fresh.locator('#dt-date').fill(date);await fresh.locator('#dt-date').dispatchEvent('change');await toggleLayout(fresh);await fresh.waitForFunction(()=>document.querySelectorAll('.dt-client-column').length===1);assert.equal(await fresh.locator('.dt-client-column').getAttribute('data-client'),'win','native preference survives an empty web cache');await restarted.close();
   await menu.locator('summary').click();await menu.locator('input[value="win"]').uncheck();assert.equal(await page.locator('.dt-client-column').count(),0);assert.match(await page.locator('.dt-no-evidence').innerText(),/所选客户端/);
   await menu.locator('[data-client-all]').click();assert.equal(await page.locator('.dt-client-column').count(),3);await page.keyboard.press('Escape');assert.equal(await menu.getAttribute('open'),null);
+  await page.waitForFunction(()=>{const el=document.querySelector('.dt-scroll');return el&&getComputedStyle(el).scrollbarWidth==='none';});
+  await page.locator('.dt-scroll').evaluate(el=>el.scrollTop=0);
+  assert.equal(await page.locator('.dt-file-project .dt-file-project-name').count(),2,'floating project labels remain on their revision tracks');
+  const verifyFileLabels=async()=>{
+   await page.waitForTimeout(50);
+   const overlap=await page.locator('.dt-file-project-name').evaluateAll(xs=>xs.some(label=>{if(getComputedStyle(label).visibility==='hidden')return false;const a=label.getBoundingClientRect();return [...label.parentElement.querySelectorAll('.dt-node-metrics svg,.dt-node-metrics b')].some(el=>{const b=el.getBoundingClientRect();return a.top<b.bottom&&a.bottom>b.top&&a.left<b.right&&a.right>b.left;});}));
+   assert.ok(await page.locator('.dt-file-project-name').evaluateAll(xs=>xs.every(el=>el.getBoundingClientRect().width>=30)),'floating names retain readable space');
+   assert.equal(overlap,false,'floating file labels do not cover revision counters');
+   const bounded=await page.locator('.dt-file-project-name').evaluateAll(xs=>xs.every(label=>{if(getComputedStyle(label).visibility==='hidden')return true;const a=label.getBoundingClientRect(),track=label.parentElement,b=track.getBoundingClientRect(),stem=track.querySelector('.dt-file-spine').getBoundingClientRect();return Math.abs(a.left-stem.left)<2&&a.top>=b.top-1&&a.bottom<=b.bottom+1;}));
+   assert.ok(bounded,'floating names align to the stem and remain within the revision extent');
+  };
+  await verifyFileLabels();
+  await page.locator('.dt-scroll').evaluate(el=>{const node=el.querySelector('.dt-git-node');el.scrollTop=node.getBoundingClientRect().top-el.getBoundingClientRect().top+el.scrollTop-4;});
+  await verifyFileLabels();
+  await page.locator('.dt-scroll').evaluate(el=>el.scrollTop+=30);await verifyFileLabels();
+  if(process.env.JOURNAL_SCREENSHOTS)await page.screenshot({path:path.join(process.env.JOURNAL_SCREENSHOTS,'file-labels-top.png')});
   await page.locator('.dt-scroll').evaluate(el=>el.scrollTop=0);
   await page.locator('.dt-client-column[data-client="mac"] .dt-area-name').first().hover();assert.match(await page.locator('.dt-evidence-tip').innerText(),/MacBook Pro/);await page.mouse.move(1,1);
   if(process.env.JOURNAL_SCREENSHOTS)await page.screenshot({path:path.join(process.env.JOURNAL_SCREENSHOTS,'clients-desktop.png')});

@@ -38,16 +38,25 @@ const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('no
   assert.equal(await page.locator('#inspector-daily-fields [data-clear-time]').isVisible(),false,'redundant time clear is hidden');
   const actionCenters=await page.locator('#inspector-save-status,#inspector-daily-fields .win-note-clear,#inspector-daily-fields .markdown-preview-toggle').evaluateAll(xs=>xs.map(el=>{const r=el.getBoundingClientRect();return r.top+r.height/2;}));
   assert.ok(Math.max(...actionCenters)-Math.min(...actionCenters)<1,'save, clear and preview are vertically aligned');
+  assert.equal(await page.locator('#inspector-save-status svg').count(),1,'save status uses an accessible icon');
+  assert.equal(await page.locator('#inspector-save-status').getAttribute('aria-label'),'已保存');
+  assert.equal(await page.locator('#inspector-daily-fields .win-note-clear svg').count(),1);
+  const editor=page.locator('#inspector-note').locator('..'),grip=editor.locator('.desktop-note-resize');
+  const initialHeight=await editor.evaluate(el=>el.getBoundingClientRect().height),handle=await grip.boundingBox();
+  await page.mouse.move(handle.x+10,handle.y+10);await page.mouse.down();await page.mouse.move(handle.x+10,handle.y-70,{steps:8});await page.mouse.up();
+  assert.ok(Math.abs(await editor.evaluate(el=>el.getBoundingClientRect().height)-initialHeight+80)<2,'drag changes the note height');
+  await grip.dblclick();await page.waitForTimeout(50);
+  assert.ok(Math.abs(await editor.evaluate(el=>el.getBoundingClientRect().height)-initialHeight)<2,'double click restores filling the window');
   const bottomGap=await page.locator('#inspector-note').evaluate(el=>document.querySelector('#month-inspector').getBoundingClientRect().bottom-el.getBoundingClientRect().bottom);
   assert.ok(bottomGap>=18&&bottomGap<=26,'note extends to a consistent bottom inset: '+bottomGap);
   assert.equal(await page.locator('.inspector-project-row>#inspector-duration').count(),1,'total shares the project row');
   assert.equal(await page.locator('#inspector-daily-fields>.form-grid').isVisible(),false,'standalone time row is removed');
-  const rowCenters=await page.locator('.inspector-project-label,#inspector-duration .inspector-time-editor>summary,.inspector-project-row>.inspector-tabs').evaluateAll(xs=>xs.map(el=>{const r=el.getBoundingClientRect();return r.top+r.height/2;}));
+  const rowCenters=await page.locator('#month-inspector .inspector-project-label,#inspector-duration .inspector-time-editor>summary,.inspector-project-row>.inspector-tabs').evaluateAll(xs=>xs.map(el=>{const r=el.getBoundingClientRect();return r.top+r.height/2;}));
   assert.ok(Math.max(...rowCenters)-Math.min(...rowCenters)<1,'project, total and tabs are vertically aligned: '+JSON.stringify(rowCenters));
   await page.locator('#inspector-duration .inspector-time-editor>summary').hover();
-  assert.equal(await page.locator('.win-time-peek').isVisible(),true);
-  assert.match(await page.locator('.win-time-peek').innerText(),/1.5/);
-  assert.match(await page.locator('.win-time-peek').innerText(),/其他已记/);
+  assert.equal(await page.locator('#inspector-duration .win-time-peek').isVisible(),true);
+  assert.match(await page.locator('#inspector-duration .win-time-peek').innerText(),/1.5/);
+  assert.match(await page.locator('#inspector-duration .win-time-peek').innerText(),/其他已记/);
   const shot=async name=>{await page.locator('.workspace-header').hover();if(process.env.JOURNAL_SCREENSHOTS)await page.screenshot({path:path.join(process.env.JOURNAL_SCREENSHOTS,name+'.png')});};
   await shot('editor-refined');
   assert.equal(await page.locator('#inspector-project-deadlines [data-edit-deadline]').count(),2);
@@ -62,7 +71,7 @@ const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('no
    const bounds=await page.locator('#inspector-duration .inspector-time-popover').evaluate(el=>{const p=el.getBoundingClientRect(),host=document.querySelector('#month-inspector').getBoundingClientRect(),buttons=[...el.querySelectorAll('[data-duration-kind]')].map(b=>b.getBoundingClientRect());return {left:p.left,right:p.right,hostLeft:host.left,hostRight:host.right,contained:buttons.every(b=>b.left>=p.left&&b.right<=p.right)};});
    assert.ok(bounds.left>=bounds.hostLeft&&bounds.right<=bounds.hostRight&&bounds.contained,'complete time editor remains within the inspector: '+JSON.stringify(bounds));
    if(process.env.JOURNAL_SCREENSHOTS)await page.screenshot({path:path.join(process.env.JOURNAL_SCREENSHOTS,'time-popover-'+width+'.png')});
-   await page.locator('.inspector-time-done').click();
+   await page.locator('#inspector-duration .inspector-time-done').click();
   }
   await page.setViewportSize({width:1280,height:1000});
   await choose('b');assert.equal(await page.locator('#windows-project-nodes').isVisible(),true);assert.match(await page.locator('#windows-project-nodes>.win-node-heading').innerText(),/未设置/);
@@ -72,7 +81,7 @@ const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('no
   const saved=await page.evaluate(async()=>await(await fetch('/api/state')).json());assert.equal(saved.state.entries.find(e=>e.projectId==='b').hours,1.25);assert.equal(saved.state.entries.find(e=>e.projectId==='a').hours,3.5);
   assert.equal(await page.locator('#inspector-duration .inspector-time-editor').evaluate(el=>el.open),true,'autosave keeps the editor open');
   assert.match(await page.locator('#inspector-duration .inspector-time-editor>summary').innerText(),/1.25/);
-  await page.locator('.inspector-time-done').click();
+  await page.locator('#inspector-duration .inspector-time-done').click();
   await page.locator('#inspector-note').fill('核对清除确认的备注');await page.locator('#inspector-note').dispatchEvent('input');await page.evaluate(()=>window.journalFlush());
   const clear=page.locator('#inspector-daily-fields .win-note-clear');
   await clear.click();await page.locator('#confirm-dialog').waitFor();assert.equal(await page.locator('#inspector-note').inputValue(),'核对清除确认的备注','opening confirmation does not clear');
@@ -104,6 +113,23 @@ const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('no
   assert.equal(await page.locator('#project-deadline-panel>summary #new-deadline').count(),1);
   assert.equal(await page.locator('#project-deadline-panel .deadline-card:not([hidden])').count(),2);
   await shot('project-deadlines-refined');
+  assert.ok(await page.locator('#project-deadline-panel .deadline-card').first().evaluate(el=>el.getBoundingClientRect().height<72),'deadline metadata is compact');
+  assert.ok(await page.locator('#project-deadline-panel .deadline-state b').first().evaluate(el=>parseFloat(getComputedStyle(el).fontSize)>=18),'remaining days stand out');
+  await page.locator('#project-add-record').click();await page.locator('#record-dialog').waitFor();
+  assert.equal(await page.locator('.desktop-record-row>#record-duration').count(),1,'record dialog shares the compact project and total row');
+  assert.equal(await page.locator('#record-info svg').count(),1);
+  assert.equal(await page.locator('#record-form>.editor-clear-actions').isVisible(),false);
+  await page.locator('#record-duration summary').hover();assert.match(await page.locator('#record-time-peek').innerText(),/时间线已记/);
+  await page.locator('#record-duration summary').click();await page.locator('#record-hours').fill('2.25');await page.locator('#record-hours').dispatchEvent('input');await page.evaluate(()=>window.journalFlush());
+  assert.equal(await page.locator('#record-duration details').evaluate(el=>el.open),true,'record time editor stays open after saving');
+  await page.locator('#record-duration .inspector-time-done').click();
+  await page.locator('#record-note').fill('弹窗中的备注');await page.locator('#record-note').dispatchEvent('input');await page.evaluate(()=>window.journalFlush());
+  await page.locator('#record-form .win-note-clear').click();await page.locator('#confirm-dialog').waitFor();assert.equal(await page.locator('#record-note').inputValue(),'弹窗中的备注');
+  await page.locator('#confirm-dialog button[value="cancel"]').click();
+  if(process.env.JOURNAL_SCREENSHOTS)await page.screenshot({path:path.join(process.env.JOURNAL_SCREENSHOTS,'record-dialog-refined.png')});
+  await page.locator('#record-form .win-note-clear').click();await page.locator('#confirm-dialog button[value="ok"]').click();await page.evaluate(()=>window.journalFlush());
+  await page.locator('#record-dialog .close-dialog').click();
+
   assert.ok(await page.locator('#project-deadline-panel .deadline-card-heading>button').first().evaluate(el=>el.getBoundingClientRect().width>200),'node names use the available row width');
   await page.locator('#project-show-done-deadlines').click();assert.equal(await page.locator('#project-deadline-panel .deadline-card:not([hidden])').count(),3);
   await page.locator('#project-list [data-select-project="b"]').click();assert.match(await page.locator('.win-deadline-empty').innerText(),/还没有/);assert.equal(await page.locator('#project-show-done-deadlines').isVisible(),false);
@@ -122,10 +148,27 @@ const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('no
   assert.equal(await marker.evaluate(el=>getComputedStyle(el).width),restingWidth,'completed highlight ends with legend hover');
   for(const width of [1280,760])for(const mode of ['year','month']){
    await page.setViewportSize({width,height:1000});await page.locator('#mode-'+mode).click();await page.waitForTimeout(100);
+   const todayCell=page.locator((mode==='year'?'.heat-day':'.month-day')+'.today-mark.inspected');
+   assert.equal(await todayCell.evaluate(el=>getComputedStyle(el).outlineStyle),'solid','today keeps a selected outline in '+mode);
+   assert.equal(await todayCell.evaluate(el=>getComputedStyle(el).outlineWidth),'2px');
    const insets=await page.locator('#inspector-note').evaluate(el=>{const host=document.querySelector('#month-inspector').getBoundingClientRect(),note=(el.hidden?el.parentElement.querySelector('.markdown-preview'):el).getBoundingClientRect();return {left:note.left-host.left,bottom:host.bottom-note.bottom};});
    assert.ok(Math.abs(insets.left-insets.bottom)<1,'note left and bottom insets match in '+mode+' at '+width+': '+JSON.stringify(insets));
   }
   const mac=await browser.newPage();await mac.goto(session.url+'/?token='+session.token);await mac.waitForFunction(()=>document.querySelector('#save-status')?.textContent==='已保存到本地');assert.equal(await mac.locator('#windows-project-nodes').count(),0);assert.equal(await mac.locator('.inspector-project-row .inspector-tabs').count(),1);
-  assert.deepEqual(errors,[]);console.log('PASS '+platform+': editor hierarchy, note confirmation, date linking, completed deadlines, equal insets and legacy browser layout');
+  await page.locator('#auto-entry').click();
+  for(const time of ['15:42','02:17','00:01','23:59']){
+   await page.clock.setFixedTime(new Date(day+'T'+time+':00+08:00'));
+   await page.locator('#dt-prev').click();await page.waitForFunction(day=>document.querySelector('#dt-date').value!==day,day);
+   assert.equal(await page.locator('#dt-today').innerText(),'此刻');
+   await page.locator('#dt-today').click();await page.waitForFunction(day=>document.querySelector('#dt-date').value===day,day);await page.waitForTimeout(100);
+   assert.equal(await page.locator('.dt-now').innerText(),time);
+   const position=await page.locator('.dt-scroll').evaluate(el=>{const grid=el.querySelector('.dt-grid'),line=grid.querySelector('.dt-now'),y=parseFloat(line.style.top);return {actual:el.scrollTop,expected:Math.max(0,Math.min(el.scrollHeight-el.clientHeight,y-el.clientHeight*2/3)),background:getComputedStyle(line.firstElementChild).backgroundColor,glow:getComputedStyle(line).boxShadow};});
+   assert.ok(Math.abs(position.actual-position.expected)<2,'now places two thirds above the line, clamped at day boundaries: '+JSON.stringify(position));assert.equal(position.background,'rgba(0, 0, 0, 0)');assert.notEqual(position.glow,'none');
+   const line=await page.locator('.dt-now').evaluate(el=>{const r=el.getBoundingClientRect(),grid=el.parentElement.getBoundingClientRect(),scroll=el.closest('.dt-scroll').getBoundingClientRect();return {parent:el.parentElement.className,width:r.width,gridWidth:grid.width,visible:r.top>scroll.top&&r.top<scroll.bottom,start:el.parentElement.dataset.start};});
+   assert.equal(line.parent,'dt-grid');assert.ok(Math.abs(line.width-line.gridWidth)<2,'now guide spans the full timeline');assert.ok(line.visible,'now button scrolls current time into view');
+   if(time==='02:17')assert.equal(line.start,'0','now before eight reveals the full day');
+   await shot('timeline-now-'+time.replace(':',''));
+  }
+  assert.deepEqual(errors,[]);console.log('PASS '+platform+': editor hierarchy, note confirmation, date linking, current-time navigation, note resizing, completed deadlines, equal insets and legacy browser layout');
  }finally{if(browser)await browser.close();server.kill();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

@@ -1,4 +1,6 @@
 /* Device lanes use the same quiet green text, paper surfaces and compact rhythm. */
+:is(.native-windows,.native-mac) .dt-scroll { scrollbar-width:none; scrollbar-gutter:auto; }
+:is(.native-windows,.native-mac) .dt-scroll::-webkit-scrollbar { display:none; width:0; height:0; }
 :is(.native-windows,.native-mac) .dt-axis-caption { position:relative; z-index:15; height:34px; box-sizing:border-box; padding-top:0; padding-bottom:0; align-items:center; }
 :is(.native-windows,.native-mac) .dt-axis-caption>span,:is(.native-windows,.native-mac) .dt-axis-caption>div { display:flex; flex-direction:row; align-items:center; align-self:center; min-height:24px; line-height:20px; }
 :is(.native-windows,.native-mac) .dt-axis-caption strong { line-height:20px; }
@@ -102,6 +104,22 @@
 :is(.native-windows,.native-mac) #project-deadline-panel .priority-badge { font-family:inherit; font-size:9px; padding:0; background:transparent; color:#9ca48f; }
 :is(.native-windows,.native-mac) #project-deadline-panel .priority-high { color:#a47e61; }
 
+/* Record totals use the same popover structure as review totals. */
+:is(.native-windows,.native-mac) #record-duration .inspector-time-editor{grid-column:2;grid-row:1;position:relative;min-width:0;margin:0 5px;align-self:stretch}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-editor>summary{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;position:relative;list-style:none;height:100%;min-height:40px;padding:0 22px 0 10px;box-sizing:border-box;border-radius:6px;cursor:pointer;color:#8b9583;font:9px/14px system-ui}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-editor>summary::-webkit-details-marker{display:none}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-editor>summary:after{content:'⌄';position:absolute;right:7px;top:50%;transform:translateY(-50%);font:12px/1 system-ui;color:#7c8d71}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-editor>summary strong{font:600 18px/22px var(--serif);color:#818a7a;font-variant-numeric:tabular-nums;white-space:nowrap}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-editor>summary:hover,:is(.native-windows,.native-mac) #record-duration .inspector-time-editor[open]>summary{background:#e8eedf}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-editor>summary:focus-visible{outline:2px solid #a9bc98;outline-offset:2px}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-popover{position:absolute;z-index:80;top:calc(100% + 12px);left:50%;transform:translateX(-50%);width:330px;max-width:calc(100vw - 48px);box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:14px;background:var(--panel);border:1px solid #dce5d1;border-radius:11px;box-shadow:0 8px 26px #34492c20}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-popover .duration-heading{display:flex;align-items:center;justify-content:space-between;position:static;grid-column:1/-1;grid-row:auto;font:10px/20px system-ui;color:#7d8e70;min-height:20px}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-done{border:0;background:transparent;box-shadow:none;color:#617c50;font:10px/20px system-ui;min-height:20px;padding:0 3px}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-popover .rough-choices{grid-column:1/-1!important;grid-row:auto!important;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-popover .rough-choices button{font-size:10px;min-height:30px;height:30px}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-popover .hour-choice{grid-column:1!important;grid-row:auto!important;display:grid;grid-template-columns:58px minmax(0,1fr);gap:10px;min-width:0}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-popover .duration-clear{position:static;grid-column:2;grid-row:auto;align-self:center;opacity:1;visibility:visible;min-height:26px;width:24px;padding:0}
+
 /* Compact day editor: one project row, one time row, visible nodes before writing. */
 :is(.native-windows,.native-mac) .inspector-project-row { display:flex; align-items:center; gap:4px; margin:0 0 8px; padding:2px; border:1px solid #e0e5d8; border-radius:8px; background:var(--panel); }
 :is(.native-windows,.native-mac) .inspector-project-row .inspector-project-label { flex:1; min-width:0; margin:0!important; }
@@ -114,23 +132,23 @@
 :is(.native-windows,.native-mac) .inspector-project-row .inspector-tabs button:not(.active):hover { background:#e3e9db; color:#617555; }
 /* The daily total is the only always-visible time control. */
 :is(.native-windows,.native-mac) .inspector-project-row { position:relative; }
-:is(.native-windows,.native-mac) #inspector-duration.duration-control { position:static; display:block; flex:none; width:auto; min-width:0; min-height:32px; padding:0 3px; margin:0; border:0; background:linear-gradient(#dce3d3,#dce3d3) left center/1px 16px no-repeat,linear-gradient(#dce3d3,#dce3d3) right center/1px 16px no-repeat; }
-:is(.native-windows,.native-mac) #inspector-duration::before,:is(.native-windows,.native-mac) #inspector-duration::after,:is(.native-windows,.native-mac) #inspector-duration>.time-source-summary { display:none; }
-:is(.native-windows,.native-mac) #inspector-duration .inspector-time-editor { position:static; display:block; margin:0; }
-:is(.native-windows,.native-mac) #inspector-duration .inspector-time-editor>summary { display:flex; align-items:center; justify-content:center; height:32px; min-height:32px; padding:0 8px; border-radius:5px; white-space:nowrap; }
-:is(.native-windows,.native-mac) #inspector-duration .inspector-time-editor>summary>span,:is(.native-windows,.native-mac) #inspector-duration .inspector-time-editor>summary:after { display:none; }
-:is(.native-windows,.native-mac) #inspector-duration .inspector-time-editor>summary strong { font:500 18px/26px var(--serif); color:var(--green); font-variant-numeric:tabular-nums; }
-:is(.native-windows,.native-mac) #inspector-duration .inspector-time-editor>summary small { font-family:inherit; font-size:9px; color:#8d9983; margin-left:4px; }
-:is(.native-windows,.native-mac) #inspector-duration .inspector-time-popover { position:absolute; left:auto; right:0; top:calc(100% + 6px); transform:none; width:min(300px,100%); max-width:100%; box-sizing:border-box; padding:12px; border-radius:9px; }
-:is(.native-windows,.native-mac) #inspector-duration .win-time-breakdown { grid-column:1/-1; display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:0 0 9px; border-bottom:1px solid #e6eadf; }
-:is(.native-windows,.native-mac) #inspector-duration .win-time-breakdown .duration-timeline,:is(.native-windows,.native-mac) #inspector-duration .win-time-other { display:flex; flex-direction:column!important; align-items:flex-start; justify-content:center; gap:2px; min-height:0; padding:0; border:0; }
-:is(.native-windows,.native-mac) #inspector-duration .win-time-breakdown span { font-family:inherit; font-size:10px; line-height:18px; color:#8b987f; }
-:is(.native-windows,.native-mac) #inspector-duration .win-time-breakdown strong { font:500 16px/24px var(--serif); color:#617555; }
-:is(.native-windows,.native-mac) #inspector-duration .win-time-breakdown small { font-family:inherit; font-size:9px; color:#8d9983; margin-left:3px; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration).duration-control { position:static; display:block; flex:none; width:auto; min-width:0; min-height:32px; padding:0 3px; margin:0; border:0; background:linear-gradient(#dce3d3,#dce3d3) left center/1px 16px no-repeat,linear-gradient(#dce3d3,#dce3d3) right center/1px 16px no-repeat; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration)::before,:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration)::after,:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration)>.time-source-summary { display:none; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .inspector-time-editor { position:static; display:block; margin:0; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .inspector-time-editor>summary { display:flex; align-items:center; justify-content:center; height:32px; min-height:32px; padding:0 8px; border-radius:5px; white-space:nowrap; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .inspector-time-editor>summary>span,:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .inspector-time-editor>summary:after { display:none; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .inspector-time-editor>summary strong { font:500 18px/26px var(--serif); color:var(--green); font-variant-numeric:tabular-nums; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .inspector-time-editor>summary small { font-family:inherit; font-size:9px; color:#8d9983; margin-left:4px; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .inspector-time-popover { position:absolute; left:auto; right:0; top:calc(100% + 6px); transform:none; width:min(300px,100%); max-width:100%; box-sizing:border-box; padding:12px; border-radius:9px; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .win-time-breakdown { grid-column:1/-1; display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:0 0 9px; border-bottom:1px solid #e6eadf; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .win-time-breakdown .duration-timeline,:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .win-time-other { display:flex; flex-direction:column!important; align-items:flex-start; justify-content:center; gap:2px; min-height:0; padding:0; border:0; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .win-time-breakdown span { font-family:inherit; font-size:10px; line-height:18px; color:#8b987f; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .win-time-breakdown strong { font:500 16px/24px var(--serif); color:#617555; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .win-time-breakdown small { font-family:inherit; font-size:9px; color:#8d9983; margin-left:3px; }
 :is(.native-windows,.native-mac) #inspector-daily-fields>.form-grid { display:none; }
 :is(.native-windows,.native-mac) .win-time-peek { position:absolute; z-index:80; top:calc(100% + 6px); right:0; display:none; width:220px; max-width:100%; box-sizing:border-box; padding:11px 12px; background:var(--panel); border:1px solid #dce5d1; border-radius:9px; box-shadow:0 5px 18px #34492c20; pointer-events:none; }
-:is(.native-windows,.native-mac) #inspector-duration:hover>.win-time-peek,:is(.native-windows,.native-mac) #inspector-duration:focus-within>.win-time-peek { display:block; }
-:is(.native-windows,.native-mac) #inspector-duration:has(.inspector-time-editor[open])>.win-time-peek { display:none; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration):hover>.win-time-peek,:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration):focus-within>.win-time-peek { display:block; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration):has(.inspector-time-editor[open])>.win-time-peek { display:none; }
 :is(.native-windows,.native-mac) .win-time-peek>div { display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:10px; line-height:24px; color:#8b987f; }
 :is(.native-windows,.native-mac) .win-time-peek strong { font:500 15px/24px var(--serif); color:#617555; }
 :is(.native-windows,.native-mac) .win-time-peek strong small { margin-left:3px; font-size:9px; font-family:inherit; }
@@ -180,6 +198,98 @@
 :is(.native-windows,.native-mac) .month-inspector .inspector-day-total>span,:is(.native-windows,.native-mac) .month-inspector .inspector-day-total small { font-family:inherit; }
 :is(.native-windows,.native-mac) #project-detail .deadline-surface,:is(.native-windows,.native-mac) #project-detail .win-deadline-empty { padding-left:22px; }
 
+/* Small, aligned note actions with accessible status and tooltips. */
+:is(.native-windows,.native-mac) .desktop-save-state,
+:is(.native-windows,.native-mac) #inspector-daily-fields .win-note-clear,
+:is(.native-windows,.native-mac) .desktop-note-action { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; min-height:24px; padding:0; flex:none; box-sizing:border-box; }
+:is(.native-windows,.native-mac) .desktop-save-state svg,
+:is(.native-windows,.native-mac) .win-note-clear svg,
+:is(.native-windows,.native-mac) .desktop-note-action svg { width:15px; height:15px; flex:none; }
+:is(.native-windows,.native-mac) .desktop-save-state { color:#8b9d80; }
+:is(.native-windows,.native-mac) .desktop-save-state[data-state="error"] { color:#ab735c; }
+:is(.native-windows,.native-mac) .desktop-save-state[data-state="saving"] svg { animation:desktop-saving 1.5s linear infinite; }
+@keyframes desktop-saving { to { transform:rotate(360deg); } }
+@media(prefers-reduced-motion:reduce) { :is(.native-windows,.native-mac) .desktop-save-state[data-state="saving"] svg { animation:none; } }
+:is(.native-windows,.native-mac) .month-inspector .markdown-editor { position:relative; min-height:140px; }
+:is(.native-windows,.native-mac) .desktop-note-resize { position:absolute; bottom:1px; right:1px; width:20px; height:20px; display:grid; place-items:center; color:#a3ad97; cursor:ns-resize; touch-action:none; border-radius:0 0 6px 0; }
+:is(.native-windows,.native-mac) .desktop-note-resize svg { width:15px; height:15px; }
+:is(.native-windows,.native-mac) .desktop-note-resize:hover { color:var(--green); }
+:is(.native-windows,.native-mac) .desktop-note-resize:focus-visible { outline:1px solid var(--green); outline-offset:-2px; }
+/* The current-time guide crosses evidence, clock and recorded intervals. */
+:is(.native-windows,.native-mac) .dt-grid>.dt-now { left:0; right:0; height:0; min-height:0; z-index:25; pointer-events:none; border-color:#bd6c5e; box-shadow:0 0 4px #c8736266,0 0 9px #c873622e; }
+:is(.native-windows,.native-mac) .dt-grid>.dt-now span { position:sticky; left:0; right:auto; top:auto; float:left; transform:translateY(-100%); box-sizing:border-box; width:38px; padding:2px 4px; text-align:center; font-size:10px; line-height:14px; background:transparent; color:#af6154; border-radius:3px; font-variant-numeric:tabular-nums; }
+/* Project sections share a calm header and compact, clearly grouped rows. */
+:is(.native-windows,.native-mac) #project-detail :is(#project-deadline-panel,#project-record-panel) { border:0; margin-top:14px; padding:0; }
+:is(.native-windows,.native-mac) #project-detail :is(#project-deadline-panel,#project-record-panel)>summary { min-height:36px; padding:3px 10px; box-sizing:border-box; border-radius:7px; background:#f1f4ed; gap:9px; }
+:is(.native-windows,.native-mac) #project-detail :is(#project-deadline-panel,#project-record-panel)>.fold-content { padding:8px 10px 0; }
+:is(.native-windows,.native-mac) #project-detail .win-deadline-empty { padding:5px 0 9px; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card { padding:10px; margin:0 0 5px; border:0; border-radius:7px; background:#f7f8f3; }
+:is(.native-windows,.native-mac) #project-detail .deadline-surface { padding:0; grid-template-columns:60px minmax(0,1fr); gap:10px; }
+:is(.native-windows,.native-mac) #project-record-panel .daily-month+.daily-month { margin-top:16px; }
+:is(.native-windows,.native-mac) #project-record-panel .daily-month-heading { align-items:center; min-height:26px; padding:0 0 5px; }
+:is(.native-windows,.native-mac) #project-record-panel .daily-month-records { display:grid; gap:4px; border:0; }
+:is(.native-windows,.native-mac) #project-record-panel .daily-record-row { min-height:54px; padding:8px; gap:10px; grid-template-columns:38px minmax(0,1fr) max-content 12px; border:0; border-radius:7px; background:#f7f8f3; }
+:is(.native-windows,.native-mac) #project-record-panel .daily-record-row:hover { background:#edf2e7; }
+:is(.native-windows,.native-mac) #project-record-panel .daily-record-row .daily-duration { font-family:inherit; background:#eaf0e2; }
+
+/* Denser project navigation and single-line milestone metadata. */
+:is(.native-windows,.native-mac) #project-list .project-item { min-height:42px; padding:6px 9px; margin:1px 0; }
+:is(.native-windows,.native-mac) #project-list .project-item small { margin-top:3px; line-height:13px; }
+:is(.native-windows,.native-mac) #project-list .project-list-row { margin:0; }
+:is(.native-windows,.native-mac) #project-list .project-group-heading { min-height:26px; padding-top:4px; padding-bottom:3px; }
+:is(.native-windows,.native-mac) #project-list .project-group-section { margin-bottom:3px; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card { padding:7px 10px; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-surface { align-items:center; grid-template-columns:54px minmax(0,1fr); }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-surface>time { align-self:center; padding:0; gap:1px; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-surface>time strong { font-size:14px; line-height:20px; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-surface>time small { line-height:12px; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card-heading { grid-template-columns:minmax(0,1fr) max-content max-content 14px; column-gap:10px; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card-heading>button { grid-column:1; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card-heading>.priority-badge { grid-column:2; grid-row:1; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card-heading>.deadline-state { grid-column:3; grid-row:1; white-space:nowrap; line-height:24px; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-state b { font:500 20px/24px var(--serif); color:var(--green); padding:0 3px; font-variant-numeric:tabular-nums; }
+:is(.native-windows,.native-mac) #project-deadline-panel .is-overdue .deadline-state b { color:#ac7c62; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card-heading>input { grid-column:4; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-inline-note { grid-row:2; grid-column:1/-1; max-height:19px; overflow:hidden; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-meta { display:none; }
+/* Note tools form a single close-set icon group. */
+:is(.native-windows,.native-mac) #inspector-daily-fields>.editor-label>.markdown-heading,
+:is(.native-windows,.native-mac) .project-detail-section>.editor-heading,
+:is(.native-windows,.native-mac) #record-form .markdown-heading { gap:2px; }
+:is(.native-windows,.native-mac) .project-detail-section>.editor-heading>.markdown-mode { margin-left:0; }
+:is(.native-windows,.native-mac) #inspector-daily-fields .win-note-clear,
+:is(.native-windows,.native-mac) .desktop-note-action,
+:is(.native-windows,.native-mac) .desktop-save-state { width:22px; }
+/* The record dialog follows the review editor's project/total row and note area. */
+:is(.native-windows,.native-mac) #record-dialog { width:560px; max-width:calc(100vw - 32px); height:min(700px,calc(100dvh - 48px)); max-height:calc(100dvh - 48px); box-sizing:border-box; padding:22px; overflow:visible; }
+:is(.native-windows,.native-mac) #record-form { display:flex; flex-direction:column; height:100%; min-height:0; }
+:is(.native-windows,.native-mac) #record-form>.dialog-heading { gap:12px; flex:none; margin-bottom:14px; }
+:is(.native-windows,.native-mac) #record-form .auto-save-hint { display:none; }
+:is(.native-windows,.native-mac) #record-date { margin-left:auto; width:136px; height:30px; min-height:30px; padding:3px 6px; font-family:inherit; font-size:11px; border:0; background:#f1f4ed; }
+:is(.native-windows,.native-mac) #record-form>.dialog-heading>.close-dialog { margin-left:0; }
+:is(.native-windows,.native-mac) #record-form>.form-grid,
+:is(.native-windows,.native-mac) #record-form>.editor-clear-actions { display:none; }
+:is(.native-windows,.native-mac) #record-form>.desktop-record-row { flex:none; margin-bottom:12px; }
+:is(.native-windows,.native-mac) #record-form>.editor-label { display:flex; flex-direction:column; flex:1; min-height:140px; margin:0; }
+:is(.native-windows,.native-mac) #record-form .markdown-heading { padding:0 10px; min-height:28px; font-size:10px; }
+:is(.native-windows,.native-mac) #record-form .markdown-editor { flex:1; min-height:140px; position:relative; margin:0; }
+:is(.native-windows,.native-mac) #record-note,
+:is(.native-windows,.native-mac) #record-form .markdown-preview { flex:1; min-height:140px; height:100%; padding:10px; resize:none; border:1px solid #e5e8df; border-radius:8px; background:linear-gradient(115deg,#e8eee3,#f1f4ec 45%,var(--panel)); }
+:is(.native-windows,.native-mac) #record-form .win-note-clear { display:inline-flex; align-items:center; justify-content:center; width:22px; height:24px; min-height:24px; padding:0; border:0; background:transparent; box-shadow:none; color:#87957c; }
+:is(.native-windows,.native-mac) #record-form .win-note-clear:disabled { opacity:.4; }
+:is(.native-windows,.native-mac) #record-form>.danger { flex:none; align-self:flex-start; margin-top:8px; min-height:24px; padding:0 2px; font-size:10px; }
+/* Floating project tags stay within their own track, including at the top edge. */
+:is(.native-windows,.native-mac) .dt-file-project .dt-file-project-name { position:absolute; margin-left:7px; width:calc(100% - 10px); max-width:none; }
+/* Today's identity and the selected-day outline are independent cues. */
+:is(.native-windows,.native-mac) :is(.heat-day,.month-day).today-mark:is(.inspected,.selected) { outline:2px solid #a46d4d!important; outline-offset:-2px; }
+@media(max-width:850px) {
+  :is(.native-windows,.native-mac) #project-deadline-panel .deadline-card-heading { column-gap:6px; }
+  :is(.native-windows,.native-mac) #project-deadline-panel .deadline-card-heading>.priority-badge { display:none; }
+  :is(.native-windows,.native-mac) #project-deadline-panel .deadline-card-heading { grid-template-columns:minmax(0,1fr) max-content 14px; }
+  :is(.native-windows,.native-mac) #project-deadline-panel .deadline-card-heading>.deadline-state { grid-column:2; }
+  :is(.native-windows,.native-mac) #project-deadline-panel .deadline-card-heading>input { grid-column:3; }
+}
+
 /* Completed deadlines remain easy to find when scanning from the year legend. */
 :is(.native-windows,.native-mac) #page-review:not(.month-view):has(.ddl-legend-trigger:is(:hover,:focus-visible)) #year-calendar .heat-day.ddl-complete {
   outline:2px solid #45693c!important;
@@ -195,6 +305,6 @@
   :is(.native-windows,.native-mac) .inspector-project-row { gap:3px; }
   :is(.native-windows,.native-mac) .inspector-project-row>.inspector-tabs { gap:2px; }
   :is(.native-windows,.native-mac) .inspector-project-row .inspector-tabs button { font-size:9px; padding:0 6px; }
-  :is(.native-windows,.native-mac) #inspector-duration .inspector-time-editor>summary { padding:0 5px; }
-  :is(.native-windows,.native-mac) #inspector-duration .duration-timeline,:is(.native-windows,.native-mac) #inspector-duration .inspector-time-editor>summary,:is(.native-windows,.native-mac) #inspector-duration>.time-source-summary>span { gap:3px; }
+  :is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .inspector-time-editor>summary { padding:0 5px; }
+  :is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .duration-timeline,:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .inspector-time-editor>summary,:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration)>.time-source-summary>span { gap:3px; }
 }

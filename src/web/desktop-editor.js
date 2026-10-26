@@ -1,5 +1,6 @@
 // Reorganize existing controls in the native desktop presentation.
 // Keep IDs, event handlers, editor contents and persisted data intact.
+import {desktopIcon,renderDesktopSaveStatus} from './desktop-icons.js';
 const $ = selector => document.querySelector(selector);
 
 export function projectNodeOverview(project) {
@@ -10,6 +11,7 @@ export function projectNodeOverview(project) {
 export function refineDesktopProject(project) {
   const panel=$('#project-deadline-panel');
   if(!panel) return;
+  renderDesktopSaveStatus($('#note-status'),'已保存');
   const summary=panel.querySelector(':scope>summary'), add=$('#new-deadline'), toggle=$('#project-show-done-deadlines');
   if(!add.dataset.windowsPlaced) {
     add.dataset.windowsPlaced='true'; add.classList.add('quiet','win-node-add');
@@ -25,7 +27,10 @@ export function refineDesktopProject(project) {
   meta.textContent=info.pending?info.pending+' 个待完成':'';
   panel.querySelectorAll('.deadline-card').forEach(card=>{
     const state=card.querySelector(':scope>.deadline-state');
-    if(state)card.querySelector('.deadline-meta').prepend(state);
+    const heading=card.querySelector('.deadline-card-heading'),check=heading.querySelector('input');
+    const priority=card.querySelector('.priority-badge');
+    if(priority)heading.insertBefore(priority,check);
+    if(state)heading.insertBefore(state,check);
   });
   let empty=panel.querySelector('.win-deadline-empty');
   if(!empty){empty=document.createElement('p');empty.className='win-deadline-empty';panel.querySelector('.fold-content').append(empty);}
@@ -69,17 +74,42 @@ export function refineDesktopInspector(project) {
   const clear=$('[data-clear-note="inspector-note"]');
   if(clear) {
     if(clear.parentElement!==heading)heading.insertBefore(clear,heading.querySelector('.markdown-mode'));
-    clear.classList.add('win-note-clear','quiet');clear.textContent='清除备注';
+    clear.classList.add('win-note-clear','quiet');clear.innerHTML=desktopIcon('trash');clear.setAttribute('aria-label','清除当日备注');
     clear.title='清除当日备注，需要确认';clear.disabled=!field.value;
     if(!clear.dataset.windowsBound) {
       clear.dataset.windowsBound='true';
       field.addEventListener('input',()=>{clear.disabled=!field.value;});
     }
   }
+  refineDesktopNotes();
 }
 
-export function refineDesktopTime(container,context) {
-  const row=$('.inspector-project-row'),editor=container.querySelector('.inspector-time-editor');
+let noteLayoutListening=false;
+function fitNotePane(){
+  const pane=$('#month-inspector');
+  if(!pane||!pane.offsetParent)return;
+  const top=pane.getBoundingClientRect().top+($('main')?.scrollTop||0);
+  pane.style.minHeight=Math.max(320,innerHeight-top-20)+'px';
+}
+export function refineDesktopNotes(){
+  if(!noteLayoutListening){window.addEventListener('resize',fitNotePane);noteLayoutListening=true;}
+  requestAnimationFrame(fitNotePane);
+  for(const id of ['inspector-note','inspector-project-note','record-note']){
+    const input=$('#'+id),editor=input?.closest('.markdown-editor');
+    if(!editor||editor.querySelector('.desktop-note-resize'))continue;
+    const grip=document.createElement('div');grip.className='desktop-note-resize';grip.tabIndex=0;grip.setAttribute('role','separator');grip.setAttribute('aria-orientation','horizontal');grip.setAttribute('aria-label','调整笔记高度');grip.title='拖动调整高度，双击恢复填满';grip.innerHTML=desktopIcon('resize');editor.append(grip);
+    const setHeight=height=>{editor.style.flex='0 0 auto';editor.style.height=Math.max(140,Math.min(4096,height))+'px';};
+    const reset=()=>{editor.style.removeProperty('height');editor.style.removeProperty('flex');fitNotePane();};
+    let drag=null;
+    grip.onpointerdown=event=>{if(event.button!==0)return;event.preventDefault();event.stopPropagation();drag={y:event.clientY,height:editor.getBoundingClientRect().height};grip.setPointerCapture(event.pointerId);};
+    grip.onpointermove=event=>{if(drag)setHeight(drag.height+event.clientY-drag.y);};
+    grip.onpointerup=grip.onpointercancel=()=>{drag=null;};grip.ondblclick=reset;
+    grip.onkeydown=event=>{if(['ArrowUp','ArrowDown','Home'].includes(event.key)){event.preventDefault();if(event.key==='Home')reset();else setHeight(editor.getBoundingClientRect().height+(event.key==='ArrowUp'?-24:24));}};
+  }
+}
+
+export function refineDesktopTime(container,context,row=$('.inspector-project-row')) {
+  const editor=container.querySelector('.inspector-time-editor');
   const summary=editor.querySelector('summary'),value=summary.querySelector('strong');
   const other=value.innerHTML,total=container.querySelector('.time-source-summary strong').innerHTML;
   if(container.dataset.context!==context)editor.open=false;
@@ -92,7 +122,7 @@ export function refineDesktopTime(container,context) {
     const otherRow=document.createElement('div');otherRow.className='win-time-other';otherRow.innerHTML='<span>其他已记</span><strong></strong>';
     breakdown.append(container.querySelector('.duration-timeline'),otherRow);panel.prepend(breakdown);
     const heading=panel.querySelector('.duration-heading>span');heading.textContent='修改其他已记';
-    const peek=document.createElement('div');peek.id='windows-time-peek';peek.className='win-time-peek';peek.setAttribute('role','tooltip');
+    const peek=document.createElement('div');peek.id=container.id==='inspector-duration'?'windows-time-peek':'record-time-peek';peek.className='win-time-peek';peek.setAttribute('role','tooltip');
     peek.innerHTML='<div><span>时间线已记</span><strong></strong></div><div><span>其他已记</span><strong></strong></div><small>当前项目当天投入 · 点击修改</small>';
     container.append(peek);
     summary.setAttribute('aria-describedby',peek.id);
@@ -103,4 +133,21 @@ export function refineDesktopTime(container,context) {
   const peekValues=container.querySelectorAll('.win-time-peek strong');
   peekValues[0].innerHTML=breakdown.querySelector('.duration-timeline strong').innerHTML;
   peekValues[1].innerHTML=other;
+}
+
+export function refineDesktopRecord(){
+  const form=$('#record-form'),grid=form.querySelector('.form-grid');
+  let row=form.querySelector('.desktop-record-row');
+  if(!row){
+    row=document.createElement('div');row.className='inspector-project-row desktop-record-row';grid.before(row);
+    const label=$('#record-project').closest('label');label.classList.add('inspector-project-label');row.append(label);
+    const date=$('#record-date'),dateLabel=date.closest('label');date.setAttribute('aria-label','记录日期');
+    form.querySelector('.dialog-heading').insertBefore(date,form.querySelector('.close-dialog'));dateLabel.remove();
+    const field=$('#record-note'),heading=field.closest('.editor-label').querySelector(':scope>span'),clear=form.querySelector('[data-clear-note="record-note"]');
+    clear.classList.add('win-note-clear','quiet');clear.innerHTML=desktopIcon('trash');clear.setAttribute('aria-label','清除当日备注');clear.title='清除当日备注，需要确认';heading.insertBefore(clear,heading.querySelector('.markdown-mode'));
+    field.addEventListener('input',()=>{clear.disabled=!field.value;});
+  }
+  form.querySelector('[data-clear-note="record-note"]').disabled=!$('#record-note').value;
+  refineDesktopTime($('#record-duration'),$('#record-project').value+'/'+$('#record-date').value,row);
+  refineDesktopNotes();
 }
