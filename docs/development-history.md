@@ -1,5 +1,13 @@
 # 开发与验证
 
+## 2026-10：Mac 与 Windows 界面同步
+
+`web/desktop.css`、`desktop-editor.js` 和 `desktop-timeline.js` 共用日期联动、紧凑日期详情、时长弹层、备注清除确认、节点布局及多客户端时间线。`desktop-host.js` 按原生宿主标记启用，普通浏览器会话保留原来的布局。Windows 的字体、导航和十字指针留在 `windows.css`；Mac 用 `macos.css` 引入共用布局，继续使用原有字体、标题栏、红绿灯与菜单栏行为。
+
+Mac 在文档开始时设置宿主标记，文档结束时加载样式。客户端筛选通过已有 `journalNative` 消息通道读取及写入本机 `UserDefaults` 的 `JournalHiddenClients`，不依赖非持久 WKWebView 缓存，也不写共享业务数据。Windows 继续使用本机 `windows-view.json`。Mac 应用名保留原样，Windows 的 .exe 后缀处理不作用于 Mac 应用名。
+
+两组界面回归脚本 `tests/windows-editor.cjs` 和 `tests/windows-clients.cjs` 支持 `JOURNAL_PLATFORM=mac` 与默认 Windows 模式。覆盖日期联动、今天选择、清除确认、编辑保存、弹层边界、内边距、多设备筛选及原生偏好消息桥。浏览器回归与 Go 跨平台构建不能代替 Mac 上的 Swift 编译和 WKWebView 原生窗口验证；发布 Mac 应用前仍需在 Mac 运行 `scripts/build-macos.sh` 并核对原生效果。
+
 Go 标准库提供本机服务和带版本校验的 JSON 持久化；界面为原生 HTML/CSS/JavaScript，无前端构建依赖。Mac 原生壳使用 Swift / WKWebView；Windows 使用 Go / WebView2。
 
 ## 构建

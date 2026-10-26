@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {activityClients,windowsAppName,timelineWidths} from '../web/windows-timeline.js';
+import {activityClients,windowsAppName,timelineWidths} from '../web/desktop-timeline.js';
 
 test('Windows application labels remove only a trailing executable suffix',()=>{
   assert.equal(windowsAppName('ChatGPT.exe'),'ChatGPT');

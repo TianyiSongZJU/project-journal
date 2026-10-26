@@ -10,7 +10,8 @@ const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('no
   const session=JSON.parse(fs.readFileSync(sessionPath));
   browser=await chromium.launch({headless:true,executablePath:process.env.JOURNAL_BROWSER});
   const context=await browser.newContext({viewport:{width:1280,height:1000},timezoneId:'Asia/Shanghai'});
-  await context.addInitScript(()=>{window.journalWindowsHost=true;document.addEventListener('DOMContentLoaded',()=>{document.documentElement.classList.add('native-windows');const link=document.createElement('link');link.rel='stylesheet';link.href='windows.css';document.head.append(link);});});
+  const platform=process.env.JOURNAL_PLATFORM||'windows';
+  await context.addInitScript(platform=>{window.journalMacHost=platform==='mac';window.journalWindowsHost=platform!=='mac';document.addEventListener('DOMContentLoaded',()=>{document.documentElement.classList.add(platform==='mac'?'native-mac':'native-windows');const link=document.createElement('link');link.rel='stylesheet';link.href=platform==='mac'?'macos.css':'windows.css';document.head.append(link);});},platform);
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>{errors.push(e.message);console.error(e.stack)});
   const ready=()=>page.waitForFunction(()=>document.querySelector('#save-status')?.textContent==='已保存到本地');
   await page.goto(session.url+'/?token='+session.token);await ready();
@@ -125,6 +126,6 @@ const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('no
    assert.ok(Math.abs(insets.left-insets.bottom)<1,'note left and bottom insets match in '+mode+' at '+width+': '+JSON.stringify(insets));
   }
   const mac=await browser.newPage();await mac.goto(session.url+'/?token='+session.token);await mac.waitForFunction(()=>document.querySelector('#save-status')?.textContent==='已保存到本地');assert.equal(await mac.locator('#windows-project-nodes').count(),0);assert.equal(await mac.locator('.inspector-project-row .inspector-tabs').count(),1);
-  assert.deepEqual(errors,[]);console.log('PASS: Windows editor hierarchy, collapsed nodes, completed/edit/add actions, duration saving, project deadline rows/empty states and unchanged non-Windows layout');
+  assert.deepEqual(errors,[]);console.log('PASS '+platform+': editor hierarchy, note confirmation, date linking, completed deadlines, equal insets and legacy browser layout');
  }finally{if(browser)await browser.close();server.kill();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

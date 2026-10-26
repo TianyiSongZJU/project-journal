@@ -11,10 +11,11 @@ const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('no
   browser=await chromium.launch({headless:true,executablePath:process.env.JOURNAL_BROWSER||undefined});
   const context=await browser.newContext({viewport:{width:1360,height:1000},timezoneId:'Asia/Shanghai'});
   let nativeHidden=[];
-  await context.exposeFunction('journalLoadHiddenClients',()=>nativeHidden);
-  await context.exposeFunction('journalSaveHiddenClients',value=>{nativeHidden=value;});
-  const windowsInit=()=>{window.journalWindowsHost=true;document.addEventListener('DOMContentLoaded',()=>{document.documentElement.classList.add('native-windows');const link=document.createElement('link');link.rel='stylesheet';link.href='windows.css';document.head.append(link);});};
-  await context.addInitScript(windowsInit);
+  const platform=process.env.JOURNAL_PLATFORM||'windows';
+  await context.exposeFunction(platform==='mac'?'testLoadHiddenClients':'journalLoadHiddenClients',()=>nativeHidden);
+  await context.exposeFunction(platform==='mac'?'testSaveHiddenClients':'journalSaveHiddenClients',value=>{nativeHidden=value;});
+  const windowsInit=platform=>{if(platform==='mac')window.webkit={messageHandlers:{journalNative:{postMessage:async body=>{if(body.action==='loadClientView'){const hiddenClients=await window.testLoadHiddenClients();window.journalNativeReply(body.id,{ok:true,hiddenClients})}else if(body.action==='saveClientView'){await window.testSaveHiddenClients(body.hiddenClients);window.journalNativeReply(body.id,{ok:true})}}}}};window.journalMacHost=platform==='mac';window.journalWindowsHost=platform!=='mac';document.addEventListener('DOMContentLoaded',()=>{document.documentElement.classList.add(platform==='mac'?'native-mac':'native-windows');const link=document.createElement('link');link.rel='stylesheet';link.href=platform==='mac'?'macos.css':'windows.css';document.head.append(link);});};
+  await context.addInitScript(windowsInit,platform);
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
   const toggleLayout=async target=>{const picker=target.locator('.dt-client-picker');if(!await picker.evaluate(el=>el.open))await picker.locator('summary').click();await target.locator('.dt-client-layout').click();await target.keyboard.press('Escape');};
   const open=async(compare=true)=>{await page.goto(session.url+'/?token='+session.token);await page.waitForFunction(()=>document.querySelector('#save-status')?.textContent==='已保存到本地');await page.locator('#auto-entry').click();await page.locator('#dt-date').fill(date);await page.locator('#dt-date').dispatchEvent('change');await page.locator('.dt-client-picker').waitFor();if(compare)await toggleLayout(page);};
@@ -22,7 +23,7 @@ const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('no
   await page.evaluate(async()=>{const d=await(await fetch('/api/state')).json();d.state.projects=[{id:'a',name:'论文研究',color:'#315c46',note:'',deadlines:[]}];d.state.entries=[{projectId:'a',date:'2026-10-23',kind:'hours',hours:2,note:'已有记录'}];d.state.timelineDays={'2026-10-23':{blocks:[{id:'selected',start:540,end:585,projectId:'a'}],applied:[]}};const res=await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:d.revision,state:d.state})});if(!res.ok)throw Error('fixture write failed');});
   const folder=path.join(dir,'activity');fs.mkdirSync(folder,{recursive:true});
   for(const [id,name,app,seconds]of [['mac','MacBook Pro','Safari',600],['win','Windows 主机','Microsoft Word.exe',780],['office','办公室电脑','Microsoft Word.EXE',420]]){
-   const evidence={};for(let i=0;i<8;i++){const key=id+'/app-'+i;evidence[key]={id:key,date,projectId:'a',kind:'activity',app,name:app,stamp:''+i,seconds,bucketStart:base+(540+i*15)*60,attribution:{filename:seconds}};}
+   const evidence={};for(let i=0;i<8;i++){const key=id+'/app-'+i;evidence[key]={id:key,date,projectId:'a',kind:'activity',app:platform==='mac'?app.replace(/\.exe$/i,''):app,name:app,stamp:''+i,seconds,bucketStart:base+(540+i*15)*60,attribution:{filename:seconds}};}
    evidence[id+'/file']={id:id+'/file',date,projectId:'a',kind:'file',name:name+'-文稿.docx',relativePath:name+'/文稿.docx',stamp:id,touches:[{at:base+560*60,stamp:id}]};
    fs.writeFileSync(path.join(folder,id+'.json'),JSON.stringify({version:1,deviceId:id,deviceName:name,evidence}));
   }
@@ -51,8 +52,9 @@ const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('no
   assert.doesNotMatch((await page.locator('.dt-file').evaluateAll(xs=>xs.map(x=>x.dataset.evidence))).join(' '),/MacBook Pro|办公室电脑/,'file clues follow the chosen clients');
   await open();assert.equal(await page.locator('.dt-client-column').count(),1,'choice persists after reload');
   const restarted=await browser.newContext({timezoneId:'Asia/Shanghai'});
-  await restarted.exposeFunction('journalLoadHiddenClients',()=>nativeHidden);
-  await restarted.addInitScript(windowsInit);
+  await restarted.exposeFunction(platform==='mac'?'testLoadHiddenClients':'journalLoadHiddenClients',()=>nativeHidden);
+  if(platform==='mac')await restarted.exposeFunction('testSaveHiddenClients',value=>{nativeHidden=value;});
+  await restarted.addInitScript(windowsInit,platform);
   const fresh=await restarted.newPage();await fresh.goto(session.url+'/?token='+session.token);await fresh.waitForFunction(()=>document.querySelector('#save-status')?.textContent==='已保存到本地');await fresh.locator('#auto-entry').click();await fresh.locator('#dt-date').fill(date);await fresh.locator('#dt-date').dispatchEvent('change');await toggleLayout(fresh);await fresh.waitForFunction(()=>document.querySelectorAll('.dt-client-column').length===1);assert.equal(await fresh.locator('.dt-client-column').getAttribute('data-client'),'win','native preference survives an empty web cache');await restarted.close();
   await menu.locator('summary').click();await menu.locator('input[value="win"]').uncheck();assert.equal(await page.locator('.dt-client-column').count(),0);assert.match(await page.locator('.dt-no-evidence').innerText(),/所选客户端/);
   await menu.locator('[data-client-all]').click();assert.equal(await page.locator('.dt-client-column').count(),3);await page.keyboard.press('Escape');assert.equal(await menu.getAttribute('open'),null);
@@ -77,6 +79,6 @@ const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('no
   await toggleLayout(page);
   await page.setViewportSize({width:1360,height:1000});await page.waitForTimeout(150);await page.locator('[data-focus-client="win"]').click();assert.equal(await page.locator('.dt-client-column').count(),1,'device title focuses a client');assert.equal(await page.locator('.dt-client-column').getAttribute('data-client'),'win');
   const macContext=await browser.newContext(),mac=await macContext.newPage();await mac.goto(session.url+'/?token='+session.token);await mac.waitForFunction(()=>document.querySelector('#save-status')?.textContent==='已保存到本地');await mac.locator('#auto-entry').click();await mac.locator('#dt-date').fill(date);await mac.locator('#dt-date').dispatchEvent('change');assert.equal(await mac.locator('.dt-client-picker').count(),0);assert.equal(await mac.locator('.dt-client-column').count(),0);assert.ok(await mac.locator('.dt-app-run').count()>0,'shared presentation remains');
-  assert.deepEqual(errors,[]);console.log('PASS: client lanes, filtering, persistence, empty selection, tooltips, responsive scrolling, unchanged records/suggestions and non-Windows presentation');
+  assert.deepEqual(errors,[]);console.log('PASS '+platform+': client lanes, filtering, native preference bridge, persistence, tooltips, responsive scrolling and unchanged records/suggestions');
  } finally {if(browser)await browser.close();server.kill();}
 })().catch(e=>{console.error(e);process.exitCode=1});

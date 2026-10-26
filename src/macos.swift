@@ -72,7 +72,13 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
  }
  func createWindow(){
   let config=WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
-  config.userContentController.addUserScript(WKUserScript(source:"document.documentElement.classList.add('native-mac')",injectionTime:.atDocumentEnd,forMainFrameOnly:true))
+  config.userContentController.addUserScript(WKUserScript(source:"window.journalMacHost = true",injectionTime:.atDocumentStart,forMainFrameOnly:true))
+  config.userContentController.addUserScript(WKUserScript(source:"""
+  document.documentElement.classList.add('native-mac');
+  const journalMacStyle = document.createElement('link');
+  journalMacStyle.rel = 'stylesheet'; journalMacStyle.href = 'macos.css';
+  document.head.appendChild(journalMacStyle);
+  """,injectionTime:.atDocumentEnd,forMainFrameOnly:true))
   config.userContentController.addUserScript(WKUserScript(source:"""
   (()=>{
    const sync=()=>{const rects=[...document.querySelectorAll('.workspace-nav,.workspace-actions')].map(el=>{const r=el.getBoundingClientRect();return {x:r.left,y:r.top,width:r.width,height:r.height}});window.webkit.messageHandlers.journalNative.postMessage({action:'headerRegions',rects})};
@@ -107,6 +113,11 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   }
   else if action=="folders"{let panel=NSOpenPanel();panel.canChooseFiles=false;panel.canChooseDirectories=true;panel.allowsMultipleSelection = !(body["single"]as?Bool ?? false);panel.prompt=body["prompt"]as?String ?? "绑定资料夹";if let path=body["initial"]as?String,!path.isEmpty{panel.directoryURL=URL(fileURLWithPath:path)};panel.beginSheetModal(for:window){response in reply(["paths":response == .OK ? panel.urls.map{$0.path}:[]])}}
   else if action=="refreshAuto"{if let observer=observer{observer.reload{reply(["ok":observer.networkError.isEmpty,"error":observer.networkError])}}else{reply(["ok":false,"error":"原生监听尚未就绪，请重新打开软件"])}}
+  else if action=="loadClientView"{reply(["ok":true,"hiddenClients":UserDefaults.standard.stringArray(forKey:"JournalHiddenClients") ?? []])}
+  else if action=="saveClientView"{
+   guard let hidden=body["hiddenClients"] as? [String],hidden.count<=128,hidden.allSatisfy({$0.count<=256}) else{reply(["ok":false,"error":"客户端选择无效，请重新选择"]);return}
+   UserDefaults.standard.set(hidden,forKey:"JournalHiddenClients");reply(["ok":true])
+  }
   else if action=="titlePermission"{observer?.requestTitlePermission();reply(["ok":true])}
  }
  @objc func undoJournal(){stepJournal(-1)}

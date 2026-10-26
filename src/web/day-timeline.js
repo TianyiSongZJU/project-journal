@@ -1,4 +1,5 @@
-import {setupWindowsClients,windowsAppName} from './windows-timeline.js';
+import {isDesktopHost} from './desktop-host.js';
+import {setupClientTimeline,windowsAppName} from './desktop-timeline.js';
 import {suggestTimeSlots,availableSuggestions,adoptSuggestion,dedupeFileChanges} from './time-suggestions.js';
 import {otherEntry,entryHours} from './model.js';
 import {setupTimelineHistory} from './timeline-history.js';
@@ -12,7 +13,7 @@ export function setupDayTimeline({getState,flushMain,applyEnvelope,toast,esc,get
  let SCALE=2.8,visibleHours=Math.max(1,Math.min(24,Number(localStorage.getItem('journal-visible-hours'))||4));
  let evidenceWarnings=[],dateStamps={},evidence=[],day=today(),blocks=[],applied=[],baseline=null,defaultProject='',selectedID='',dirty=false,saving=null,saveTimer=null,drag=null,raf=0,scrollTop=null,fullDay=false,active=false,loadGeneration=0,fileGap=15;
  let showSuggestions=localStorage.getItem('journal-time-suggestions')!=='off',suggestionCache=null,suggestionList=[],suggestionRules={};
- const root=$('#auto-cards');const windowsClients=window.journalWindowsHost?setupWindowsClients({esc}):null;const clone=v=>structuredClone(v),stored=()=>getState().timelineDays?.[day]||{blocks:[],applied:[]};
+ const root=$('#auto-cards');const windowsClients=isDesktopHost()?setupClientTimeline({esc}):null;const clone=v=>structuredClone(v),stored=()=>getState().timelineDays?.[day]||{blocks:[],applied:[]};
  const project=id=>getState().projects.find(p=>p.id===id),color=id=>project(id)?.color||'#a19578',label=id=>project(id)?projectLabel(project(id)):'待分配';
  const assigned=xs=>xs.filter(b=>b.projectId),minutes=xs=>xs.reduce((n,b)=>n+b.end-b.start,0),key=b=>`${b.id}/${b.start}/${b.end}/${b.projectId}`;
  function adopt(){const d=stored();blocks=clone(d.blocks||[]);applied=clone(d.applied||[]);baseline=JSON.stringify(d);dirty=false;if(defaultProject&&!project(defaultProject))defaultProject='';if(!defaultProject)defaultProject=[...blocks].reverse().find(b=>project(b.projectId))?.projectId||''}
@@ -36,7 +37,7 @@ export function setupDayTimeline({getState,flushMain,applyEnvelope,toast,esc,get
   const select=root.querySelector('#dt-default-project');mountProjectSelect(select,getState().projects,{groups:getState().settings.projectGroups||[]});select.onchange=()=>{defaultProject=select.value;root.querySelector('#dt-clear-default').hidden=!defaultProject};root.querySelector('#dt-clear-default').onclick=()=>{defaultProject='';select.value='';select._projectCaption?.();root.querySelector('#dt-clear-default').hidden=true};root.querySelector('#dt-apply').onclick=()=>persist(true);root.querySelector('#dt-retry-save').onclick=()=>persist(false);paintBlocks();renderList();wireEvidence();fitPanels();wirePointer(range,scale);const scroller=root.querySelector('.dt-scroll'),focusTimes=[...g.activities.map(a=>a.start),...g.files.map(f=>f.at),...blocks.map(b=>b.start)],focusTime=focusTimes.length?Math.min(...focusTimes):range.start+60;scroller.scrollTop=anchor!==null?Math.max(0,(anchor-range.start)*scale):scrollTop??Math.max(0,(focusTime-range.start-30)*scale);scrollTop=scroller.scrollTop;showNow(range,scale);status(dirty?'选区有未保存改动':'选区已保存 · 可继续调整');requestAnimationFrame(()=>{if(active&&!drag&&Math.abs(SCALE-(root.querySelector('.dt-scroll').clientHeight-36)/(visibleHours*60))>.01)render()})
  }
  const appColor=app=>{let hash=0;for(const c of app)hash=(hash*31+c.charCodeAt(0))>>>0;return ['#819774','#b2a67d','#759b92','#9a91a5','#b78f72','#8798ae'][hash%6]};
- const appName=app=>(windowsClients?windowsAppName(app):app).replace(/^Microsoft /,'');
+ const appName=app=>(window.journalWindowsHost?windowsAppName(app):app).replace(/^Microsoft /,'');
  const minuteLabel=seconds=>seconds<60?'不足1分':Math.round(seconds/60)+'分';
  function evidenceCard(time,title,body,foot){return `<header><time>${time}</time><strong>${title}</strong></header><div class="dt-evidence-body">${body}</div><footer>${foot}</footer>`}
  function activityGuides(g,range,scale){return windowsClients?windowsClients.renderActivities(g,range,scale,activityRuns):activityRuns(g,range,scale)}

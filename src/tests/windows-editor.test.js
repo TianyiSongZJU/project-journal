@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {projectNodeOverview} from '../web/windows-editor.js';
+import {projectNodeOverview} from '../web/desktop-editor.js';
 
 test('project-node overview separates completed work and keeps the earliest pending date',()=>{
   const project={deadlines:[{id:'later',date:'2026-11-02',done:false},{id:'done',date:'2026-10-01',done:true},{id:'next',date:'2026-10-30',done:false}]};

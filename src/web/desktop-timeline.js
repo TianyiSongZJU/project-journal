@@ -1,4 +1,4 @@
-// Windows presentation only. Device filters never change suggestions or saved time.
+// Shared native desktop presentation. Device filters never change suggestions or saved time.
 import {activitySlots} from './timeline-layout.js';
 export const clientKey = item => item.deviceId || item.device || item.deviceName || 'local';
 export const windowsAppName = app => app.replace(/\.exe$/i,'');
@@ -15,7 +15,7 @@ export function activityClients(activities) {
 
 const labelWidth = text => [...text].reduce((width,char)=>width+(/[\u2e80-\uffff]/.test(char)?10:5.5),0);
 function activityDemand(activities,start,end) {
-  const slots=activitySlots(activities.map(item=>({...item,app:windowsAppName(item.app)})),start,end);
+  const slots=activitySlots(activities.map(item=>({...item,app:typeof window!=='undefined'&&window.journalMacHost?item.app:windowsAppName(item.app)})),start,end);
   if(!slots.length) return 132;
   return Math.min(360,Math.max(132,...slots.map(slot=>slot.apps.filter((app,index)=>!index||app.percent>=12).slice(0,4).reduce((width,app)=>width+Math.min(124,Math.max(64,labelWidth(app.app.replace(/^Microsoft /,''))+24)),0))));
 }
@@ -33,8 +33,8 @@ export function timelineWidths({width,activities=[],fileLabels=[],compare=false,
   return {activityWidth,filesWidth,minimum,gap};
 }
 
-export function setupWindowsClients({esc}) {
-  const storageKey = 'journal-windows-hidden-clients';
+export function setupClientTimeline({esc}) {
+  const storageKey = window.journalMacHost?'journal-macos-hidden-clients':'journal-windows-hidden-clients';
   let hidden;
   try { const value=JSON.parse(localStorage.getItem(storageKey)); hidden=new Set(Array.isArray(value)?value:[]); }
   catch { hidden=new Set(); }
@@ -143,7 +143,7 @@ export function setupWindowsClients({esc}) {
   function renderActivities(guides,range,scale,renderRuns) {
     const clients=activityClients(guides.activities);
     if(!clients.length) return '';
-    if(!compare) return `<div class="dt-client-column dt-clients-merged" style="--client-index:0;--client-count:1">${renderRuns({activities:guides.activities.map(item=>({...item,app:windowsAppName(item.app)})),merged:true},range,scale,'合并展示')}</div>`;
+    if(!compare) return `<div class="dt-client-column dt-clients-merged" style="--client-index:0;--client-count:1">${renderRuns({activities:guides.activities.map(item=>({...item,app:typeof window!=='undefined'&&window.journalMacHost?item.app:windowsAppName(item.app)})),merged:true},range,scale,'合并展示')}</div>`;
     return clients.map((client,index)=>`<div class="dt-client-column" data-client="${esc(client.id)}" aria-label="${esc(client.name)}的前台活动" style="--client-index:${index};--client-count:${clients.length}">${renderRuns({activities:client.activities},range,scale,client.name)}</div>`).join('');
   }
   function activityDetail(activities,run) {

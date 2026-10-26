@@ -1,4 +1,4 @@
-// Reorganize existing controls only in the native Windows presentation.
+// Reorganize existing controls in the native desktop presentation.
 // Keep IDs, event handlers, editor contents and persisted data intact.
 const $ = selector => document.querySelector(selector);
 
@@ -7,7 +7,7 @@ export function projectNodeOverview(project) {
   return {pending:pending.length,done:(project.deadlines||[]).length-pending.length,next:pending[0]||null};
 }
 
-export function refineWindowsProject(project) {
+export function refineDesktopProject(project) {
   const panel=$('#project-deadline-panel');
   if(!panel) return;
   const summary=panel.querySelector(':scope>summary'), add=$('#new-deadline'), toggle=$('#project-show-done-deadlines');
@@ -34,7 +34,7 @@ export function refineWindowsProject(project) {
   empty.textContent=project.deadlines.length?'暂无待完成节点':'还没有截止节点，为项目留一个重要日期。';
 }
 
-export function refineWindowsNodes(project) {
+export function refineDesktopNodes(project) {
   const panel=$('#inspector-project-ddl-panel');
   if(!panel) return;
   let section=$('#windows-project-nodes');
@@ -56,7 +56,7 @@ export function refineWindowsNodes(project) {
   toggle.textContent=(toggle.getAttribute('aria-pressed')==='true'?'\u6536\u8d77\u5df2\u5b8c\u6210':'\u5df2\u5b8c\u6210')+(info.done?' '+info.done:'');
 }
 
-export function refineWindowsInspector(project) {
+export function refineDesktopInspector(project) {
   const row=$('.inspector-project-row'),tabs=$('.inspector-tabs');
   if(tabs&&tabs.parentElement!==row)row.append(tabs);
   const label=$('#inspector-ddl-panel .inspector-context-heading>span');
@@ -64,7 +64,7 @@ export function refineWindowsInspector(project) {
     const text=[...label.childNodes].find(node=>node.nodeType===3);
     if(text)text.textContent='当天截止';
   }
-  refineWindowsNodes(project);
+  refineDesktopNodes(project);
   const field=$('#inspector-note'),heading=field.closest('.editor-label').querySelector(':scope>span');
   const clear=$('[data-clear-note="inspector-note"]');
   if(clear) {
@@ -78,7 +78,7 @@ export function refineWindowsInspector(project) {
   }
 }
 
-export function refineWindowsTime(container,context) {
+export function refineDesktopTime(container,context) {
   const row=$('.inspector-project-row'),editor=container.querySelector('.inspector-time-editor');
   const summary=editor.querySelector('summary'),value=summary.querySelector('strong');
   const other=value.innerHTML,total=container.querySelector('.time-source-summary strong').innerHTML;
