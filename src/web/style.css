@@ -505,3 +505,12 @@ dialog #record-info{margin:0 0 0 auto;font-size:9px}
 .heat-day.today-mark,.heat-day.today-mark.inspected,.heat-day.today-mark.selected{outline:none!important;box-shadow:0 2px 5px 1px #31412f50!important}
 .month-day.today-mark,.month-day.today-mark.inspected,.month-day.today-mark.selected{outline:none!important;box-shadow:0 3px 9px 2px #233c4273!important}
 .month-day.today-mark .day-number{border-color:transparent}
+
+/* Preview deadline locations from the year legend, without changing selection. */
+.legend .ddl-legend-trigger{display:inline-flex;align-items:center;gap:5px;margin:0 8px 0 0;padding:2px 0;min-height:20px;border:0;border-radius:3px;background:transparent;box-shadow:none;font:inherit;color:inherit;cursor:default}
+.legend .ddl-legend-trigger .ddl-legend{flex:none;margin:0}
+#page-review:not(.month-view) .ddl-legend-trigger:is(:hover,:focus-visible){color:#8d6046}
+#page-review:not(.month-view):has(.ddl-legend-trigger:is(:hover,:focus-visible)) #year-calendar .heat-day.has-ddl{outline:1.5px solid #a77758!important;outline-offset:-1.5px}
+#page-review:not(.month-view):has(.ddl-legend-trigger:is(:hover,:focus-visible)) #year-calendar .heat-day.has-ddl .year-ddl-corner{width:9px;height:9px;background:#995b3b}
+#page-review:not(.month-view):has(.ddl-legend-trigger:is(:hover,:focus-visible)) #year-calendar .heat-day.ddl-complete{outline-color:#7b8b70!important}
+#page-review:not(.month-view):has(.ddl-legend-trigger:is(:hover,:focus-visible)) #year-calendar .heat-day.ddl-complete .year-ddl-corner{background:#657858}
