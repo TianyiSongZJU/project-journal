@@ -2,9 +2,9 @@ import {sortProjects} from './model.js';
 import {projectLabel,projectGroup,projectGroups,mountProjectSelect} from './projects.js';
 import {setupDayTimeline} from './day-timeline.js';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-export function setupAutomation({getState,flushMain,applyEnvelope,toast,esc}){
+export function setupAutomation({getState,flushMain,applyEnvelope,toast,esc,getSelectedDate,onSelectedDateChange}){
  let data=null,active=false,loading=false,refreshPromise=null,refreshTimer=null,config=null,settingsProject='',foldersGrouped=true,foldersCompleted=false;
- const timelineUI=setupDayTimeline({getState,flushMain,applyEnvelope,toast,esc});
+ const timelineUI=setupDayTimeline({getState,flushMain,applyEnvelope,toast,esc,getSelectedDate,onSelectedDateChange});
  const orderedAutoProjects=()=>sortProjects(getState().projects,getState().settings.projectSort||'manual',getState().entries);
  const requests=new Map();window.journalNativeReply=(id,result)=>{requests.get(id)?.(result);requests.delete(id)};
  async function native(action,extra={}){if(window.webkit?.messageHandlers?.journalNative){return new Promise(resolve=>{const id=crypto.randomUUID();requests.set(id,resolve);window.webkit.messageHandlers.journalNative.postMessage({action,id,...extra})})}if(action==='folders'&&window.journalChooseFolder)return {paths:await window.journalChooseFolder()};return {unsupported:true}}

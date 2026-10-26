@@ -1,14 +1,20 @@
 package main
 
 import (
+	"encoding/json"
+	"flag"
 	webview2 "github.com/jchv/go-webview2"
 	"github.com/jchv/go-webview2/webviewloader"
 	"os"
 	"path/filepath"
 	"runtime"
+	"sync"
 	"syscall"
 	"unsafe"
 )
+
+// The Windows resource compiler assigns ID 1 to the manifest, then ID 2 to the icon group.
+const windowsAppIconID = 2
 
 func init() {
 	runtime.LockOSThread()
@@ -25,13 +31,51 @@ func runWindowUI(address string) {
 		return
 	}
 	cache, _ := os.UserCacheDir()
-	w := webview2.NewWithOptions(webview2.WebViewOptions{DataPath: filepath.Join(cache, "ProjectJournal", "WebView2"), AutoFocus: true, WindowOptions: webview2.WindowOptions{Title: "项目手记", IconId: 1, Width: 1120, Height: 740, Center: true}})
+	w := webview2.NewWithOptions(webview2.WebViewOptions{DataPath: filepath.Join(cache, "ProjectJournal", "WebView2"), AutoFocus: true, WindowOptions: webview2.WindowOptions{Title: "项目手记", IconId: windowsAppIconID, Width: 1120, Height: 740, Center: true}})
 	if w == nil {
 		windowsMessage("项目手记", "无法创建窗口，请确认 WebView2 Runtime 已安装。")
 		return
 	}
 	defer w.Destroy()
+	// Keep display preferences local and stable across the backend's random ports.
+	viewPath := filepath.Join(autoHome(flag.Lookup("data-dir").Value.String(), flag.Lookup("auto-home").Value.String()), "windows-view.json")
+	var viewMu sync.Mutex
+	w.Bind("journalLoadHiddenClients", func() ([]string, error) {
+		viewMu.Lock()
+		defer viewMu.Unlock()
+		b, err := os.ReadFile(viewPath)
+		if os.IsNotExist(err) {
+			return []string{}, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		var hidden []string
+		err = json.Unmarshal(b, &hidden)
+		return hidden, err
+	})
+	w.Bind("journalSaveHiddenClients", func(hidden []string) error {
+		viewMu.Lock()
+		defer viewMu.Unlock()
+		b, err := json.Marshal(hidden)
+		if err != nil {
+			return err
+		}
+		if err = os.MkdirAll(filepath.Dir(viewPath), 0755); err != nil {
+			return err
+		}
+		return atomicWrite(viewPath, b)
+	})
 	w.SetSize(720, 550, webview2.HintMin)
+	// Keep native Windows presentation separate from the shared macOS styles.
+	w.Init(`window.journalWindowsHost = true;
+	document.addEventListener("DOMContentLoaded", () => {
+		document.documentElement.classList.add("native-windows");
+		const style = document.createElement("link");
+		style.rel = "stylesheet";
+		style.href = "windows.css";
+		document.head.appendChild(style);
+	}, { once: true });`)
 	nativeClose = func() { w.Dispatch(w.Terminate) }
 	// Wait for the renderer to finish saving before accepting native window close.
 	closing, closeApproved := false, false

@@ -88,7 +88,7 @@ func runWindow(address string) {
 	notify := trayNotify{ID: 1, Flags: 7, Message: 0x8001}
 	notify.Size = uint32(unsafe.Sizeof(notify))
 	copy(notify.Tip[:], syscall.StringToUTF16("项目手记 · 后台记录"))
-	notify.Icon, _, _ = trayUser.NewProc("LoadIconW").Call(instance, 1)
+	notify.Icon, _, _ = trayUser.NewProc("LoadIconW").Call(instance, windowsAppIconID)
 	quit := func() {
 		mu.Lock()
 		running := child != nil
