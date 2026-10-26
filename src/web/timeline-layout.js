@@ -58,15 +58,25 @@ export function applicationRuns(activities,start,end){
 }
 
 
-// Thin guides connect disjoint horizontal positions, never filling in active time.
-export function applicationLinks(slots,start,scale){
- const links=[];
- for(let i=1;i<slots.length;i++){
-  const a=slots[i-1],b=slots[i];
-  if(a.at+15!==b.at||a.width<=0||b.width<=0)continue;
-  if(Math.min(a.left+a.width,b.left+b.width)-Math.max(a.left,b.left)>.1)continue;
-  const right=b.left>a.left,x1=right?a.left+a.width-Math.min(.35,a.width/2):a.left+Math.min(.35,a.width/2),x2=right?b.left+Math.min(.35,b.width/2):b.left+b.width-Math.min(.35,b.width/2),y=(b.at-start)*scale,pad=Math.min(4,15*scale/4);
-  links.push({at:b.at,path:`M${x1},${y-pad} C${x1},${y} ${x2},${y} ${x2},${y+pad}`});
+// Repeat names when a run becomes visually disconnected or expands after a thin neck.
+export function applicationLabels(slots,start,scale){
+ const segments=[];let segment;
+ for(const slot of slots){
+  const previous=segment?.at(-1),overlap=previous?Math.min(previous.left+previous.width,slot.left+slot.width)-Math.max(previous.left,slot.left):0;
+  if(!previous||previous.at+15!==slot.at||overlap<=Math.min(previous.width,slot.width)*.2||(previous.width<12&&slot.width>=12)){segment=[];segments.push(segment)}
+  segment.push(slot);
  }
- return links;
+ const labels=[],height=scale<1?12:15;
+ for(const group of segments){
+  const end=(group.at(-1).at+15-start)*scale;
+  for(let i=0;i<group.length;i++){
+   const slot=group[i],top=(slot.at-start)*scale+2;
+   if(end-top<height+1)continue;
+   let left=slot.left,right=slot.left+slot.width;
+   // Keep the text inside the application even at compressed zoom levels.
+   for(let j=i+1;j<group.length&&(group[j].at-start)*scale<top+height;j++){left=Math.max(left,group[j].left);right=Math.min(right,group[j].left+group[j].width)}
+   if(right-left>=12){labels.push({left,width:right-left,top,at:slot.at});break}
+  }
+ }
+ return labels;
 }
