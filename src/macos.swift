@@ -34,41 +34,88 @@ final class JournalStartupTiming {
  }
 }
 
-// Native surface survives WebKit navigation, so loading never flashes between documents.
+// Vector layers only: the wallpaper is composed once, then animated by Core Animation.
 final class JournalLaunchSurface:NSView {
  let tiles=CALayer()
+ let artwork=CALayer()
+ let backdrop=CAGradientLayer()
+ let light=CAGradientLayer()
  let cold:Bool
+ let began=CACurrentMediaTime()
+ let reduceMotion=NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
  var finishing=false
+ var pieces:[CALayer]=[]
+ var phases:[CFTimeInterval]=[]
+ let liftX=sin(31 * Double.pi/180)/cos(53 * Double.pi/180)
+ let liftY=cos(31 * Double.pi/180)/cos(53 * Double.pi/180)
  init(frame:NSRect,cold:Bool){
   self.cold=cold;super.init(frame:frame)
-  autoresizingMask=[.width,.height];wantsLayer=true
-  layer?.backgroundColor=NSColor(calibratedRed:0.941,green:0.945,blue:0.933,alpha:1).cgColor
+  autoresizingMask=[.width,.height];wantsLayer=true;layer?.masksToBounds=true
   setAccessibilityElement(true);setAccessibilityRole(.progressIndicator);setAccessibilityLabel("正在打开")
-  tiles.opacity=cold ? 1:0;layer?.addSublayer(tiles)
-  let palette:[(CGFloat,CGFloat,CGFloat)]=[(0.80,0.85,0.75),(0.66,0.76,0.58),(0.47,0.62,0.40),(0.34,0.49,0.31),(0.19,0.36,0.27)]
-  let reduce=NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
-  for (i,c) in palette.enumerated(){
-   let tile=CALayer();tile.frame=CGRect(x:CGFloat(i)*29,y:CGFloat([0,3,6,3,0][i]),width:19,height:19);tile.cornerRadius=5
-   tile.backgroundColor=NSColor(calibratedRed:c.0,green:c.1,blue:c.2,alpha:1).cgColor
-   tile.shadowColor=NSColor(calibratedRed:0.20,green:0.32,blue:0.21,alpha:1).cgColor;tile.shadowOpacity=0.045;tile.shadowRadius=5;tile.shadowOffset=CGSize(width:0,height:-2)
-   tiles.addSublayer(tile)
-   if cold && !reduce{
-    let enter=CABasicAnimation(keyPath:"opacity");enter.fromValue=0;enter.toValue=1;enter.duration=0.46;enter.beginTime=CACurrentMediaTime()+Double(i)*0.065;enter.fillMode = .both;enter.timingFunction=CAMediaTimingFunction(name:.easeOut);tile.add(enter,forKey:"appear")
-    let lift=CABasicAnimation(keyPath:"transform.translation.y");lift.fromValue = -5;lift.toValue=0;lift.duration=0.55;lift.beginTime=enter.beginTime;lift.fillMode = .both;lift.timingFunction=CAMediaTimingFunction(name:.easeOut);tile.add(lift,forKey:"settle")
-    let breathe=CABasicAnimation(keyPath:"opacity");breathe.fromValue=1;breathe.toValue=0.66;breathe.duration=1.8;breathe.autoreverses=true;breathe.repeatCount = .infinity;breathe.beginTime=CACurrentMediaTime()+1.0+Double(i)*0.09;tile.add(breathe,forKey:"breathe")
+  func color(_ r:CGFloat,_ g:CGFloat,_ b:CGFloat,_ a:CGFloat=1)->CGColor{NSColor(calibratedRed:r,green:g,blue:b,alpha:a).cgColor}
+  backdrop.colors=[color(0.975,0.983,0.961),color(0.906,0.935,0.879)];backdrop.startPoint=CGPoint(x:0.2,y:1);backdrop.endPoint=CGPoint(x:0.85,y:0)
+  layer?.addSublayer(backdrop);layer?.addSublayer(artwork);artwork.addSublayer(tiles)
+  artwork.opacity=cold ? 1:0
+  tiles.bounds=CGRect(x:0,y:0,width:1726,height:1726)
+  for row in 0..<5 {for column in 0..<5 {
+   let tile=CALayer();tile.frame=CGRect(x:column*354,y:row*354,width:310,height:310);tile.opacity=0.36
+   tile.shadowColor=color(0.38,0.46,0.35);tile.shadowOpacity=0.07;tile.shadowRadius=23;tile.shadowOffset=CGSize(width:12,height:-16)
+   tile.shadowPath=CGPath(roundedRect:tile.bounds,cornerWidth:30,cornerHeight:30,transform:nil)
+   let edge=CAGradientLayer();edge.frame=tile.bounds.offsetBy(dx:0,dy:-5);edge.cornerRadius=30;edge.colors=[color(0.88,0.93,0.84),color(0.80,0.86,0.74)];edge.startPoint=CGPoint(x:0,y:1);edge.endPoint=CGPoint(x:1,y:0)
+   let face=CAGradientLayer();face.frame=tile.bounds;face.cornerRadius=30;face.colors=[color(0.970,0.982,0.946),color(0.863,0.910,0.827)];face.startPoint=CGPoint(x:0.08,y:1);face.endPoint=CGPoint(x:0.95,y:0.12)
+   face.borderColor=color(1,1,1,0.28);face.borderWidth=0.8
+   tile.addSublayer(edge);tile.addSublayer(face);tiles.addSublayer(tile);pieces.append(tile)
+   let phase=Double(row+column)*0.30+0.4;phases.append(phase)
+   if !reduceMotion {
+    let rise=CAKeyframeAnimation(keyPath:"transform");rise.values=[NSValue(caTransform3D:CATransform3DIdentity),NSValue(caTransform3D:CATransform3DMakeTranslation(liftX*18,liftY*18,0)),NSValue(caTransform3D:CATransform3DIdentity)];rise.keyTimes=[0,0.5,1]
+    let mist=CAKeyframeAnimation(keyPath:"opacity");mist.values=[0.187,0.528,0.187];mist.keyTimes=[0,0.5,1]
+    let ease=CAMediaTimingFunction(controlPoints:0.37,0,0.63,1)
+    rise.timingFunctions=[ease,ease];mist.timingFunctions=[ease,ease]
+    let wave=CAAnimationGroup();wave.animations=[rise,mist];wave.duration=3;wave.repeatCount = .infinity;wave.beginTime=began-phase
+    tile.add(wave,forKey:"ripple")
    }
-  }
-  if !cold{DispatchQueue.main.asyncAfter(deadline:.now()+0.2){[weak self] in guard let self=self,!self.finishing else{return};self.tiles.opacity=1}}
+  }}
+  light.colors=[color(1,1,0.98,0.25),color(1,1,0.98,0)];light.startPoint=CGPoint(x:0.2,y:1);light.endPoint=CGPoint(x:0.7,y:0.2);layer?.addSublayer(light)
+  if !cold{DispatchQueue.main.asyncAfter(deadline:.now()+0.2){[weak self] in guard let self=self,!self.finishing else{return};self.artwork.opacity=1}}
  }
  required init?(coder:NSCoder){fatalError("init(coder:) has not been implemented")}
- override func layout(){super.layout();CATransaction.begin();CATransaction.setDisableActions(true);tiles.position=CGPoint(x:(bounds.width-135)/2,y:bounds.height/2-12);CATransaction.commit()}
+ override func layout(){
+  super.layout();CATransaction.begin();CATransaction.setDisableActions(true)
+  backdrop.frame=bounds;artwork.frame=bounds;light.frame=bounds
+  tiles.position=CGPoint(x:bounds.midX,y:bounds.midY-10)
+  // An oblique projection gives the same relief appearance without a 3D scene renderer.
+  let scale=max(bounds.width/1024,bounds.height/710)*1.05
+  let angle=31 * Double.pi/180,tilt=53 * Double.pi/180
+  tiles.setAffineTransform(CGAffineTransform(a:cos(angle)*scale,b:sin(angle)*cos(tilt)*scale,c:-sin(angle)*scale,d:cos(angle)*cos(tilt)*scale,tx:0,ty:0))
+  CATransaction.commit()
+ }
  func finish(_ completion:@escaping()->Void){
   guard !finishing else{return};finishing=true
-  tiles.sublayers?.forEach{$0.removeAllAnimations()}
-  NSAnimationContext.runAnimationGroup({context in
-   context.duration=NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0:0.12
-   context.timingFunction=CAMediaTimingFunction(name:.easeOut);animator().alphaValue=0
-  },completionHandler:{[weak self] in self?.removeFromSuperview();completion()})
+  if reduceMotion{pieces.forEach{$0.removeAllAnimations()};removeFromSuperview();completion();return}
+  let hasArtwork=artwork.opacity>0.1
+  let duration:CFTimeInterval=hasArtwork ? (cold ? 0.32:0.20):0.10
+  let spread:CFTimeInterval=hasArtwork ? (cold ? 0.14:0.08):0
+  let now=CACurrentMediaTime()
+  CATransaction.begin();CATransaction.setDisableActions(true)
+  for (i,tile) in pieces.enumerated(){
+   let visible=tile.presentation() ?? tile
+   let height=visible.transform.m42/liftY
+   let opacity=visible.opacity
+   let descending=(now-began+phases[i]).truncatingRemainder(dividingBy:3)>1.5
+   let crest=descending ? height*0.8:max(height,10)
+   let settle=CAKeyframeAnimation(keyPath:"transform");settle.values=[NSValue(caTransform3D:CATransform3DMakeTranslation(liftX*height,liftY*height,0)),NSValue(caTransform3D:CATransform3DMakeTranslation(liftX*crest,liftY*crest,0)),NSValue(caTransform3D:CATransform3DIdentity)];settle.keyTimes=[0,0.22,1];settle.timingFunctions=[CAMediaTimingFunction(name:.easeOut),CAMediaTimingFunction(name:.easeInEaseOut)]
+   let fade=CAKeyframeAnimation(keyPath:"opacity");fade.values=[opacity,opacity,0];fade.keyTimes=[0,0.15,1];fade.timingFunctions=[CAMediaTimingFunction(name:.linear),CAMediaTimingFunction(name:.easeInEaseOut)]
+   let end=CAAnimationGroup();end.animations=[settle,fade];end.duration=duration;end.beginTime=now+Double((i%5)+(i/5))/8*spread;end.fillMode = .both;end.isRemovedOnCompletion=false
+   tile.removeAllAnimations();tile.opacity=0;tile.transform=CATransform3DIdentity;tile.add(end,forKey:"settleAway")
+  }
+  for surface in [backdrop,light]{
+   let fade=CABasicAnimation(keyPath:"opacity");fade.fromValue=surface.presentation()?.opacity ?? surface.opacity;fade.toValue=0;fade.duration=duration+spread;fade.timingFunction=CAMediaTimingFunction(name:.easeInEaseOut);surface.opacity=0;surface.add(fade,forKey:"reveal")
+  }
+  CATransaction.commit()
+  // Only a bounded settling gesture remains; never wait for the three-second cycle.
+  DispatchQueue.main.asyncAfter(deadline:.now()+duration+spread){[weak self] in
+   self?.pieces.forEach{$0.removeAllAnimations()};self?.removeFromSuperview();completion()
+  }
  }
  override func hitTest(_ point:NSPoint)->NSView?{nil}
 }
