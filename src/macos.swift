@@ -45,7 +45,6 @@ final class JournalLaunchSurface:NSView {
  let reduceMotion=NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
  var finishing=false
  var pieces:[CALayer]=[]
- var phases:[CFTimeInterval]=[]
  let liftX=sin(31 * Double.pi/180)/cos(53 * Double.pi/180)
  let liftY=cos(31 * Double.pi/180)/cos(53 * Double.pi/180)
  init(frame:NSRect,cold:Bool){
@@ -65,13 +64,15 @@ final class JournalLaunchSurface:NSView {
    let face=CAGradientLayer();face.frame=tile.bounds;face.cornerRadius=30;face.colors=[color(0.970,0.982,0.946),color(0.863,0.910,0.827)];face.startPoint=CGPoint(x:0.08,y:1);face.endPoint=CGPoint(x:0.95,y:0.12)
    face.borderColor=color(1,1,1,0.28);face.borderWidth=0.8
    tile.addSublayer(edge);tile.addSublayer(face);tiles.addSublayer(tile);pieces.append(tile)
-   let phase=Double(row+column)*0.30+0.4;phases.append(phase)
+   let phase=Double(row+column)*0.018
    if !reduceMotion {
-    let rise=CAKeyframeAnimation(keyPath:"transform");rise.values=[NSValue(caTransform3D:CATransform3DIdentity),NSValue(caTransform3D:CATransform3DMakeTranslation(liftX*18,liftY*18,0)),NSValue(caTransform3D:CATransform3DIdentity)];rise.keyTimes=[0,0.5,1]
-    let mist=CAKeyframeAnimation(keyPath:"opacity");mist.values=[0.187,0.528,0.187];mist.keyTimes=[0,0.5,1]
-    let ease=CAMediaTimingFunction(controlPoints:0.37,0,0.63,1)
-    rise.timingFunctions=[ease,ease];mist.timingFunctions=[ease,ease]
-    let wave=CAAnimationGroup();wave.animations=[rise,mist];wave.duration=3;wave.repeatCount = .infinity;wave.beginTime=began-phase
+    // Shorter openings use less travel, rather than speeding up a large movement.
+    let travel:CGFloat=cold ? 3:2
+    let rise=CAKeyframeAnimation(keyPath:"transform");rise.values=[NSValue(caTransform3D:CATransform3DIdentity),NSValue(caTransform3D:CATransform3DMakeTranslation(liftX*travel,liftY*travel,0))];rise.keyTimes=[0,1]
+    let mist=CAKeyframeAnimation(keyPath:"opacity");mist.values=[0.187,0.46];mist.keyTimes=[0,1]
+    let ease=CAMediaTimingFunction(controlPoints:0.25,0,0.35,1)
+    rise.timingFunctions=[ease];mist.timingFunctions=[ease]
+    let wave=CAAnimationGroup();wave.animations=[rise,mist];wave.duration=cold ? 0.38:0.24;wave.beginTime=began+phase;wave.fillMode = .both;wave.isRemovedOnCompletion=false
     tile.add(wave,forKey:"ripple")
    }
   }}
@@ -84,7 +85,7 @@ final class JournalLaunchSurface:NSView {
   backdrop.frame=bounds;artwork.frame=bounds;light.frame=bounds
   tiles.position=CGPoint(x:bounds.midX,y:bounds.midY-10)
   // An oblique projection gives the same relief appearance without a 3D scene renderer.
-  let scale=max(bounds.width/1024,bounds.height/710)*1.05
+  let scale=max(bounds.width/1024,bounds.height/710)*1.1
   let angle=31 * Double.pi/180,tilt=53 * Double.pi/180
   tiles.setAffineTransform(CGAffineTransform(a:cos(angle)*scale,b:sin(angle)*cos(tilt)*scale,c:-sin(angle)*scale,d:cos(angle)*cos(tilt)*scale,tx:0,ty:0))
   CATransaction.commit()
@@ -93,16 +94,15 @@ final class JournalLaunchSurface:NSView {
   guard !finishing else{return};finishing=true
   if reduceMotion{pieces.forEach{$0.removeAllAnimations()};removeFromSuperview();completion();return}
   let hasArtwork=artwork.opacity>0.1
-  let duration:CFTimeInterval=hasArtwork ? (cold ? 0.32:0.20):0.10
-  let spread:CFTimeInterval=hasArtwork ? (cold ? 0.14:0.08):0
+  let duration:CFTimeInterval=hasArtwork ? (cold ? 0.16:0.12):0.08
+  let spread:CFTimeInterval=hasArtwork ? (cold ? 0.08:0.05):0
   let now=CACurrentMediaTime()
   CATransaction.begin();CATransaction.setDisableActions(true)
   for (i,tile) in pieces.enumerated(){
    let visible=tile.presentation() ?? tile
    let height=visible.transform.m42/liftY
    let opacity=visible.opacity
-   let descending=(now-began+phases[i]).truncatingRemainder(dividingBy:3)>1.5
-   let crest=descending ? height*0.8:max(height,10)
+   let crest=height*0.84
    let settle=CAKeyframeAnimation(keyPath:"transform");settle.values=[NSValue(caTransform3D:CATransform3DMakeTranslation(liftX*height,liftY*height,0)),NSValue(caTransform3D:CATransform3DMakeTranslation(liftX*crest,liftY*crest,0)),NSValue(caTransform3D:CATransform3DIdentity)];settle.keyTimes=[0,0.22,1];settle.timingFunctions=[CAMediaTimingFunction(name:.easeOut),CAMediaTimingFunction(name:.easeInEaseOut)]
    let fade=CAKeyframeAnimation(keyPath:"opacity");fade.values=[opacity,opacity,0];fade.keyTimes=[0,0.15,1];fade.timingFunctions=[CAMediaTimingFunction(name:.linear),CAMediaTimingFunction(name:.easeInEaseOut)]
    let end=CAAnimationGroup();end.animations=[settle,fade];end.duration=duration;end.beginTime=now+Double((i%5)+(i/5))/8*spread;end.fillMode = .both;end.isRemovedOnCompletion=false
@@ -112,7 +112,7 @@ final class JournalLaunchSurface:NSView {
    let fade=CABasicAnimation(keyPath:"opacity");fade.fromValue=surface.presentation()?.opacity ?? surface.opacity;fade.toValue=0;fade.duration=duration+spread;fade.timingFunction=CAMediaTimingFunction(name:.easeInEaseOut);surface.opacity=0;surface.add(fade,forKey:"reveal")
   }
   CATransaction.commit()
-  // Only a bounded settling gesture remains; never wait for the three-second cycle.
+  // Loading controls the cycle: rise once, then settle as soon as the real page is ready.
   DispatchQueue.main.asyncAfter(deadline:.now()+duration+spread){[weak self] in
    self?.pieces.forEach{$0.removeAllAnimations()};self?.removeFromSuperview();completion()
   }
