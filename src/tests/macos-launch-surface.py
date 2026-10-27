@@ -41,7 +41,7 @@ func check(_ cold:Bool){
   for item in surface.pieces{
    let wave=item.animation(forKey:"ripple")!,fade=item.animation(forKey:"fallingFade")!
    let phase=(fade.beginTime-wave.beginTime).truncatingRemainder(dividingBy:surface.wavePeriod)
-   assert(phase>=surface.wavePeriod/2-0.001,"A rising tile must not fade")
+   assert(phase>=surface.wavePeriod*0.695-0.001,"Tiles must descend about one third before fading")
    assert(phase+fade.duration<=surface.wavePeriod+0.001,"Fade must end before the next rise")
    end=max(end,fade.beginTime+fade.duration)
    if fade.beginTime>ready+0.12{pending.append(item)}

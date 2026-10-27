@@ -73,9 +73,9 @@ final class JournalLaunchSurface:NSView {
     let travel:CGFloat=8
     let riseDuration=wavePeriod
     let rise=CAKeyframeAnimation(keyPath:"transform");rise.values=[NSValue(caTransform3D:CATransform3DIdentity),NSValue(caTransform3D:CATransform3DMakeTranslation(liftX*travel,liftY*travel,0)),NSValue(caTransform3D:CATransform3DIdentity)];rise.keyTimes=[0,0.5,1]
-    let mist=CAKeyframeAnimation(keyPath:"opacity");mist.values=[0.187,0.46,0.187];mist.keyTimes=[0,0.5,1]
+    let mist=CAKeyframeAnimation(keyPath:"opacity");mist.values=[0.187,0.46,0.46,0.187];mist.keyTimes=[0,0.5,0.695,1]
     let ease=CAMediaTimingFunction(controlPoints:0.37,0,0.63,1)
-    rise.timingFunctions=[ease,ease];mist.timingFunctions=[ease,ease];rise.duration=riseDuration;mist.duration=riseDuration
+    rise.timingFunctions=[ease,ease];mist.timingFunctions=[ease,CAMediaTimingFunction(name:.linear),ease];rise.duration=riseDuration;mist.duration=riseDuration
     let wave=CAAnimationGroup();wave.animations=[rise,mist];wave.duration=riseDuration;wave.beginTime=began+phase;wave.fillMode = .both;wave.isRemovedOnCompletion=false;wave.repeatCount = .infinity
     tile.add(wave,forKey:"ripple")
    }
@@ -97,19 +97,21 @@ final class JournalLaunchSurface:NSView {
   guard !finishing else{return};finishing=true
   if reduceMotion{pieces.forEach{$0.removeAllAnimations()};removeFromSuperview();completion();return}
   let now=CACurrentMediaTime(),half=wavePeriod/2
+  // With this easing, 39% of descent time is approximately one third of its travel.
+  let fadePoint=half+half*0.39
   var firstFade=Double.greatestFiniteMagnitude,lastFadeEnd:CFTimeInterval=0
   CATransaction.begin();CATransaction.setDisableActions(true)
   for (i,tile) in pieces.enumerated(){
    let elapsed=now-waveStarts[i]
    let phase=max(0,elapsed).truncatingRemainder(dividingBy:wavePeriod)
-   let isFalling=elapsed>=0 && phase>=half
-   let wait=isFalling ? 0:max(0,-elapsed)+half-phase
-   let remainingFall=isFalling ? wavePeriod-phase:half
+   let reachedFadePoint=elapsed>=0 && phase>=fadePoint
+   let wait=reachedFadePoint ? 0:max(0,-elapsed)+fadePoint-phase
+   let remainingFall=wavePeriod-(reachedFadePoint ? phase:fadePoint)
    let duration=min(cold ? 0.32:0.27,remainingFall)
-   let opacity=isFalling ? (tile.presentation()?.opacity ?? tile.opacity):0.46
+   let opacity=reachedFadePoint ? (tile.presentation()?.opacity ?? tile.opacity):0.46
    let fade=CABasicAnimation(keyPath:"opacity");fade.fromValue=opacity;fade.toValue=0
    fade.beginTime=now+wait;fade.duration=max(0.001,duration);fade.timingFunction=CAMediaTimingFunction(name:.easeInEaseOut)
-   // Leave the ripple running. The fade only takes over once this tile is falling.
+   // Leave the ripple running. The fade only takes over after about a third of this tile’s descent.
    fade.fillMode = .forwards;fade.isRemovedOnCompletion=false;tile.opacity=0;tile.add(fade,forKey:"fallingFade")
    firstFade=min(firstFade,wait);lastFadeEnd=max(lastFadeEnd,wait+duration)
   }
