@@ -49,6 +49,8 @@ final class JournalLaunchSurface:NSView {
  var wavePeriod:CFTimeInterval{cold ? 1.6:1.0}
  var initialPhase:Double{cold ? 0.48:1.0}
  var phaseGap:Double{cold ? 0.08:0.13}
+ // One shared sweep includes every diagonal before the leading tile can rise again.
+ var waveCycleDuration:CFTimeInterval{wavePeriod*(1+8*phaseGap)}
  let liftX=sin(31 * Double.pi/180)/cos(52 * Double.pi/180)
  let liftY=cos(31 * Double.pi/180)/cos(52 * Double.pi/180)
  init(frame:NSRect,cold:Bool){
@@ -68,8 +70,8 @@ final class JournalLaunchSurface:NSView {
    let face=CAGradientLayer();face.frame=tile.bounds;face.cornerRadius=30;face.colors=[color(0.9404,0.9608,0.9155),color(220.0/255,232.0/255,211.0/255)];face.startPoint=CGPoint(x:0.08,y:1);face.endPoint=CGPoint(x:0.95,y:0.12)
    face.borderColor=color(1,1,1,0.28);face.borderWidth=0.8
    tile.addSublayer(edge);tile.addSublayer(face);tiles.addSublayer(tile);pieces.append(tile)
-   // Start inside a traveling wave, with a clear phase difference between diagonals.
-   let age=(2+initialPhase-Double(row+column)*phaseGap).truncatingRemainder(dividingBy:1)*wavePeriod
+   // Keep diagonal phases unwrapped: adjacent tiles belong to the same sweep.
+   let age=(initialPhase-Double(row+column)*phaseGap)*wavePeriod
    let waveStart=began-age
    waveStarts.append(waveStart)
    if !reduceMotion {
@@ -80,7 +82,8 @@ final class JournalLaunchSurface:NSView {
     let mist=CAKeyframeAnimation(keyPath:"opacity");mist.values=[0.187,0.46,0.46,0.187];mist.keyTimes=[0,0.5,0.805,1]
     let ease=CAMediaTimingFunction(controlPoints:0.37,0,0.63,1)
     rise.timingFunctions=[ease,ease];mist.timingFunctions=[ease,CAMediaTimingFunction(name:.linear),ease];rise.duration=riseDuration;mist.duration=riseDuration
-    let wave=CAAnimationGroup();wave.animations=[rise,mist];wave.duration=riseDuration;wave.beginTime=waveStart;wave.fillMode = .both;wave.isRemovedOnCompletion=false;wave.repeatCount = .infinity
+    rise.fillMode = .forwards;rise.isRemovedOnCompletion=false;mist.fillMode = .forwards;mist.isRemovedOnCompletion=false
+    let wave=CAAnimationGroup();wave.animations=[rise,mist];wave.duration=waveCycleDuration;wave.beginTime=waveStart;wave.fillMode = .both;wave.isRemovedOnCompletion=false;wave.repeatCount = .infinity
     tile.add(wave,forKey:"ripple")
    }
   }}
@@ -103,19 +106,22 @@ final class JournalLaunchSurface:NSView {
   let now=CACurrentMediaTime(),half=wavePeriod/2
   // With this easing, 61% of descent time is approximately two thirds of its travel.
   let fadePoint=half+half*0.61
+  let sweep=floor(max(0,now-waveStarts[0])/waveCycleDuration)
   var firstFade=Double.greatestFiniteMagnitude,lastFadeEnd:CFTimeInterval=0
   CATransaction.begin();CATransaction.setDisableActions(true)
   for (i,tile) in pieces.enumerated(){
-   let elapsed=now-waveStarts[i]
-   let phase=max(0,elapsed).truncatingRemainder(dividingBy:wavePeriod)
-   let reachedFadePoint=elapsed>=0 && phase>=fadePoint
-   let wait=reachedFadePoint ? 0:max(0,-elapsed)+fadePoint-phase
-   let remainingFall=wavePeriod-(reachedFadePoint ? phase:fadePoint)
+   // Finish this shared sweep, including tiles that have already landed. Never
+   // wrap an early diagonal into the following sweep while later ones fade.
+   let elapsed=now-(waveStarts[i]+sweep*waveCycleDuration)
+   let reachedFadePoint=elapsed>=fadePoint
+   let wait=max(0,fadePoint-elapsed)
+   let remainingFall=max(0,wavePeriod-max(elapsed,fadePoint))
    let duration=min(0.32,remainingFall)
    let opacity=reachedFadePoint ? (tile.presentation()?.opacity ?? tile.opacity):0.46
    let fade=CABasicAnimation(keyPath:"opacity");fade.fromValue=opacity;fade.toValue=0
    fade.beginTime=now+wait;fade.duration=max(0.001,duration);fade.timingFunction=CAMediaTimingFunction(name:.easeInEaseOut)
-   // Leave the ripple running. The fade only takes over after about two thirds of this tile’s descent.
+   // The ripple rests flat after its descent until the next shared sweep.
+   // Already landed tiles disappear immediately; the others fade as they fall.
    fade.fillMode = .forwards;fade.isRemovedOnCompletion=false;tile.opacity=0;tile.add(fade,forKey:"fallingFade")
    firstFade=min(firstFade,wait);lastFadeEnd=max(lastFadeEnd,wait+duration)
   }
@@ -125,7 +131,7 @@ final class JournalLaunchSurface:NSView {
    fade.timingFunction=CAMediaTimingFunction(name:.easeInEaseOut);surface.opacity=0;surface.add(fade,forKey:"reveal")
   }
   CATransaction.commit()
-  // Exit on the next descent of each tile, never hold still at the crest.
+  // Remove the overlay after the last diagonal in this sweep has disappeared.
   DispatchQueue.main.asyncAfter(deadline:.now()+lastFadeEnd){[weak self] in
    self?.pieces.forEach{$0.removeAllAnimations()};self?.removeFromSuperview();completion()
   }
