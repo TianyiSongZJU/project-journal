@@ -14,3 +14,9 @@ Each launch records these stages once, with `elapsedMs` measured using the monot
 `pageReady.elapsedMs` is the main startup metric. This is an application measurement, not a physical click-to-screen measurement: it excludes Launch Services, executable loading before main, and display presentation latency. Missing later stages indicate an incomplete launch. No extra requests are made to the backend for timing.
 
 For repeated measurements, quit with Command-Q, then open the app and wait for content to appear. Closing only the window leaves the process running and does not create another startup measurement. Logs are pruned after 256 KiB, retaining the latest 500 events before appending the next event. Logging failures do not interrupt startup.
+
+## Reopening windows
+
+Each explicit status menu action starts a separate measurement with `source: "statusBar"`. Dock reopening uses `source: "dock"`. A complete process launch uses `source: "coldStart"`. `windowMode` distinguishes `newWindow` (a closed window is recreated) from `existingWindow` (an existing window is raised, including unminimizing). Each measurement has its own ID, start time, and stage deduplication. Reopen measurements start at `openRequested`, then record `windowShown` and `pageReady`. For an existing page, `pageMs` is omitted because the page is not reloaded.
+
+For status bar measurements, close the window with its red button and choose **打开项目手记** from the status menu. Repeat without quitting. For an existing window measurement, minimize or hide it and use the same menu action. Time spent opening the status menu before choosing the action is excluded.

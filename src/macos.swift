@@ -8,16 +8,19 @@ final class JournalStartupTiming {
  let began=ProcessInfo.processInfo.systemUptime
  let launchID=UUID().uuidString
  let file:URL
+ let source:String
+ let windowMode:String
  var recorded=Set<String>()
- init(directory:URL?=nil){
+ init(directory:URL?=nil,source:String="coldStart",windowMode:String="newWindow"){
+  self.source=source;self.windowMode=windowMode
   let base=Bundle.main.bundleURL.deletingLastPathComponent()
   let home=directory ?? (Bundle.main.object(forInfoDictionaryKey:"JournalAutomationHome") as? String).map{URL(fileURLWithPath:$0)} ?? base.appendingPathComponent("local/macos")
   file=home.appendingPathComponent("startup-times.jsonl")
-  mark("mainStarted")
+  mark(source == "coldStart" ? "mainStarted":"openRequested")
  }
  func mark(_ event:String,page:String?=nil,pageMS:Double?=nil){
   guard recorded.insert(event).inserted else{return}
-  var row:[String:Any]=["launchID":launchID,"at":ISO8601DateFormatter().string(from:Date()),"pid":ProcessInfo.processInfo.processIdentifier,"event":event,"elapsedMs":((ProcessInfo.processInfo.systemUptime-began)*1000).rounded()]
+  var row:[String:Any]=["launchID":launchID,"at":ISO8601DateFormatter().string(from:Date()),"pid":ProcessInfo.processInfo.processIdentifier,"event":event,"source":source,"windowMode":windowMode,"elapsedMs":((ProcessInfo.processInfo.systemUptime-began)*1000).rounded()]
   if let page=page,["page-review","page-projects","page-auto","page-settings"].contains(page){row["page"]=page}
   if let ms=pageMS,ms.isFinite,ms>=0{row["pageMs"]=ms.rounded()}
   do{
@@ -71,6 +74,7 @@ final class JournalTitleText: NSView {
 
 final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate, WKScriptMessageHandler, NSMenuDelegate {
  var startupTiming:JournalStartupTiming?
+ var openingTiming:JournalStartupTiming?
  var window: NSWindow!
  var titleDragArea:JournalWindowDragView?
  var headerControlRects:[NSRect]=[]
@@ -135,7 +139,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   let titleLabel=JournalTitleText(frame:NSRect(x:24,y:9,width:80,height:24));titleLabel.setAccessibilityElement(true);titleLabel.setAccessibilityRole(.staticText);titleLabel.setAccessibilityLabel("项目手记");titleView.addSubview(titleLabel)
   titleAccessory.view=titleView;window.addTitlebarAccessoryViewController(titleAccessory)
   window.center();window.makeKeyAndOrderFront(nil);NSApp.activate(ignoringOtherApps:true);DispatchQueue.main.async { [weak self] in self?.alignTitlebar() }
-  startupTiming?.mark("windowShown")
+  (openingTiming ?? startupTiming)?.mark("windowShown")
   webView.loadHTMLString("<html><body style='background:#f6f3eb;color:#315c46;font:20px serif;padding:80px'>项目手记<br><small>正在打开本地记录…</small></body></html>",baseURL:nil)
   if let url=launchURL{webView.load(URLRequest(url:url))}
  }
@@ -143,12 +147,34 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
  func updateTrackingMenu(_ state:[String:Any]){let enabled=state["enabled"]as?Bool ?? false;let activity=state["activityEnabled"]as?Bool ?? false;let status=state["status"]as?String ?? "正在读取";let label=status=="监听中" ? "监听中 · \(activity ? "文件＋时长辅助":"仅文件活动")":status;trackingStatusItem?.title="● "+label;statusItem?.button?.toolTip="项目手记 · "+label;trackingToggleItem?.title=enabled ? "暂停自动记录":"继续自动记录";trackingToggleItem?.isEnabled = status != "待绑定资料夹";trackingToggleItem?.state = .off}
  func menuWillOpen(_ menu:NSMenu){observer?.reload()}
 
- @objc func openJournal(){NSApp.setActivationPolicy(.regular);if window==nil{createWindow()};window.makeKeyAndOrderFront(nil);NSApp.activate(ignoringOtherApps:true)}
- func applicationShouldHandleReopen(_ sender:NSApplication,hasVisibleWindows flag:Bool)->Bool{openJournal();return true}
+ @objc func openJournal(){showJournal(source:"statusBar")}
+ func showJournal(source:String){
+  let existing=window != nil
+  let timing=JournalStartupTiming(source:source,windowMode:existing ? "existingWindow":"newWindow");openingTiming=timing
+  NSApp.setActivationPolicy(.regular);if !existing{createWindow()}
+  if window.isMiniaturized{window.deminiaturize(nil)}
+  window.makeKeyAndOrderFront(nil);NSApp.activate(ignoringOtherApps:true)
+  timing.mark("windowShown")
+  if existing{
+   webView.evaluateJavaScript("""
+   (()=>{const deadline=performance.now()+120000;const ready=()=>{
+    if(window.journalViewReady){requestAnimationFrame(()=>requestAnimationFrame(()=>window.webkit.messageHandlers.journalNative.postMessage({action:'openReady',measurementID:'\(timing.launchID)',page:document.querySelector('main>section:not([hidden])')?.id||''})));return}
+    if(performance.now()<deadline)requestAnimationFrame(ready);
+   };requestAnimationFrame(ready)})();
+   """,completionHandler:nil)
+  }
+ }
+ func applicationShouldHandleReopen(_ sender:NSApplication,hasVisibleWindows flag:Bool)->Bool{showJournal(source:"dock");return true}
  @objc func toggleTracking(){guard let observer=observer else{return};var request=URLRequest(url:observer.server.appendingPathComponent("api/auto/status"));request.setValue(observer.token,forHTTPHeaderField:"X-Journal-Token");URLSession.shared.dataTask(with:request){data,_,_ in guard let data=data,let root=(try? JSONSerialization.jsonObject(with:data))as?[String:Any],var config=root["config"]as?[String:Any]else{return};config["enabled"] = !(config["enabled"]as?Bool ?? false);var update=URLRequest(url:observer.server.appendingPathComponent("api/auto/config"));update.httpMethod="PUT";update.setValue(observer.token,forHTTPHeaderField:"X-Journal-Token");update.setValue("application/json",forHTTPHeaderField:"Content-Type");update.httpBody=try? JSONSerialization.data(withJSONObject:["config":config,"revision":root["configRevision"] ?? ""]);URLSession.shared.dataTask(with:update){_,_,_ in DispatchQueue.main.async{observer.reload()}}.resume()}.resume()}
  func flushWindow(_ completion:@escaping(Bool)->Void){guard let view=webView else{completion(true);return};view.callAsyncJavaScript("return window.journalFlush ? await window.journalFlush() : true;",arguments:[:],in:nil,in:.page){result in if case .success(let value)=result{completion(value as?Bool == true)}else{completion(false)}}}
  func userContentController(_ userContentController:WKUserContentController,didReceive message:WKScriptMessage){guard let body=message.body as?[String:Any],let action=body["action"]as?String else{return};let id=body["id"]as?String ?? "";func reply(_ result:[String:Any]){self.webView?.callAsyncJavaScript("window.journalNativeReply && window.journalNativeReply(id,result)",arguments:["id":id,"result":result],in:nil,in:.page,completionHandler:nil)}
-  if action=="startupReady"{startupTiming?.mark("pageReady",page:body["page"] as? String,pageMS:body["pageMs"] as? Double)}
+  if action=="startupReady",message.webView === webView{
+   (openingTiming ?? startupTiming)?.mark("pageReady",page:body["page"] as? String,pageMS:body["pageMs"] as? Double)
+   if openingTiming?.windowMode == "newWindow"{openingTiming=nil}
+  }
+  else if action=="openReady",message.webView === webView,let timing=openingTiming,body["measurementID"] as? String == timing.launchID{
+   timing.mark("pageReady",page:body["page"] as? String);openingTiming=nil
+  }
   else if action=="headerRegions" {
    if let rects=body["rects"] as? [[String:Double]] {headerControlRects=rects.compactMap{r in guard let x=r["x"],let y=r["y"],let w=r["width"],let h=r["height"],w>0,h>0 else{return nil};return NSRect(x:x,y:y,width:w,height:h)};alignTitlebar()}
   }
