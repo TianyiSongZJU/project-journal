@@ -45,6 +45,8 @@ final class JournalLaunchSurface:NSView {
  let reduceMotion=NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
  var finishing=false
  var pieces:[CALayer]=[]
+ var waveStarts:[CFTimeInterval]=[]
+ var wavePeriod:CFTimeInterval{cold ? 1.4:1.1}
  let liftX=sin(31 * Double.pi/180)/cos(53 * Double.pi/180)
  let liftY=cos(31 * Double.pi/180)/cos(53 * Double.pi/180)
  init(frame:NSRect,cold:Bool){
@@ -54,7 +56,7 @@ final class JournalLaunchSurface:NSView {
   func color(_ r:CGFloat,_ g:CGFloat,_ b:CGFloat,_ a:CGFloat=1)->CGColor{NSColor(calibratedRed:r,green:g,blue:b,alpha:a).cgColor}
   backdrop.colors=[color(0.975,0.983,0.961),color(0.906,0.935,0.879)];backdrop.startPoint=CGPoint(x:0.2,y:1);backdrop.endPoint=CGPoint(x:0.85,y:0)
   layer?.addSublayer(backdrop);layer?.addSublayer(artwork);artwork.addSublayer(tiles)
-  artwork.opacity=cold ? 1:0
+  artwork.opacity=1
   tiles.bounds=CGRect(x:0,y:0,width:1726,height:1726)
   for row in 0..<5 {for column in 0..<5 {
    let tile=CALayer();tile.frame=CGRect(x:column*354,y:row*354,width:310,height:310);tile.opacity=0.36
@@ -64,21 +66,21 @@ final class JournalLaunchSurface:NSView {
    let face=CAGradientLayer();face.frame=tile.bounds;face.cornerRadius=30;face.colors=[color(0.970,0.982,0.946),color(0.863,0.910,0.827)];face.startPoint=CGPoint(x:0.08,y:1);face.endPoint=CGPoint(x:0.95,y:0.12)
    face.borderColor=color(1,1,1,0.28);face.borderWidth=0.8
    tile.addSublayer(edge);tile.addSublayer(face);tiles.addSublayer(tile);pieces.append(tile)
-   let phase=Double(row+column)*0.018
+   let phase=Double(row+column)*0.035
+   waveStarts.append(began+phase)
    if !reduceMotion {
-    // Keep motion visible at this scale, with a gentle rise rather than a fast jump.
-    let travel:CGFloat=cold ? 8:6
-    let riseDuration:CFTimeInterval=cold ? 0.50:0.36
-    let rise=CAKeyframeAnimation(keyPath:"transform");rise.values=[NSValue(caTransform3D:CATransform3DIdentity),NSValue(caTransform3D:CATransform3DMakeTranslation(liftX*travel,liftY*travel,0))];rise.keyTimes=[0,1]
-    let mist=CAKeyframeAnimation(keyPath:"opacity");mist.values=[0.187,0.46];mist.keyTimes=[0,1]
-    let ease=CAMediaTimingFunction(controlPoints:0.25,0,0.35,1)
-    rise.timingFunctions=[ease];mist.timingFunctions=[ease];rise.duration=riseDuration;mist.duration=riseDuration
-    let wave=CAAnimationGroup();wave.animations=[rise,mist];wave.duration=riseDuration;wave.beginTime=began+phase;wave.fillMode = .both;wave.isRemovedOnCompletion=false
+    // Keep the same visible travel on warm opens, with a smooth continuous wave.
+    let travel:CGFloat=8
+    let riseDuration=wavePeriod
+    let rise=CAKeyframeAnimation(keyPath:"transform");rise.values=[NSValue(caTransform3D:CATransform3DIdentity),NSValue(caTransform3D:CATransform3DMakeTranslation(liftX*travel,liftY*travel,0)),NSValue(caTransform3D:CATransform3DIdentity)];rise.keyTimes=[0,0.5,1]
+    let mist=CAKeyframeAnimation(keyPath:"opacity");mist.values=[0.187,0.46,0.187];mist.keyTimes=[0,0.5,1]
+    let ease=CAMediaTimingFunction(controlPoints:0.37,0,0.63,1)
+    rise.timingFunctions=[ease,ease];mist.timingFunctions=[ease,ease];rise.duration=riseDuration;mist.duration=riseDuration
+    let wave=CAAnimationGroup();wave.animations=[rise,mist];wave.duration=riseDuration;wave.beginTime=began+phase;wave.fillMode = .both;wave.isRemovedOnCompletion=false;wave.repeatCount = .infinity
     tile.add(wave,forKey:"ripple")
    }
   }}
   light.colors=[color(1,1,0.98,0.25),color(1,1,0.98,0)];light.startPoint=CGPoint(x:0.2,y:1);light.endPoint=CGPoint(x:0.7,y:0.2);layer?.addSublayer(light)
-  if !cold{DispatchQueue.main.asyncAfter(deadline:.now()+0.2){[weak self] in guard let self=self,!self.finishing else{return};self.artwork.opacity=1}}
  }
  required init?(coder:NSCoder){fatalError("init(coder:) has not been implemented")}
  override func layout(){
@@ -94,27 +96,31 @@ final class JournalLaunchSurface:NSView {
  func finish(_ completion:@escaping()->Void){
   guard !finishing else{return};finishing=true
   if reduceMotion{pieces.forEach{$0.removeAllAnimations()};removeFromSuperview();completion();return}
-  let hasArtwork=artwork.opacity>0.1
-  let duration:CFTimeInterval=hasArtwork ? (cold ? 0.24:0.20):0.08
-  let spread:CFTimeInterval=hasArtwork ? (cold ? 0.08:0.06):0
-  let now=CACurrentMediaTime()
+  let now=CACurrentMediaTime(),half=wavePeriod/2
+  var firstFade=Double.greatestFiniteMagnitude,lastFadeEnd:CFTimeInterval=0
   CATransaction.begin();CATransaction.setDisableActions(true)
   for (i,tile) in pieces.enumerated(){
-   let visible=tile.presentation() ?? tile
-   let height=visible.transform.m42/liftY
-   let opacity=visible.opacity
-   let crest=height*0.84
-   let settle=CAKeyframeAnimation(keyPath:"transform");settle.values=[NSValue(caTransform3D:CATransform3DMakeTranslation(liftX*height,liftY*height,0)),NSValue(caTransform3D:CATransform3DMakeTranslation(liftX*crest,liftY*crest,0)),NSValue(caTransform3D:CATransform3DIdentity)];settle.keyTimes=[0,0.22,1];settle.timingFunctions=[CAMediaTimingFunction(name:.easeOut),CAMediaTimingFunction(name:.easeInEaseOut)]
-   let fade=CAKeyframeAnimation(keyPath:"opacity");fade.values=[opacity,opacity,0];fade.keyTimes=[0,0.15,1];fade.timingFunctions=[CAMediaTimingFunction(name:.linear),CAMediaTimingFunction(name:.easeInEaseOut)];settle.duration=duration;fade.duration=duration
-   let end=CAAnimationGroup();end.animations=[settle,fade];end.duration=duration;end.beginTime=now+Double((i%5)+(i/5))/8*spread;end.fillMode = .both;end.isRemovedOnCompletion=false
-   tile.removeAllAnimations();tile.opacity=0;tile.transform=CATransform3DIdentity;tile.add(end,forKey:"settleAway")
+   let elapsed=now-waveStarts[i]
+   let phase=max(0,elapsed).truncatingRemainder(dividingBy:wavePeriod)
+   let isFalling=elapsed>=0 && phase>=half
+   let wait=isFalling ? 0:max(0,-elapsed)+half-phase
+   let remainingFall=isFalling ? wavePeriod-phase:half
+   let duration=min(cold ? 0.32:0.27,remainingFall)
+   let opacity=isFalling ? (tile.presentation()?.opacity ?? tile.opacity):0.46
+   let fade=CABasicAnimation(keyPath:"opacity");fade.fromValue=opacity;fade.toValue=0
+   fade.beginTime=now+wait;fade.duration=max(0.001,duration);fade.timingFunction=CAMediaTimingFunction(name:.easeInEaseOut)
+   // Leave the ripple running. The fade only takes over once this tile is falling.
+   fade.fillMode = .forwards;fade.isRemovedOnCompletion=false;tile.opacity=0;tile.add(fade,forKey:"fallingFade")
+   firstFade=min(firstFade,wait);lastFadeEnd=max(lastFadeEnd,wait+duration)
   }
   for surface in [backdrop,light]{
-   let fade=CABasicAnimation(keyPath:"opacity");fade.fromValue=surface.presentation()?.opacity ?? surface.opacity;fade.toValue=0;fade.duration=duration+spread;fade.timingFunction=CAMediaTimingFunction(name:.easeInEaseOut);surface.opacity=0;surface.add(fade,forKey:"reveal")
+   let fade=CABasicAnimation(keyPath:"opacity");fade.fromValue=surface.presentation()?.opacity ?? surface.opacity;fade.toValue=0
+   fade.beginTime=now+firstFade;fade.duration=max(0.001,lastFadeEnd-firstFade);fade.fillMode = .both;fade.isRemovedOnCompletion=false
+   fade.timingFunction=CAMediaTimingFunction(name:.easeInEaseOut);surface.opacity=0;surface.add(fade,forKey:"reveal")
   }
   CATransaction.commit()
-  // Loading controls the cycle: rise once, then settle as soon as the real page is ready.
-  DispatchQueue.main.asyncAfter(deadline:.now()+duration+spread){[weak self] in
+  // Exit on the next descent of each tile, never hold still at the crest.
+  DispatchQueue.main.asyncAfter(deadline:.now()+lastFadeEnd){[weak self] in
    self?.pieces.forEach{$0.removeAllAnimations()};self?.removeFromSuperview();completion()
   }
  }
