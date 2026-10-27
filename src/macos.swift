@@ -47,6 +47,8 @@ final class JournalLaunchSurface:NSView {
  var pieces:[CALayer]=[]
  var waveStarts:[CFTimeInterval]=[]
  var revealMasks:[CAGradientLayer]=[]
+ var revealFields:[[CAGradientLayer]]=[]
+ var revealSources:[Int]=[]
  let restingOpacity:Float=0.28
  let crestOpacity:Float=0.64
  var wavePeriod:CFTimeInterval{cold ? 1.6:1.0}
@@ -104,12 +106,26 @@ final class JournalLaunchSurface:NSView {
   layoutRevealMasks()
   CATransaction.commit()
  }
- // Use the visible screen diagonal: the oblique tile projection compresses
- // its mathematical phase direction into an almost vertical sweep.
+ func revealCenter(_ index:Int)->CGPoint{
+  tiles.convert(pieces[index].position,to:layer)
+ }
  func layoutRevealMasks(){
-  for mask in revealMasks{
-   mask.frame=bounds;mask.startPoint=CGPoint(x:0,y:0);mask.endPoint=CGPoint(x:1,y:1)
-  }
+  guard !revealSources.isEmpty,bounds.width>0,bounds.height>0 else{return}
+  let centers=revealSources.map{revealCenter($0)}
+  // Cover every point, including corners and gaps, with at least one clear core.
+  // The grid's half-diagonal bounds the distance between its samples.
+  var reach:CGFloat=0
+  for y in 0...8{for x in 0...8{
+   let point=CGPoint(x:bounds.minX+bounds.width*CGFloat(x)/8,y:bounds.minY+bounds.height*CGFloat(y)/8)
+   reach=max(reach,centers.map{hypot($0.x-point.x,$0.y-point.y)}.min()!)
+  }}
+  let core=reach+hypot(bounds.width,bounds.height)/16+16
+  let radius=core/0.45
+  for fields in revealFields{for (field,center) in zip(fields,centers){
+   field.frame=bounds
+   field.startPoint=CGPoint(x:(center.x-bounds.minX)/bounds.width,y:(center.y-bounds.minY)/bounds.height)
+   field.endPoint=CGPoint(x:field.startPoint.x+radius/bounds.width,y:field.startPoint.y+radius/bounds.height)
+  }}
  }
  func finish(_ completion:@escaping()->Void){
   guard !finishing else{return};finishing=true
@@ -118,7 +134,7 @@ final class JournalLaunchSurface:NSView {
   // With this easing, 61% of descent time is approximately two thirds of its travel.
   let fadePoint=half+half*0.61
   let sweep=floor(max(0,now-waveStarts[0])/waveCycleDuration)
-  var firstFade=Double.greatestFiniteMagnitude,lastFadeEnd:CFTimeInterval=0
+  var lastFadeEnd:CFTimeInterval=0
   CATransaction.begin();CATransaction.setDisableActions(true)
   for (i,tile) in pieces.enumerated(){
    // Finish this shared sweep, including tiles that have already landed. Never
@@ -134,32 +150,43 @@ final class JournalLaunchSurface:NSView {
    // The ripple rests flat after its descent until the next shared sweep.
    // Already landed tiles disappear immediately; the others fade as they fall.
    fade.fillMode = .forwards;fade.isRemovedOnCompletion=false;tile.opacity=0;tile.add(fade,forKey:"fallingFade")
-   firstFade=min(firstFade,wait);lastFadeEnd=max(lastFadeEnd,wait+duration)
+   lastFadeEnd=max(lastFadeEnd,wait+duration)
   }
+  let projection=tiles.affineTransform()
+  let margin=354*max(hypot(projection.a,projection.b),hypot(projection.c,projection.d))
+  revealSources=pieces.indices.filter{bounds.insetBy(dx:-margin,dy:-margin).contains(revealCenter($0))}
   for surface in [backdrop,light]{
-   // A broad, soft transparent front follows the same direction as the tiles.
-   // Keep the background opaque ahead of it rather than fading the whole page.
-   let mask=CAGradientLayer()
-   // Extend the soft alpha field beyond the screen diagonal for a broader dissolve.
-   let featherHalfWidth=0.6
-   let alphas:[CGFloat]=[0,0,0.074,0.259,0.5,0.741,0.926,1,1]
-   mask.colors=alphas.map{NSColor.black.withAlphaComponent($0).cgColor}
-   mask.locations=[0,1,1,1,1,1,1,1,1]
-   let wipe=CAKeyframeAnimation(keyPath:"locations")
-   wipe.values=(0...32).map{step -> [NSNumber] in
-    let front = -featherHalfWidth+(1+2*featherHalfWidth)*Double(step)/32
-    return [0]+(-3...3).map{NSNumber(value:max(0,min(1,front+Double($0)*featherHalfWidth/3)))}+[1]
+   var fields:[CAGradientLayer]=[]
+   for index in revealSources{
+    let field=CAGradientLayer();field.type = .radial
+    let alphas:[CGFloat]=[0,0,0.074,0.259,0.5,0.741,0.926,1]
+    let finalColors=alphas.map{NSColor.black.withAlphaComponent($0).cgColor}
+    let opaqueColors=alphas.map{_ in NSColor.black.cgColor}
+    let finalLocations:[NSNumber]=[0,0.45,0.53,0.61,0.69,0.77,0.85,1]
+    field.colors=finalColors;field.locations=finalLocations
+    // Each native radial mask opens from its own tile when that tile fades.
+    // Nested masks multiply their alpha, merging the clear regions naturally.
+    let tileFade=pieces[index].animation(forKey:"fallingFade")!
+    let spread=CAKeyframeAnimation(keyPath:"locations")
+    spread.values=[[0,0,0,0,0,0,0,1],finalLocations]
+    let dissolve=CABasicAnimation(keyPath:"colors");dissolve.fromValue=opaqueColors;dissolve.toValue=finalColors
+    let duration=max(0.18,tileFade.duration)
+    spread.duration=duration;dissolve.duration=duration
+    let opening=CAAnimationGroup();opening.animations=[spread,dissolve]
+    opening.beginTime=tileFade.beginTime;opening.duration=duration
+    opening.timingFunction=CAMediaTimingFunction(name:.easeInEaseOut)
+    opening.fillMode = .both;opening.isRemovedOnCompletion=false
+    field.add(opening,forKey:"localReveal")
+    if let previous=fields.last{previous.mask=field}else{surface.mask=field;revealMasks.append(field)}
+    fields.append(field);lastFadeEnd=max(lastFadeEnd,opening.beginTime-now+duration)
    }
-   wipe.keyTimes=(0...32).map{NSNumber(value:Double($0)/32)}
-   wipe.beginTime=now+firstFade;wipe.duration=max(0.001,lastFadeEnd-firstFade)
-   wipe.fillMode = .both;wipe.isRemovedOnCompletion=false;wipe.calculationMode = .linear
-   surface.mask=mask;revealMasks.append(mask);mask.add(wipe,forKey:"directionalReveal")
+   revealFields.append(fields)
   }
   layoutRevealMasks()
   CATransaction.commit()
   // Remove the overlay after the last diagonal in this sweep has disappeared.
   DispatchQueue.main.asyncAfter(deadline:.now()+lastFadeEnd){[weak self] in
-   self?.pieces.forEach{$0.removeAllAnimations()};self?.revealMasks.forEach{$0.removeAllAnimations()};self?.removeFromSuperview();completion()
+   self?.pieces.forEach{$0.removeAllAnimations()};self?.revealFields.flatMap{$0}.forEach{$0.removeAllAnimations()};self?.removeFromSuperview();completion()
   }
  }
  override func hitTest(_ point:NSPoint)->NSView?{nil}

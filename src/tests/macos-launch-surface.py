@@ -56,27 +56,50 @@ func check(_ cold:Bool,_ loading:Double){
   for background in [surface.backdrop,surface.light]{
    assert(background.opacity==1 && background.animation(forKey:"reveal")==nil,"Background must reveal spatially, not fade uniformly")
   }
-  for mask in surface.revealMasks{
-   assert(mask.animation(forKey:"directionalReveal") != nil)
-   let from=CGPoint(x:mask.startPoint.x*surface.bounds.width,y:mask.startPoint.y*surface.bounds.height)
-   let to=CGPoint(x:mask.endPoint.x*surface.bounds.width,y:mask.endPoint.y*surface.bounds.height)
-   let direction=CGPoint(x:to.x-from.x,y:to.y-from.y)
-   assert(mask.startPoint==CGPoint(x:0,y:0) && mask.endPoint==CGPoint(x:1,y:1),"Reveal must use the visible corner-to-corner diagonal")
-   assert(direction.x>0 && direction.y>0)
-   let ratio=direction.x/direction.y
-   assert(ratio>0.5 && ratio<2,"Reveal must have substantial horizontal and vertical travel")
-   assert(mask.colors?.count==9,"Use smooth alpha levels across the broad feather")
+  assert(!surface.revealSources.isEmpty)
+  for fields in surface.revealFields{
+   assert(fields.count==surface.revealSources.count)
+   for (slot,field) in fields.enumerated(){
+    let index=surface.revealSources[slot]
+    assert(field.type == .radial,"Each fading tile must open its own radial region")
+    let opening=field.animation(forKey:"localReveal")!
+    let fade=surface.pieces[index].animation(forKey:"fallingFade")!
+    assert(abs(opening.beginTime-fade.beginTime)<0.001,"Background diffusion must start with its own tile")
+    assert(opening.duration>=0.18,"Already landed tiles must still dissolve softly")
+    let center=surface.revealCenter(index)
+    assert(abs(field.startPoint.x*surface.bounds.width-center.x)<0.001)
+    assert(abs(field.startPoint.y*surface.bounds.height-center.y)<0.001)
+    let radiusX=(field.endPoint.x-field.startPoint.x)*surface.bounds.width
+    let radiusY=(field.endPoint.y-field.startPoint.y)*surface.bounds.height
+    assert(abs(radiusX-radiusY)<0.001,"Diffusion must spread evenly in screen space")
+    if slot+1<fields.count{assert(field.mask === fields[slot+1])}
+    end=max(end,opening.beginTime+opening.duration)
+   }
   }
+  let fields=surface.revealFields[0]
+  for y in 0...8{for x in 0...8{
+   let point=CGPoint(x:surface.bounds.width*Double(x)/8,y:surface.bounds.height*Double(y)/8)
+   assert(fields.contains{field in
+    let center=CGPoint(x:field.startPoint.x*surface.bounds.width,y:field.startPoint.y*surface.bounds.height)
+    let core=(field.endPoint.x-field.startPoint.x)*surface.bounds.width*0.45
+    return hypot(center.x-point.x,center.y-point.y)<core
+   },"Clear cores must cover every corner and gap before removal")
+  }}
   var sawSpatialReveal=false
   while CACurrentMediaTime()<end-0.025{
    RunLoop.main.run(until:Date().addingTimeInterval(0.015))
    let now=CACurrentMediaTime()
-   if let mask=surface.revealMasks.first,let wipe=mask.animation(forKey:"directionalReveal"){
-    let progress=(now-wipe.beginTime)/wipe.duration
-    if progress>0.35 && progress<0.65,let locations=mask.presentation()?.locations{
-     assert(locations[1].doubleValue<0.4 && locations[7].doubleValue>0.6,"Mid-reveal must expose one region while retaining the other")
-     assert(locations[7].doubleValue-locations[1].doubleValue>0.58,"Reveal boundary must stay feathered")
-     sawSpatialReveal=true
+   for field in fields{
+    let opening=field.animation(forKey:"localReveal")!
+    let progress=(now-opening.beginTime)/opening.duration
+    if let presented=field.presentation(),let colors=presented.colors as? [CGColor]{
+     if progress < -0.025{assert(colors[0].alpha>0.99,"Future regions must remain covered")}
+     if progress>0.25 && progress<0.75{
+      assert(colors[0].alpha<0.99 && colors[0].alpha>0.01,"Center must fade gradually as its radius grows")
+      assert(colors.last!.alpha>0.99,"The outside of each radial region stays opaque")
+      assert((presented.locations?[1].doubleValue ?? 0)>0,"The clear core must expand outward")
+      sawSpatialReveal=true
+     }
     }
    }
    for (i,item) in surface.pieces.enumerated() where now>fadeEnds[i]+0.025{
@@ -84,12 +107,12 @@ func check(_ cold:Bool,_ loading:Double){
     assert(abs((item.presentation()?.transform.m42 ?? 0)/surface.liftY)<0.3,"Landed tiles must not start rising again during the exit")
    }
   }
-  assert(sawSpatialReveal,"Must observe the moving background gradient in real presentation layers")
+  assert(sawSpatialReveal,"Must observe the expanding radial background regions in real presentation layers")
  }
  RunLoop.main.run(until:Date().addingTimeInterval(max(0,end-CACurrentMediaTime())+0.1))
  assert(completed==1 && surface.superview==nil)
  assert(surface.pieces.allSatisfy{$0.animationKeys()==nil})
- assert(surface.revealMasks.allSatisfy{$0.animationKeys()==nil})
+ assert(surface.revealFields.flatMap{$0}.allSatisfy{$0.animationKeys()==nil})
  window.close()
  print("PASS",cold ? "cold":"warm","loading",loading,"exit ms",(end-ready)*1000)
 }
