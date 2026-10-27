@@ -66,13 +66,14 @@ final class JournalLaunchSurface:NSView {
    tile.addSublayer(edge);tile.addSublayer(face);tiles.addSublayer(tile);pieces.append(tile)
    let phase=Double(row+column)*0.018
    if !reduceMotion {
-    // Shorter openings use less travel, rather than speeding up a large movement.
-    let travel:CGFloat=cold ? 3:2
+    // Keep motion visible at this scale, with a gentle rise rather than a fast jump.
+    let travel:CGFloat=cold ? 8:6
+    let riseDuration:CFTimeInterval=cold ? 0.50:0.36
     let rise=CAKeyframeAnimation(keyPath:"transform");rise.values=[NSValue(caTransform3D:CATransform3DIdentity),NSValue(caTransform3D:CATransform3DMakeTranslation(liftX*travel,liftY*travel,0))];rise.keyTimes=[0,1]
     let mist=CAKeyframeAnimation(keyPath:"opacity");mist.values=[0.187,0.46];mist.keyTimes=[0,1]
     let ease=CAMediaTimingFunction(controlPoints:0.25,0,0.35,1)
-    rise.timingFunctions=[ease];mist.timingFunctions=[ease]
-    let wave=CAAnimationGroup();wave.animations=[rise,mist];wave.duration=cold ? 0.38:0.24;wave.beginTime=began+phase;wave.fillMode = .both;wave.isRemovedOnCompletion=false
+    rise.timingFunctions=[ease];mist.timingFunctions=[ease];rise.duration=riseDuration;mist.duration=riseDuration
+    let wave=CAAnimationGroup();wave.animations=[rise,mist];wave.duration=riseDuration;wave.beginTime=began+phase;wave.fillMode = .both;wave.isRemovedOnCompletion=false
     tile.add(wave,forKey:"ripple")
    }
   }}
@@ -94,8 +95,8 @@ final class JournalLaunchSurface:NSView {
   guard !finishing else{return};finishing=true
   if reduceMotion{pieces.forEach{$0.removeAllAnimations()};removeFromSuperview();completion();return}
   let hasArtwork=artwork.opacity>0.1
-  let duration:CFTimeInterval=hasArtwork ? (cold ? 0.16:0.12):0.08
-  let spread:CFTimeInterval=hasArtwork ? (cold ? 0.08:0.05):0
+  let duration:CFTimeInterval=hasArtwork ? (cold ? 0.24:0.20):0.08
+  let spread:CFTimeInterval=hasArtwork ? (cold ? 0.08:0.06):0
   let now=CACurrentMediaTime()
   CATransaction.begin();CATransaction.setDisableActions(true)
   for (i,tile) in pieces.enumerated(){
@@ -104,7 +105,7 @@ final class JournalLaunchSurface:NSView {
    let opacity=visible.opacity
    let crest=height*0.84
    let settle=CAKeyframeAnimation(keyPath:"transform");settle.values=[NSValue(caTransform3D:CATransform3DMakeTranslation(liftX*height,liftY*height,0)),NSValue(caTransform3D:CATransform3DMakeTranslation(liftX*crest,liftY*crest,0)),NSValue(caTransform3D:CATransform3DIdentity)];settle.keyTimes=[0,0.22,1];settle.timingFunctions=[CAMediaTimingFunction(name:.easeOut),CAMediaTimingFunction(name:.easeInEaseOut)]
-   let fade=CAKeyframeAnimation(keyPath:"opacity");fade.values=[opacity,opacity,0];fade.keyTimes=[0,0.15,1];fade.timingFunctions=[CAMediaTimingFunction(name:.linear),CAMediaTimingFunction(name:.easeInEaseOut)]
+   let fade=CAKeyframeAnimation(keyPath:"opacity");fade.values=[opacity,opacity,0];fade.keyTimes=[0,0.15,1];fade.timingFunctions=[CAMediaTimingFunction(name:.linear),CAMediaTimingFunction(name:.easeInEaseOut)];settle.duration=duration;fade.duration=duration
    let end=CAAnimationGroup();end.animations=[settle,fade];end.duration=duration;end.beginTime=now+Double((i%5)+(i/5))/8*spread;end.fillMode = .both;end.isRemovedOnCompletion=false
    tile.removeAllAnimations();tile.opacity=0;tile.transform=CATransform3DIdentity;tile.add(end,forKey:"settleAway")
   }
