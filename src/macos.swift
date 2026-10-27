@@ -3,6 +3,33 @@ import WebKit
 import UniformTypeIdentifiers
 import CoreText
 
+// Device-local diagnostics: no project names, document paths, or activity content.
+final class JournalStartupTiming {
+ let began=ProcessInfo.processInfo.systemUptime
+ let launchID=UUID().uuidString
+ let file:URL
+ var recorded=Set<String>()
+ init(directory:URL?=nil){
+  let base=Bundle.main.bundleURL.deletingLastPathComponent()
+  let home=directory ?? (Bundle.main.object(forInfoDictionaryKey:"JournalAutomationHome") as? String).map{URL(fileURLWithPath:$0)} ?? base.appendingPathComponent("local/macos")
+  file=home.appendingPathComponent("startup-times.jsonl")
+  mark("mainStarted")
+ }
+ func mark(_ event:String,page:String?=nil,pageMS:Double?=nil){
+  guard recorded.insert(event).inserted else{return}
+  var row:[String:Any]=["launchID":launchID,"at":ISO8601DateFormatter().string(from:Date()),"pid":ProcessInfo.processInfo.processIdentifier,"event":event,"elapsedMs":((ProcessInfo.processInfo.systemUptime-began)*1000).rounded()]
+  if let page=page,["page-review","page-projects","page-auto","page-settings"].contains(page){row["page"]=page}
+  if let ms=pageMS,ms.isFinite,ms>=0{row["pageMs"]=ms.rounded()}
+  do{
+   try FileManager.default.createDirectory(at:file.deletingLastPathComponent(),withIntermediateDirectories:true)
+   var previous=(try? Data(contentsOf:file)) ?? Data()
+   if previous.count>262144{previous=Data(previous.split(separator:10).suffix(500).flatMap{Array($0)+[10]})}
+   previous.append(try JSONSerialization.data(withJSONObject:row,options:.sortedKeys));previous.append(10)
+   try previous.write(to:file,options:.atomic)
+  }catch{/* Diagnostics must never prevent the app from opening. */}
+ }
+}
+
 // Center the actual Chinese glyph bounds, rather than NSTextField's line box.
 final class JournalTitleContainer: NSView {
  override func hitTest(_ point:NSPoint)->NSView? {let hit=super.hitTest(point);return hit is JournalTitleText ? hit:nil}
@@ -43,6 +70,7 @@ final class JournalTitleText: NSView {
 }
 
 final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate, WKScriptMessageHandler, NSMenuDelegate {
+ var startupTiming:JournalStartupTiming?
  var window: NSWindow!
  var titleDragArea:JournalWindowDragView?
  var headerControlRects:[NSRect]=[]
@@ -58,6 +86,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
  var outputBuffer = ""
  var startupTimer: Timer?
  func applicationDidFinishLaunching(_ notification: Notification) {
+  startupTiming?.mark("appLaunched")
   let menu = NSMenu(); let appItem = NSMenuItem(); menu.addItem(appItem)
   let appMenu = NSMenu();appMenu.addItem(withTitle:"关于项目手记", action:#selector(NSApplication.orderFrontStandardAboutPanel(_:)),keyEquivalent:"");appMenu.addItem(.separator());appMenu.addItem(withTitle:"隐藏项目手记",action:#selector(NSApplication.hide(_:)),keyEquivalent:"h");appMenu.addItem(withTitle:"退出项目手记",action:#selector(NSApplication.terminate(_:)),keyEquivalent:"q");appItem.submenu=appMenu
   let editItem=NSMenuItem();menu.addItem(editItem);let edit=NSMenu(title:"编辑");edit.addItem(withTitle:"撤销",action:#selector(undoJournal),keyEquivalent:"z");let redoItem=edit.addItem(withTitle:"重做",action:#selector(redoJournal),keyEquivalent:"z");redoItem.keyEquivalentModifierMask=[.command,.shift];edit.addItem(.separator());for (title,selector,key) in [("剪切","cut:","x"),("复制","copy:","c"),("粘贴","paste:","v"),("全选","selectAll:","a")]{edit.addItem(withTitle:title,action:NSSelectorFromString(selector),keyEquivalent:key)};editItem.submenu=edit;let windowItem=NSMenuItem();menu.addItem(windowItem);let windowMenu=NSMenu(title:"窗口");windowMenu.addItem(withTitle:"关闭窗口",action:#selector(NSWindow.performClose(_:)),keyEquivalent:"w");windowMenu.addItem(withTitle:"最小化",action:#selector(NSWindow.performMiniaturize(_:)),keyEquivalent:"m");windowItem.submenu=windowMenu;NSApp.windowsMenu=windowMenu;NSApp.mainMenu=menu
@@ -67,11 +96,21 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   let process=Process();process.executableURL=backend;process.arguments=["--no-open","--window-url","--data-dir",data.path,"--parent-pid",String(ProcessInfo.processInfo.processIdentifier)];if let home=Bundle.main.object(forInfoDictionaryKey:"JournalAutomationHome")as?String{process.arguments! += ["--auto-home",home]}else{let local=base.appendingPathComponent("local/macos");if FileManager.default.fileExists(atPath:local.path){process.arguments! += ["--auto-home",local.path]}};let output=Pipe();process.standardOutput=output;process.standardError=output;task=process
   output.fileHandleForReading.readabilityHandler={ [weak self] handle in let bytes=handle.availableData;if bytes.isEmpty{return};let str=String(data:bytes,encoding:.utf8) ?? "";DispatchQueue.main.async { self?.handleOutput(str) } }
   process.terminationHandler={ [weak self] _ in DispatchQueue.main.async { guard let self=self, !self.terminating else{return};if !self.loaded { self.showError(self.outputBuffer.isEmpty ? "本地程序未能启动。请检查软件文件是否完整。" : self.outputBuffer) } else { NSApp.terminate(nil) } } }
+  startupTiming?.mark("backendStarted")
   do{try process.run()}catch{showError("无法启动本地程序：\(error.localizedDescription)")}
   startupTimer=Timer.scheduledTimer(withTimeInterval:20,repeats:false){ [weak self] _ in guard let self=self,!self.loaded else{return};self.showError("启动超时，请检查文件夹权限。\n\(self.outputBuffer)") }
  }
  func createWindow(){
   let config=WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
+  config.userContentController.addUserScript(WKUserScript(source:"""
+  (()=>{
+   const deadline=performance.now()+120000;
+   const ready=()=>{
+    if(window.journalViewReady){requestAnimationFrame(()=>requestAnimationFrame(()=>window.webkit.messageHandlers.journalNative.postMessage({action:'startupReady',page:document.querySelector('main>section:not([hidden])')?.id||'',pageMs:performance.now()})));return}
+    if(performance.now()<deadline)requestAnimationFrame(ready);
+   };requestAnimationFrame(ready);
+  })();
+  """,injectionTime:.atDocumentStart,forMainFrameOnly:true))
   config.userContentController.addUserScript(WKUserScript(source:"window.journalMacHost = true",injectionTime:.atDocumentStart,forMainFrameOnly:true))
   config.userContentController.addUserScript(WKUserScript(source:"""
   document.documentElement.classList.add('native-mac');
@@ -96,6 +135,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   let titleLabel=JournalTitleText(frame:NSRect(x:24,y:9,width:80,height:24));titleLabel.setAccessibilityElement(true);titleLabel.setAccessibilityRole(.staticText);titleLabel.setAccessibilityLabel("项目手记");titleView.addSubview(titleLabel)
   titleAccessory.view=titleView;window.addTitlebarAccessoryViewController(titleAccessory)
   window.center();window.makeKeyAndOrderFront(nil);NSApp.activate(ignoringOtherApps:true);DispatchQueue.main.async { [weak self] in self?.alignTitlebar() }
+  startupTiming?.mark("windowShown")
   webView.loadHTMLString("<html><body style='background:#f6f3eb;color:#315c46;font:20px serif;padding:80px'>项目手记<br><small>正在打开本地记录…</small></body></html>",baseURL:nil)
   if let url=launchURL{webView.load(URLRequest(url:url))}
  }
@@ -108,7 +148,8 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
  @objc func toggleTracking(){guard let observer=observer else{return};var request=URLRequest(url:observer.server.appendingPathComponent("api/auto/status"));request.setValue(observer.token,forHTTPHeaderField:"X-Journal-Token");URLSession.shared.dataTask(with:request){data,_,_ in guard let data=data,let root=(try? JSONSerialization.jsonObject(with:data))as?[String:Any],var config=root["config"]as?[String:Any]else{return};config["enabled"] = !(config["enabled"]as?Bool ?? false);var update=URLRequest(url:observer.server.appendingPathComponent("api/auto/config"));update.httpMethod="PUT";update.setValue(observer.token,forHTTPHeaderField:"X-Journal-Token");update.setValue("application/json",forHTTPHeaderField:"Content-Type");update.httpBody=try? JSONSerialization.data(withJSONObject:["config":config,"revision":root["configRevision"] ?? ""]);URLSession.shared.dataTask(with:update){_,_,_ in DispatchQueue.main.async{observer.reload()}}.resume()}.resume()}
  func flushWindow(_ completion:@escaping(Bool)->Void){guard let view=webView else{completion(true);return};view.callAsyncJavaScript("return window.journalFlush ? await window.journalFlush() : true;",arguments:[:],in:nil,in:.page){result in if case .success(let value)=result{completion(value as?Bool == true)}else{completion(false)}}}
  func userContentController(_ userContentController:WKUserContentController,didReceive message:WKScriptMessage){guard let body=message.body as?[String:Any],let action=body["action"]as?String else{return};let id=body["id"]as?String ?? "";func reply(_ result:[String:Any]){self.webView?.callAsyncJavaScript("window.journalNativeReply && window.journalNativeReply(id,result)",arguments:["id":id,"result":result],in:nil,in:.page,completionHandler:nil)}
-  if action=="headerRegions" {
+  if action=="startupReady"{startupTiming?.mark("pageReady",page:body["page"] as? String,pageMS:body["pageMs"] as? Double)}
+  else if action=="headerRegions" {
    if let rects=body["rects"] as? [[String:Double]] {headerControlRects=rects.compactMap{r in guard let x=r["x"],let y=r["y"],let w=r["width"],let h=r["height"],w>0,h>0 else{return nil};return NSRect(x:x,y:y,width:w,height:h)};alignTitlebar()}
   }
   else if action=="folders"{let panel=NSOpenPanel();panel.canChooseFiles=false;panel.canChooseDirectories=true;panel.allowsMultipleSelection = !(body["single"]as?Bool ?? false);panel.prompt=body["prompt"]as?String ?? "绑定资料夹";if let path=body["initial"]as?String,!path.isEmpty{panel.directoryURL=URL(fileURLWithPath:path)};panel.beginSheetModal(for:window){response in reply(["paths":response == .OK ? panel.urls.map{$0.path}:[]])}}
@@ -156,7 +197,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
 
  func windowDidResize(_ notification:Notification){alignTitlebar()}
  func webView(_ webView:WKWebView,didFinish navigation:WKNavigation!){alignTitlebar();webView.evaluateJavaScript("window.journalSyncHeaderDragRegions && window.journalSyncHeaderDragRegions()",completionHandler:nil)}
- func handleOutput(_ text:String){outputBuffer+=text;guard !loaded else{return};for line in outputBuffer.components(separatedBy:.newlines){if line.hasPrefix("http://127.0.0.1:"),line.contains("?token="),let url=URL(string:line){loaded=true;launchURL=url;startupTimer?.invalidate();webView?.load(URLRequest(url:url));if var components=URLComponents(url:url,resolvingAgainstBaseURL:false),let token=components.queryItems?.first(where:{$0.name=="token"})?.value{components.query=nil;components.path="/";if let base=components.url{observer=JournalObserver(server:base,token:token);observer?.onStatus={ [weak self] state in self?.updateTrackingMenu(state) };observer?.reload()}};return}}}
+ func handleOutput(_ text:String){outputBuffer+=text;guard !loaded else{return};for line in outputBuffer.components(separatedBy:.newlines){if line.hasPrefix("http://127.0.0.1:"),line.contains("?token="),let url=URL(string:line){loaded=true;startupTiming?.mark("backendReady");launchURL=url;startupTimer?.invalidate();webView?.load(URLRequest(url:url));if var components=URLComponents(url:url,resolvingAgainstBaseURL:false),let token=components.queryItems?.first(where:{$0.name=="token"})?.value{components.query=nil;components.path="/";if let base=components.url{observer=JournalObserver(server:base,token:token);observer?.onStatus={ [weak self] state in self?.updateTrackingMenu(state) };observer?.reload()}};return}}}
  func showError(_ text:String){startupTimer?.invalidate();let alert=NSAlert();alert.messageText="项目手记暂时无法启动";alert.informativeText=String(text.prefix(1600));alert.runModal();terminating=true;if task?.isRunning==true{task?.terminate()};NSApp.terminate(nil)}
  func windowShouldClose(_ sender:NSWindow)->Bool{flushWindow{[weak self] ok in guard let self=self,ok else{return};self.webView?.configuration.userContentController.removeScriptMessageHandler(forName:"journalNative");self.webView?.navigationDelegate=nil;self.webView?.uiDelegate=nil;self.window?.delegate=nil;self.window?.contentView=nil;self.window?.close();self.window=nil;self.webView=nil;NSApp.setActivationPolicy(.accessory)};return false}
  func applicationShouldTerminateAfterLastWindowClosed(_ sender:NSApplication)->Bool{return false}
@@ -177,8 +218,10 @@ if CommandLine.arguments.count>3 && CommandLine.arguments[1]=="--observer-test" 
  let timer=Timer.scheduledTimer(withTimeInterval:duration,repeats:false){_ in observer.flush{print("OBSERVER_TEST_DONE");fflush(stdout);exit(0)}}
  withExtendedLifetime(timer){RunLoop.main.run()};return
 }
+let startupTiming=JournalStartupTiming()
 let app=NSApplication.shared
 let delegate=JournalApp()
+delegate.startupTiming=startupTiming
 app.delegate=delegate
 app.setActivationPolicy(.regular)
 app.run()
