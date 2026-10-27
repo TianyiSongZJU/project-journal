@@ -46,6 +46,8 @@ final class JournalLaunchSurface:NSView {
  var finishing=false
  var pieces:[CALayer]=[]
  var waveStarts:[CFTimeInterval]=[]
+ let restingOpacity:Float=0.28
+ let crestOpacity:Float=0.64
  var wavePeriod:CFTimeInterval{cold ? 1.6:1.0}
  var initialPhase:Double{cold ? 0.48:1.0}
  var phaseGap:Double{cold ? 0.08:0.13}
@@ -63,12 +65,12 @@ final class JournalLaunchSurface:NSView {
   artwork.opacity=1
   tiles.bounds=CGRect(x:0,y:0,width:1726,height:1726)
   for row in 0..<5 {for column in 0..<5 {
-   let tile=CALayer();tile.frame=CGRect(x:column*354,y:row*354,width:310,height:310);tile.opacity=0.36
-   tile.shadowColor=color(0.38,0.46,0.35);tile.shadowOpacity=0.12;tile.shadowRadius=23;tile.shadowOffset=CGSize(width:12,height:-16)
+   let tile=CALayer();tile.frame=CGRect(x:column*354,y:row*354,width:310,height:310);tile.opacity=0.48
+   tile.shadowColor=color(0.38,0.46,0.35);tile.shadowOpacity=0.14;tile.shadowRadius=14;tile.shadowOffset=CGSize(width:8,height:-10)
    tile.shadowPath=CGPath(roundedRect:tile.bounds,cornerWidth:30,cornerHeight:30,transform:nil)
    let edge=CAGradientLayer();edge.frame=tile.bounds.offsetBy(dx:0,dy:-4);edge.cornerRadius=30;edge.colors=[color(0.88,0.93,0.84),color(0.80,0.86,0.74)];edge.startPoint=CGPoint(x:0,y:1);edge.endPoint=CGPoint(x:1,y:0)
    let face=CAGradientLayer();face.frame=tile.bounds;face.cornerRadius=30;face.colors=[color(0.9404,0.9608,0.9155),color(220.0/255,232.0/255,211.0/255)];face.startPoint=CGPoint(x:0.08,y:1);face.endPoint=CGPoint(x:0.95,y:0.12)
-   face.borderColor=color(1,1,1,0.28);face.borderWidth=0.8
+   face.borderColor=color(1,1,1,0.42);face.borderWidth=1
    tile.addSublayer(edge);tile.addSublayer(face);tiles.addSublayer(tile);pieces.append(tile)
    // Keep diagonal phases unwrapped: adjacent tiles belong to the same sweep.
    let age=(initialPhase-Double(row+column)*phaseGap)*wavePeriod
@@ -79,7 +81,7 @@ final class JournalLaunchSurface:NSView {
     let travel:CGFloat=11
     let riseDuration=wavePeriod
     let rise=CAKeyframeAnimation(keyPath:"transform");rise.values=[NSValue(caTransform3D:CATransform3DIdentity),NSValue(caTransform3D:CATransform3DMakeTranslation(liftX*travel,liftY*travel,0)),NSValue(caTransform3D:CATransform3DIdentity)];rise.keyTimes=[0,0.5,1]
-    let mist=CAKeyframeAnimation(keyPath:"opacity");mist.values=[0.187,0.46,0.46,0.187];mist.keyTimes=[0,0.5,0.805,1]
+    let mist=CAKeyframeAnimation(keyPath:"opacity");mist.values=[restingOpacity,crestOpacity,crestOpacity,restingOpacity];mist.keyTimes=[0,0.5,0.805,1]
     let ease=CAMediaTimingFunction(controlPoints:0.37,0,0.63,1)
     rise.timingFunctions=[ease,ease];mist.timingFunctions=[ease,CAMediaTimingFunction(name:.linear),ease];rise.duration=riseDuration;mist.duration=riseDuration
     rise.fillMode = .forwards;rise.isRemovedOnCompletion=false;mist.fillMode = .forwards;mist.isRemovedOnCompletion=false
@@ -117,7 +119,7 @@ final class JournalLaunchSurface:NSView {
    let wait=max(0,fadePoint-elapsed)
    let remainingFall=max(0,wavePeriod-max(elapsed,fadePoint))
    let duration=min(0.32,remainingFall)
-   let opacity=reachedFadePoint ? (tile.presentation()?.opacity ?? tile.opacity):0.46
+   let opacity=reachedFadePoint ? (tile.presentation()?.opacity ?? tile.opacity):crestOpacity
    let fade=CABasicAnimation(keyPath:"opacity");fade.fromValue=opacity;fade.toValue=0
    fade.beginTime=now+wait;fade.duration=max(0.001,duration);fade.timingFunction=CAMediaTimingFunction(name:.easeInEaseOut)
    // The ripple rests flat after its descent until the next shared sweep.
