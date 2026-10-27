@@ -46,6 +46,7 @@ final class JournalLaunchSurface:NSView {
  var finishing=false
  var pieces:[CALayer]=[]
  var waveStarts:[CFTimeInterval]=[]
+ var revealMasks:[CAGradientLayer]=[]
  let restingOpacity:Float=0.28
  let crestOpacity:Float=0.64
  var wavePeriod:CFTimeInterval{cold ? 1.6:1.0}
@@ -100,7 +101,24 @@ final class JournalLaunchSurface:NSView {
   let scale=max(bounds.width/1024,bounds.height/710)*1.05
   let angle=31 * Double.pi/180,tilt=52 * Double.pi/180
   tiles.setAffineTransform(CGAffineTransform(a:cos(angle)*scale,b:sin(angle)*cos(tilt)*scale,c:-sin(angle)*scale,d:cos(angle)*cos(tilt)*scale,tx:0,ty:0))
+  layoutRevealMasks()
   CATransaction.commit()
+ }
+ // The wave advances along row + column in tile space. Its screen-space
+ // normal is the inverse transpose of the oblique projection, not its angle.
+ func layoutRevealMasks(){
+  let inverse=tiles.affineTransform().inverted()
+  let normal=CGPoint(x:inverse.a+inverse.b,y:inverse.c+inverse.d)
+  let lengthSquared=normal.x*normal.x+normal.y*normal.y
+  guard bounds.width>0,bounds.height>0,lengthSquared>0 else{return}
+  let center=CGPoint(x:bounds.midX,y:bounds.midY)
+  let projections=[CGPoint(x:bounds.minX,y:bounds.minY),CGPoint(x:bounds.maxX,y:bounds.minY),CGPoint(x:bounds.minX,y:bounds.maxY),CGPoint(x:bounds.maxX,y:bounds.maxY)].map{($0.x-center.x)*normal.x+($0.y-center.y)*normal.y}
+  func endpoint(_ projection:CGFloat)->CGPoint{
+   CGPoint(x:(center.x+normal.x*projection/lengthSquared-bounds.minX)/bounds.width,y:(center.y+normal.y*projection/lengthSquared-bounds.minY)/bounds.height)
+  }
+  for mask in revealMasks{
+   mask.frame=bounds;mask.startPoint=endpoint(projections.min()!);mask.endPoint=endpoint(projections.max()!)
+  }
  }
  func finish(_ completion:@escaping()->Void){
   guard !finishing else{return};finishing=true
@@ -128,14 +146,26 @@ final class JournalLaunchSurface:NSView {
    firstFade=min(firstFade,wait);lastFadeEnd=max(lastFadeEnd,wait+duration)
   }
   for surface in [backdrop,light]{
-   let fade=CABasicAnimation(keyPath:"opacity");fade.fromValue=surface.presentation()?.opacity ?? surface.opacity;fade.toValue=0
-   fade.beginTime=now+firstFade;fade.duration=max(0.001,lastFadeEnd-firstFade);fade.fillMode = .both;fade.isRemovedOnCompletion=false
-   fade.timingFunction=CAMediaTimingFunction(name:.easeInEaseOut);surface.opacity=0;surface.add(fade,forKey:"reveal")
+   // A broad, soft transparent front follows the same direction as the tiles.
+   // Keep the background opaque ahead of it rather than fading the whole page.
+   let mask=CAGradientLayer()
+   let clear=NSColor.black.withAlphaComponent(0).cgColor,opaque=NSColor.black.cgColor
+   mask.colors=[clear,clear,opaque,opaque];mask.locations=[0,1,1,1]
+   let wipe=CAKeyframeAnimation(keyPath:"locations")
+   wipe.values=(0...32).map{step -> [NSNumber] in
+    let front = -0.12+1.24*Double(step)/32
+    return [0,NSNumber(value:max(0,min(1,front-0.12))),NSNumber(value:max(0,min(1,front+0.12))),1]
+   }
+   wipe.keyTimes=(0...32).map{NSNumber(value:Double($0)/32)}
+   wipe.beginTime=now+firstFade;wipe.duration=max(0.001,lastFadeEnd-firstFade)
+   wipe.fillMode = .both;wipe.isRemovedOnCompletion=false;wipe.calculationMode = .linear
+   surface.mask=mask;revealMasks.append(mask);mask.add(wipe,forKey:"directionalReveal")
   }
+  layoutRevealMasks()
   CATransaction.commit()
   // Remove the overlay after the last diagonal in this sweep has disappeared.
   DispatchQueue.main.asyncAfter(deadline:.now()+lastFadeEnd){[weak self] in
-   self?.pieces.forEach{$0.removeAllAnimations()};self?.removeFromSuperview();completion()
+   self?.pieces.forEach{$0.removeAllAnimations()};self?.revealMasks.forEach{$0.removeAllAnimations()};self?.removeFromSuperview();completion()
   }
  }
  override func hitTest(_ point:NSPoint)->NSView?{nil}

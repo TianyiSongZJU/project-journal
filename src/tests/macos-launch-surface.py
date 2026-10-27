@@ -52,18 +52,45 @@ func check(_ cold:Bool,_ loading:Double){
   }
   assert(zip(byDiagonal,byDiagonal.dropFirst()).allSatisfy{$0<=$1+0.001},"Leading diagonal must disappear before the following diagonals")
   assert(byDiagonal.last!-byDiagonal.first!<=8*surface.phaseGap*surface.wavePeriod+0.01,"No extra period at the leading edge")
+  assert(surface.revealMasks.count==2)
+  for background in [surface.backdrop,surface.light]{
+   assert(background.opacity==1 && background.animation(forKey:"reveal")==nil,"Background must reveal spatially, not fade uniformly")
+  }
+  for mask in surface.revealMasks{
+   assert(mask.animation(forKey:"directionalReveal") != nil)
+   let from=CGPoint(x:mask.startPoint.x*surface.bounds.width,y:mask.startPoint.y*surface.bounds.height)
+   let to=CGPoint(x:mask.endPoint.x*surface.bounds.width,y:mask.endPoint.y*surface.bounds.height)
+   let direction=CGPoint(x:to.x-from.x,y:to.y-from.y)
+   let transform=surface.tiles.affineTransform()
+   assert(direction.x*transform.a+direction.y*transform.b>0,"Reveal follows increasing columns")
+   assert(direction.x*transform.c+direction.y*transform.d>0,"Reveal follows increasing rows")
+   let x=direction.x*transform.a+direction.y*transform.b
+   let y=direction.x*transform.c+direction.y*transform.d
+   assert(abs(x-y)<0.001,"Rows and columns share the same diagonal phase")
+  }
+  var sawSpatialReveal=false
   while CACurrentMediaTime()<end-0.025{
    RunLoop.main.run(until:Date().addingTimeInterval(0.015))
    let now=CACurrentMediaTime()
+   if let mask=surface.revealMasks.first,let wipe=mask.animation(forKey:"directionalReveal"){
+    let progress=(now-wipe.beginTime)/wipe.duration
+    if progress>0.35 && progress<0.65,let locations=mask.presentation()?.locations{
+     assert(locations[1].doubleValue>0.1 && locations[2].doubleValue<0.9,"Mid-reveal must expose one region while retaining the other")
+     assert(locations[2].doubleValue-locations[1].doubleValue>0.2,"Reveal boundary must stay feathered")
+     sawSpatialReveal=true
+    }
+   }
    for (i,item) in surface.pieces.enumerated() where now>fadeEnds[i]+0.025{
     assert((item.presentation()?.opacity ?? 0)<0.01,"A disappeared tile must stay invisible")
     assert(abs((item.presentation()?.transform.m42 ?? 0)/surface.liftY)<0.3,"Landed tiles must not start rising again during the exit")
    }
   }
+  assert(sawSpatialReveal,"Must observe the moving background gradient in real presentation layers")
  }
  RunLoop.main.run(until:Date().addingTimeInterval(max(0,end-CACurrentMediaTime())+0.1))
  assert(completed==1 && surface.superview==nil)
  assert(surface.pieces.allSatisfy{$0.animationKeys()==nil})
+ assert(surface.revealMasks.allSatisfy{$0.animationKeys()==nil})
  window.close()
  print("PASS",cold ? "cold":"warm","loading",loading,"exit ms",(end-ready)*1000)
 }
