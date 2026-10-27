@@ -61,12 +61,11 @@ func check(_ cold:Bool,_ loading:Double){
    let from=CGPoint(x:mask.startPoint.x*surface.bounds.width,y:mask.startPoint.y*surface.bounds.height)
    let to=CGPoint(x:mask.endPoint.x*surface.bounds.width,y:mask.endPoint.y*surface.bounds.height)
    let direction=CGPoint(x:to.x-from.x,y:to.y-from.y)
-   let transform=surface.tiles.affineTransform()
-   assert(direction.x*transform.a+direction.y*transform.b>0,"Reveal follows increasing columns")
-   assert(direction.x*transform.c+direction.y*transform.d>0,"Reveal follows increasing rows")
-   let x=direction.x*transform.a+direction.y*transform.b
-   let y=direction.x*transform.c+direction.y*transform.d
-   assert(abs(x-y)<0.001,"Rows and columns share the same diagonal phase")
+   assert(mask.startPoint==CGPoint(x:0,y:0) && mask.endPoint==CGPoint(x:1,y:1),"Reveal must use the visible corner-to-corner diagonal")
+   assert(direction.x>0 && direction.y>0)
+   let ratio=direction.x/direction.y
+   assert(ratio>0.5 && ratio<2,"Reveal must have substantial horizontal and vertical travel")
+   assert(mask.colors?.count==9,"Use smooth alpha levels across the broad feather")
   }
   var sawSpatialReveal=false
   while CACurrentMediaTime()<end-0.025{
@@ -75,8 +74,8 @@ func check(_ cold:Bool,_ loading:Double){
    if let mask=surface.revealMasks.first,let wipe=mask.animation(forKey:"directionalReveal"){
     let progress=(now-wipe.beginTime)/wipe.duration
     if progress>0.35 && progress<0.65,let locations=mask.presentation()?.locations{
-     assert(locations[1].doubleValue>0.1 && locations[2].doubleValue<0.9,"Mid-reveal must expose one region while retaining the other")
-     assert(locations[2].doubleValue-locations[1].doubleValue>0.2,"Reveal boundary must stay feathered")
+     assert(locations[1].doubleValue<0.4 && locations[7].doubleValue>0.6,"Mid-reveal must expose one region while retaining the other")
+     assert(locations[7].doubleValue-locations[1].doubleValue>0.58,"Reveal boundary must stay feathered")
      sawSpatialReveal=true
     }
    }
@@ -102,5 +101,5 @@ with tempfile.TemporaryDirectory(prefix='journal-launch-test-') as directory:
     swift.write_text('import Cocoa\nimport QuartzCore\n' + source[start:end] + checks)
     executable = folder / 'launch-test'
     cache = os.environ.get('JOURNAL_SWIFT_MODULE_CACHE', str(folder / 'module-cache'))
-    subprocess.run(['swiftc', '-O', '-module-cache-path', cache, str(swift), '-o', str(executable)], check=True)
+    subprocess.run(['swiftc', '-Onone', '-module-cache-path', cache, str(swift), '-o', str(executable)], check=True)
     subprocess.run([str(executable)], check=True, timeout=35)

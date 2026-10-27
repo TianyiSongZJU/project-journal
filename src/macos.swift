@@ -104,20 +104,11 @@ final class JournalLaunchSurface:NSView {
   layoutRevealMasks()
   CATransaction.commit()
  }
- // The wave advances along row + column in tile space. Its screen-space
- // normal is the inverse transpose of the oblique projection, not its angle.
+ // Use the visible screen diagonal: the oblique tile projection compresses
+ // its mathematical phase direction into an almost vertical sweep.
  func layoutRevealMasks(){
-  let inverse=tiles.affineTransform().inverted()
-  let normal=CGPoint(x:inverse.a+inverse.b,y:inverse.c+inverse.d)
-  let lengthSquared=normal.x*normal.x+normal.y*normal.y
-  guard bounds.width>0,bounds.height>0,lengthSquared>0 else{return}
-  let center=CGPoint(x:bounds.midX,y:bounds.midY)
-  let projections=[CGPoint(x:bounds.minX,y:bounds.minY),CGPoint(x:bounds.maxX,y:bounds.minY),CGPoint(x:bounds.minX,y:bounds.maxY),CGPoint(x:bounds.maxX,y:bounds.maxY)].map{($0.x-center.x)*normal.x+($0.y-center.y)*normal.y}
-  func endpoint(_ projection:CGFloat)->CGPoint{
-   CGPoint(x:(center.x+normal.x*projection/lengthSquared-bounds.minX)/bounds.width,y:(center.y+normal.y*projection/lengthSquared-bounds.minY)/bounds.height)
-  }
   for mask in revealMasks{
-   mask.frame=bounds;mask.startPoint=endpoint(projections.min()!);mask.endPoint=endpoint(projections.max()!)
+   mask.frame=bounds;mask.startPoint=CGPoint(x:0,y:0);mask.endPoint=CGPoint(x:1,y:1)
   }
  }
  func finish(_ completion:@escaping()->Void){
@@ -149,12 +140,14 @@ final class JournalLaunchSurface:NSView {
    // A broad, soft transparent front follows the same direction as the tiles.
    // Keep the background opaque ahead of it rather than fading the whole page.
    let mask=CAGradientLayer()
-   let clear=NSColor.black.withAlphaComponent(0).cgColor,opaque=NSColor.black.cgColor
-   mask.colors=[clear,clear,opaque,opaque];mask.locations=[0,1,1,1]
+   // Smoothstep alpha across 72% of the diagonal avoids a narrow wipe edge.
+   let alphas:[CGFloat]=[0,0,0.074,0.259,0.5,0.741,0.926,1,1]
+   mask.colors=alphas.map{NSColor.black.withAlphaComponent($0).cgColor}
+   mask.locations=[0,1,1,1,1,1,1,1,1]
    let wipe=CAKeyframeAnimation(keyPath:"locations")
    wipe.values=(0...32).map{step -> [NSNumber] in
-    let front = -0.12+1.24*Double(step)/32
-    return [0,NSNumber(value:max(0,min(1,front-0.12))),NSNumber(value:max(0,min(1,front+0.12))),1]
+    let front = -0.36+1.72*Double(step)/32
+    return [0]+(-3...3).map{NSNumber(value:max(0,min(1,front+Double($0)*0.12)))}+[1]
    }
    wipe.keyTimes=(0...32).map{NSNumber(value:Double($0)/32)}
    wipe.beginTime=now+firstFade;wipe.duration=max(0.001,lastFadeEnd-firstFade)
