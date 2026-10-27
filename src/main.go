@@ -410,6 +410,7 @@ func main() {
 	if autoErr != nil {
 		fatalLaunch(autoErr)
 	}
+	viewStateHandler := localViewStateHandler(collector.home)
 	currentAuto = collector
 	collector.restart()
 	defer collector.close()
@@ -483,6 +484,8 @@ func main() {
 			return
 		}
 		switch r.URL.Path {
+		case "/api/view-state":
+			viewStateHandler(w, r)
 		case "/api/ping":
 			io.WriteString(w, "project-journal-v1")
 		case "/api/state":

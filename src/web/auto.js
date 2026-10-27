@@ -2,7 +2,7 @@ import {sortProjects} from './model.js';
 import {projectLabel,projectGroup,projectGroups,mountProjectSelect} from './projects.js';
 import {setupDayTimeline} from './day-timeline.js';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-export function setupAutomation({getState,flushMain,applyEnvelope,toast,esc,getSelectedDate,onSelectedDateChange}){
+export function setupAutomation({getState,flushMain,applyEnvelope,toast,esc,getSelectedDate,onSelectedDateChange,initialView={},onViewChange}){
  let data=null,active=false,loading=false,refreshPromise=null,refreshTimer=null,config=null,settingsProject='',foldersGrouped=true,foldersCompleted=false;
  const orderedAutoProjects=()=>sortProjects(getState().projects,getState().settings.projectSort||'manual',getState().entries);
  const requests=new Map();window.journalNativeReply=(id,result)=>{requests.get(id)?.(result);requests.delete(id)};
@@ -11,7 +11,7 @@ export function setupAutomation({getState,flushMain,applyEnvelope,toast,esc,getS
   window.journalLoadHiddenClients=async()=>{const value=await native('loadClientView');if(!value.ok)throw Error(value.error||'客户端偏好暂时无法读取');return value.hiddenClients||[]};
   window.journalSaveHiddenClients=async hiddenClients=>{const value=await native('saveClientView',{hiddenClients});if(!value.ok)throw Error(value.error||'客户端偏好尚未保存，请重试')};
  }
- const timelineUI=setupDayTimeline({getState,flushMain,applyEnvelope,toast,esc,getSelectedDate,onSelectedDateChange});
+ const timelineUI=setupDayTimeline({getState,flushMain,applyEnvelope,toast,esc,getSelectedDate,onSelectedDateChange,initialView,onViewChange});
  async function api(path,body,method='POST'){const res=await fetch('/api/auto'+path,{method,headers:{'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})}),value=await res.json();if(!res.ok)throw Error(value.error||'自动记录暂时不可用');return value}
  const flush=()=>timelineUI.flush();
  const draftConfig=value=>{const draft=structuredClone(value);draft.bindings.forEach(b=>b._savedPath=b.path);return draft};
@@ -46,5 +46,5 @@ export function setupAutomation({getState,flushMain,applyEnvelope,toast,esc,getS
  $('#auto-settings-dialog').addEventListener('input',e=>{if(!e.target.classList.contains('project-search')&&e.target.id!=='auto-folder-completed')settingChanged()});$('#auto-enabled').onchange=settingChanged;$('#auto-activity').onchange=settingChanged;
  $('#auto-folder-grouped').onclick=()=>{foldersGrouped=!foldersGrouped;$('#auto-folder-grouped').classList.toggle('active',foldersGrouped);$('#auto-folder-grouped').setAttribute('aria-pressed',String(foldersGrouped));renderFolders()};$('#auto-folder-completed').onchange=e=>{foldersCompleted=e.target.checked;renderFolders()};
  window.addEventListener('focus',()=>{if(!timelineUI.isBusy())refresh(active);scheduleRefresh()});document.addEventListener('visibilitychange',()=>{if(!document.hidden&&active)refresh();scheduleRefresh()});$('#auto-settings-dialog').addEventListener('close',()=>{config=null});
- return {cancelSelection:()=>timelineUI.cancelSelection(),async pageChanged(value){active=value==='auto';if(active){if(await flush()){await refresh(false);await timelineUI.setActive(true);draw()}}else{clearTimeout(refreshTimer);await timelineUI.setActive(false)}},flush,openBindings:openSettings,refreshFolderWarning:folderWarning,async start(){await refresh(false)},async refreshBadge(){if(!active&&!document.hidden)await refresh(false)},async stateChanged(){await timelineUI.stateChanged();if(active)await refresh()}};
+ return {getView:()=>timelineUI.getView(),cancelSelection:()=>timelineUI.cancelSelection(),async pageChanged(value){active=value==='auto';if(active){if(await flush()){await refresh(false);await timelineUI.setActive(true);draw()}}else{clearTimeout(refreshTimer);await timelineUI.setActive(false)}},flush,openBindings:openSettings,refreshFolderWarning:folderWarning,async start(){await refresh(false)},async refreshBadge(){if(!active&&!document.hidden)await refresh(false)},async stateChanged(){await timelineUI.stateChanged();if(active)await refresh()}};
 }
