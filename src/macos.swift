@@ -140,14 +140,15 @@ final class JournalLaunchSurface:NSView {
    // A broad, soft transparent front follows the same direction as the tiles.
    // Keep the background opaque ahead of it rather than fading the whole page.
    let mask=CAGradientLayer()
-   // Smoothstep alpha across 72% of the diagonal avoids a narrow wipe edge.
+   // Extend the soft alpha field beyond the screen diagonal for a broader dissolve.
+   let featherHalfWidth=0.6
    let alphas:[CGFloat]=[0,0,0.074,0.259,0.5,0.741,0.926,1,1]
    mask.colors=alphas.map{NSColor.black.withAlphaComponent($0).cgColor}
    mask.locations=[0,1,1,1,1,1,1,1,1]
    let wipe=CAKeyframeAnimation(keyPath:"locations")
    wipe.values=(0...32).map{step -> [NSNumber] in
-    let front = -0.36+1.72*Double(step)/32
-    return [0]+(-3...3).map{NSNumber(value:max(0,min(1,front+Double($0)*0.12)))}+[1]
+    let front = -featherHalfWidth+(1+2*featherHalfWidth)*Double(step)/32
+    return [0]+(-3...3).map{NSNumber(value:max(0,min(1,front+Double($0)*featherHalfWidth/3)))}+[1]
    }
    wipe.keyTimes=(0...32).map{NSNumber(value:Double($0)/32)}
    wipe.beginTime=now+firstFade;wipe.duration=max(0.001,lastFadeEnd-firstFade)
