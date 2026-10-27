@@ -87,6 +87,7 @@ type AutoEdit struct {
 	At               string  `json:"at"`
 }
 type AutoAppUsage struct {
+	Pending     []AutoActivityPending      `json:"pending,omitempty"`
 	Attribution map[int64]map[string]int64 `json:"attribution,omitempty"`
 	Date        string                     `json:"date"`
 	ProjectID   string                     `json:"projectId,omitempty"`
@@ -746,6 +747,12 @@ func (a *AutoCollector) ingestActivity(v AutoActivity) {
 	defer a.mu.Unlock()
 	a.stats.ActivitySamples++
 	a.stats.TitleAccess = v.TitleAccess
+	if !a.activityAt.IsZero() && now.Before(a.activityAt) {
+		return
+	}
+	lastInput := activityLastInput(now, v.IdleSeconds)
+	idleConfirmed := v.IdleSeconds >= float64(c.IdleMinutes*60)
+	a.reconcileActivityIdleLocked(lastInput, idleConfirmed)
 	prev := a.activity
 	start := a.activityAt
 	a.activity = &v
@@ -757,8 +764,10 @@ func (a *AutoCollector) ingestActivity(v AutoActivity) {
 	if elapsed < 1 || elapsed > 150 {
 		return
 	}
-	if excess := v.IdleSeconds - float64(c.IdleMinutes*60); excess > 0 {
-		elapsed -= excess
+	if idleConfirmed {
+		// Once idle is confirmed, the current sample may only retain the
+		// portion before the last input; earlier provisional samples are undone above.
+		elapsed = min(elapsed, lastInput.Sub(start).Seconds())
 	}
 	if elapsed <= 0 {
 		return
@@ -793,10 +802,13 @@ func (a *AutoCollector) ingestActivity(v AutoActivity) {
 		if item.Slots == nil {
 			item.Slots = map[int64]int64{}
 		}
+		before := item.Slots[bucketStart]
 		item.Slots[bucketStart] += int64(stop.Sub(start).Seconds())
 		if item.Slots[bucketStart] > 900 {
 			item.Slots[bucketStart] = 900
 		}
+		credited := max(int64(0), item.Slots[bucketStart]-before)
+		attributed := int64(0)
 		if pid != "" && basis != "" {
 			if item.Attribution == nil {
 				item.Attribution = map[int64]map[string]int64{}
@@ -804,10 +816,15 @@ func (a *AutoCollector) ingestActivity(v AutoActivity) {
 			if item.Attribution[bucketStart] == nil {
 				item.Attribution[bucketStart] = map[string]int64{}
 			}
+			beforeBasis := item.Attribution[bucketStart][basis]
 			item.Attribution[bucketStart][basis] += int64(stop.Sub(start).Seconds())
 			if item.Attribution[bucketStart][basis] > 900 {
 				item.Attribution[bucketStart][basis] = 900
 			}
+			attributed = max(int64(0), item.Attribution[bucketStart][basis]-beforeBasis)
+		}
+		if !idleConfirmed && stop.After(lastInput) && (credited > 0 || attributed > 0) {
+			item.Pending = append(item.Pending, AutoActivityPending{Bucket: bucketStart, Start: start.UnixNano(), End: stop.UnixNano(), Seconds: credited, Basis: basis, AttributedSeconds: attributed})
 		}
 		a.log.AppUsage[key] = item
 		start = stop

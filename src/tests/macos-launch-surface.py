@@ -21,6 +21,13 @@ func check(_ cold:Bool){
  let surface=JournalLaunchSurface(frame:NSRect(x:0,y:0,width:1120,height:720),cold:cold)
  window.contentView=surface;window.orderBack(nil);surface.layoutSubtreeIfNeeded();CATransaction.flush()
  assert(surface.artwork.opacity==1,"Warm opens must show movement immediately")
+ RunLoop.main.run(until:Date().addingTimeInterval(0.04))
+ let initial=surface.pieces.map{($0.presentation()?.transform.m42 ?? 0)/surface.liftY}
+ if !surface.reduceMotion{
+  assert(initial[12]>1,"The visible center must already be raised on the first frame")
+  assert(cold ? initial[12]<8:initial[12]>8,"Cold center starts rising; warm center starts near the crest")
+  assert((initial.max() ?? 0)-(initial.min() ?? 0)>6,"The initial frame must contain a visible wave crest and trough")
+ }
  let tile=surface.pieces[0]
  func height()->Double{(tile.presentation()?.transform.m42 ?? 0)/surface.liftY}
  var heights:[Double]=[]
@@ -41,7 +48,7 @@ func check(_ cold:Bool){
   for item in surface.pieces{
    let wave=item.animation(forKey:"ripple")!,fade=item.animation(forKey:"fallingFade")!
    let phase=(fade.beginTime-wave.beginTime).truncatingRemainder(dividingBy:surface.wavePeriod)
-   assert(phase>=surface.wavePeriod*0.695-0.001,"Tiles must descend about one third before fading")
+   assert(phase>=surface.wavePeriod*0.805-0.001,"Tiles must descend about two thirds before fading")
    assert(phase+fade.duration<=surface.wavePeriod+0.001,"Fade must end before the next rise")
    end=max(end,fade.beginTime+fade.duration)
    if fade.beginTime>ready+0.12{pending.append(item)}
@@ -53,7 +60,7 @@ func check(_ cold:Bool){
  assert(completed==1 && surface.superview==nil)
  assert(surface.pieces.allSatisfy{$0.animationKeys()==nil},"No animation may remain after removal")
  window.close()
- print("PASS",cold ? "cold":"warm","continuous heights",heights,"exit ms",(end-ready)*1000)
+ print("PASS",cold ? "cold":"warm","initial wave",initial,"continuous heights",heights,"exit ms",(end-ready)*1000)
 }
 check(true)
 check(false)
