@@ -2,6 +2,7 @@ import Cocoa
 import WebKit
 import UniformTypeIdentifiers
 import CoreText
+import QuartzCore
 
 // Device-local diagnostics: no project names, document paths, or activity content.
 final class JournalStartupTiming {
@@ -16,7 +17,7 @@ final class JournalStartupTiming {
   let base=Bundle.main.bundleURL.deletingLastPathComponent()
   let home=directory ?? (Bundle.main.object(forInfoDictionaryKey:"JournalAutomationHome") as? String).map{URL(fileURLWithPath:$0)} ?? base.appendingPathComponent("local/macos")
   file=home.appendingPathComponent("startup-times.jsonl")
-  mark(source == "coldStart" ? "mainStarted":"openRequested")
+  mark(["coldStart","backgroundStart"].contains(source) ? "mainStarted":"openRequested")
  }
  func mark(_ event:String,page:String?=nil,pageMS:Double?=nil){
   guard recorded.insert(event).inserted else{return}
@@ -31,6 +32,45 @@ final class JournalStartupTiming {
    try previous.write(to:file,options:.atomic)
   }catch{/* Diagnostics must never prevent the app from opening. */}
  }
+}
+
+// Native surface survives WebKit navigation, so loading never flashes between documents.
+final class JournalLaunchSurface:NSView {
+ let tiles=CALayer()
+ let cold:Bool
+ var finishing=false
+ init(frame:NSRect,cold:Bool){
+  self.cold=cold;super.init(frame:frame)
+  autoresizingMask=[.width,.height];wantsLayer=true
+  layer?.backgroundColor=NSColor(calibratedRed:0.941,green:0.945,blue:0.933,alpha:1).cgColor
+  setAccessibilityElement(true);setAccessibilityRole(.progressIndicator);setAccessibilityLabel("正在打开")
+  tiles.opacity=cold ? 1:0;layer?.addSublayer(tiles)
+  let palette:[(CGFloat,CGFloat,CGFloat)]=[(0.80,0.85,0.75),(0.66,0.76,0.58),(0.47,0.62,0.40),(0.34,0.49,0.31),(0.19,0.36,0.27)]
+  let reduce=NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+  for (i,c) in palette.enumerated(){
+   let tile=CALayer();tile.frame=CGRect(x:CGFloat(i)*29,y:CGFloat([0,3,6,3,0][i]),width:19,height:19);tile.cornerRadius=5
+   tile.backgroundColor=NSColor(calibratedRed:c.0,green:c.1,blue:c.2,alpha:1).cgColor
+   tile.shadowColor=NSColor(calibratedRed:0.20,green:0.32,blue:0.21,alpha:1).cgColor;tile.shadowOpacity=0.045;tile.shadowRadius=5;tile.shadowOffset=CGSize(width:0,height:-2)
+   tiles.addSublayer(tile)
+   if cold && !reduce{
+    let enter=CABasicAnimation(keyPath:"opacity");enter.fromValue=0;enter.toValue=1;enter.duration=0.46;enter.beginTime=CACurrentMediaTime()+Double(i)*0.065;enter.fillMode = .both;enter.timingFunction=CAMediaTimingFunction(name:.easeOut);tile.add(enter,forKey:"appear")
+    let lift=CABasicAnimation(keyPath:"transform.translation.y");lift.fromValue = -5;lift.toValue=0;lift.duration=0.55;lift.beginTime=enter.beginTime;lift.fillMode = .both;lift.timingFunction=CAMediaTimingFunction(name:.easeOut);tile.add(lift,forKey:"settle")
+    let breathe=CABasicAnimation(keyPath:"opacity");breathe.fromValue=1;breathe.toValue=0.66;breathe.duration=1.8;breathe.autoreverses=true;breathe.repeatCount = .infinity;breathe.beginTime=CACurrentMediaTime()+1.0+Double(i)*0.09;tile.add(breathe,forKey:"breathe")
+   }
+  }
+  if !cold{DispatchQueue.main.asyncAfter(deadline:.now()+0.2){[weak self] in guard let self=self,!self.finishing else{return};self.tiles.opacity=1}}
+ }
+ required init?(coder:NSCoder){fatalError("init(coder:) has not been implemented")}
+ override func layout(){super.layout();CATransaction.begin();CATransaction.setDisableActions(true);tiles.position=CGPoint(x:(bounds.width-135)/2,y:bounds.height/2-12);CATransaction.commit()}
+ func finish(_ completion:@escaping()->Void){
+  guard !finishing else{return};finishing=true
+  tiles.sublayers?.forEach{$0.removeAllAnimations()}
+  NSAnimationContext.runAnimationGroup({context in
+   context.duration=NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0:0.12
+   context.timingFunction=CAMediaTimingFunction(name:.easeOut);animator().alphaValue=0
+  },completionHandler:{[weak self] in self?.removeFromSuperview();completion()})
+ }
+ override func hitTest(_ point:NSPoint)->NSView?{nil}
 }
 
 // Center the actual Chinese glyph bounds, rather than NSTextField's line box.
@@ -75,6 +115,8 @@ final class JournalTitleText: NSView {
 final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate, WKScriptMessageHandler, NSMenuDelegate {
  var startupTiming:JournalStartupTiming?
  var openingTiming:JournalStartupTiming?
+ let backgroundLaunch=CommandLine.arguments.contains("--background")
+ var launchSurface:JournalLaunchSurface?
  var window: NSWindow!
  var titleDragArea:JournalWindowDragView?
  var headerControlRects:[NSRect]=[]
@@ -95,7 +137,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   let appMenu = NSMenu();appMenu.addItem(withTitle:"关于项目手记", action:#selector(NSApplication.orderFrontStandardAboutPanel(_:)),keyEquivalent:"");appMenu.addItem(.separator());appMenu.addItem(withTitle:"隐藏项目手记",action:#selector(NSApplication.hide(_:)),keyEquivalent:"h");appMenu.addItem(withTitle:"退出项目手记",action:#selector(NSApplication.terminate(_:)),keyEquivalent:"q");appItem.submenu=appMenu
   let editItem=NSMenuItem();menu.addItem(editItem);let edit=NSMenu(title:"编辑");edit.addItem(withTitle:"撤销",action:#selector(undoJournal),keyEquivalent:"z");let redoItem=edit.addItem(withTitle:"重做",action:#selector(redoJournal),keyEquivalent:"z");redoItem.keyEquivalentModifierMask=[.command,.shift];edit.addItem(.separator());for (title,selector,key) in [("剪切","cut:","x"),("复制","copy:","c"),("粘贴","paste:","v"),("全选","selectAll:","a")]{edit.addItem(withTitle:title,action:NSSelectorFromString(selector),keyEquivalent:key)};editItem.submenu=edit;let windowItem=NSMenuItem();menu.addItem(windowItem);let windowMenu=NSMenu(title:"窗口");windowMenu.addItem(withTitle:"关闭窗口",action:#selector(NSWindow.performClose(_:)),keyEquivalent:"w");windowMenu.addItem(withTitle:"最小化",action:#selector(NSWindow.performMiniaturize(_:)),keyEquivalent:"m");windowItem.submenu=windowMenu;NSApp.windowsMenu=windowMenu;NSApp.mainMenu=menu
   if let iconURL=Bundle.main.url(forResource:"AppIcon",withExtension:"icns"){NSApp.applicationIconImage=NSImage(contentsOf:iconURL)}
-  installStatusItem();createWindow()
+  installStatusItem();if !backgroundLaunch{createWindow()}
   let bundle=Bundle.main.bundleURL;let base=bundle.deletingLastPathComponent();let nested=base.appendingPathComponent("项目手记/数据");let english=base.appendingPathComponent("data");let legacy=FileManager.default.fileExists(atPath:nested.path) ? nested : base.appendingPathComponent("数据");let data=FileManager.default.fileExists(atPath:english.path) || !FileManager.default.fileExists(atPath:legacy.path) ? english : legacy;let backend=Bundle.main.resourceURL!.appendingPathComponent("journal-core")
   let process=Process();process.executableURL=backend;process.arguments=["--no-open","--window-url","--data-dir",data.path,"--parent-pid",String(ProcessInfo.processInfo.processIdentifier)];if let home=Bundle.main.object(forInfoDictionaryKey:"JournalAutomationHome")as?String{process.arguments! += ["--auto-home",home]}else{let local=base.appendingPathComponent("local/macos");if FileManager.default.fileExists(atPath:local.path){process.arguments! += ["--auto-home",local.path]}};let output=Pipe();process.standardOutput=output;process.standardError=output;task=process
   output.fileHandleForReading.readabilityHandler={ [weak self] handle in let bytes=handle.availableData;if bytes.isEmpty{return};let str=String(data:bytes,encoding:.utf8) ?? "";DispatchQueue.main.async { self?.handleOutput(str) } }
@@ -110,7 +152,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   (()=>{
    const deadline=performance.now()+120000;
    const ready=()=>{
-    if(window.journalViewReady){requestAnimationFrame(()=>requestAnimationFrame(()=>window.webkit.messageHandlers.journalNative.postMessage({action:'startupReady',page:document.querySelector('main>section:not([hidden])')?.id||'',pageMs:performance.now()})));return}
+    if(window.journalViewReady||document.querySelector('.error-banner')){requestAnimationFrame(()=>requestAnimationFrame(()=>window.webkit.messageHandlers.journalNative.postMessage({action:'startupReady',page:document.querySelector('main>section:not([hidden])')?.id||'',pageMs:performance.now()})));return}
     if(performance.now()<deadline)requestAnimationFrame(ready);
    };requestAnimationFrame(ready);
   })();
@@ -138,9 +180,10 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   let titleView=JournalTitleContainer(frame:NSRect(x:0,y:0,width:165,height:38))
   let titleLabel=JournalTitleText(frame:NSRect(x:24,y:9,width:80,height:24));titleLabel.setAccessibilityElement(true);titleLabel.setAccessibilityRole(.staticText);titleLabel.setAccessibilityLabel("项目手记");titleView.addSubview(titleLabel)
   titleAccessory.view=titleView;window.addTitlebarAccessoryViewController(titleAccessory)
+  let surface=JournalLaunchSurface(frame:webView.bounds,cold:openingTiming == nil);launchSurface=surface;webView.addSubview(surface)
   window.center();window.makeKeyAndOrderFront(nil);NSApp.activate(ignoringOtherApps:true);DispatchQueue.main.async { [weak self] in self?.alignTitlebar() }
   (openingTiming ?? startupTiming)?.mark("windowShown")
-  webView.loadHTMLString("<html><body style='background:#f6f3eb;color:#315c46;font:20px serif;padding:80px'>项目手记<br><small>正在打开本地记录…</small></body></html>",baseURL:nil)
+
   if let url=launchURL{webView.load(URLRequest(url:url))}
  }
  func installStatusItem(){statusItem=NSStatusBar.system.statusItem(withLength:NSStatusItem.squareLength);statusItem?.button?.image=NSImage(systemSymbolName:"square.grid.3x3.fill",accessibilityDescription:"项目手记");let menu=NSMenu();menu.delegate=self;let state=NSMenuItem(title:"正在读取记录状态…",action:nil,keyEquivalent:"");state.isEnabled=false;menu.addItem(state);trackingStatusItem=state;menu.addItem(.separator());menu.addItem(withTitle:"打开项目手记",action:#selector(openJournal),keyEquivalent:"");let toggle=menu.addItem(withTitle:"继续自动记录",action:#selector(toggleTracking),keyEquivalent:"");toggle.isEnabled=false;trackingToggleItem=toggle;menu.addItem(.separator());menu.addItem(withTitle:"退出项目手记",action:#selector(NSApplication.terminate(_:)),keyEquivalent:"");statusItem?.menu=menu}
@@ -169,7 +212,9 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
  func flushWindow(_ completion:@escaping(Bool)->Void){guard let view=webView else{completion(true);return};view.callAsyncJavaScript("return window.journalFlush ? await window.journalFlush() : true;",arguments:[:],in:nil,in:.page){result in if case .success(let value)=result{completion(value as?Bool == true)}else{completion(false)}}}
  func userContentController(_ userContentController:WKUserContentController,didReceive message:WKScriptMessage){guard let body=message.body as?[String:Any],let action=body["action"]as?String else{return};let id=body["id"]as?String ?? "";func reply(_ result:[String:Any]){self.webView?.callAsyncJavaScript("window.journalNativeReply && window.journalNativeReply(id,result)",arguments:["id":id,"result":result],in:nil,in:.page,completionHandler:nil)}
   if action=="startupReady",message.webView === webView{
-   (openingTiming ?? startupTiming)?.mark("pageReady",page:body["page"] as? String,pageMS:body["pageMs"] as? Double)
+   let timing=openingTiming ?? startupTiming
+   let complete:()->Void={timing?.mark("pageReady",page:body["page"] as? String,pageMS:body["pageMs"] as? Double)}
+   if let surface=launchSurface{launchSurface=nil;surface.finish(complete)}else{complete()}
    if openingTiming?.windowMode == "newWindow"{openingTiming=nil}
   }
   else if action=="openReady",message.webView === webView,let timing=openingTiming,body["measurementID"] as? String == timing.launchID{
@@ -223,9 +268,9 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
 
  func windowDidResize(_ notification:Notification){alignTitlebar()}
  func webView(_ webView:WKWebView,didFinish navigation:WKNavigation!){alignTitlebar();webView.evaluateJavaScript("window.journalSyncHeaderDragRegions && window.journalSyncHeaderDragRegions()",completionHandler:nil)}
- func handleOutput(_ text:String){outputBuffer+=text;guard !loaded else{return};for line in outputBuffer.components(separatedBy:.newlines){if line.hasPrefix("http://127.0.0.1:"),line.contains("?token="),let url=URL(string:line){loaded=true;startupTiming?.mark("backendReady");launchURL=url;startupTimer?.invalidate();webView?.load(URLRequest(url:url));if var components=URLComponents(url:url,resolvingAgainstBaseURL:false),let token=components.queryItems?.first(where:{$0.name=="token"})?.value{components.query=nil;components.path="/";if let base=components.url{observer=JournalObserver(server:base,token:token);observer?.onStatus={ [weak self] state in self?.updateTrackingMenu(state) };observer?.reload()}};return}}}
+ func handleOutput(_ text:String){outputBuffer+=text;guard !loaded else{return};for line in outputBuffer.components(separatedBy:.newlines){if line.hasPrefix("http://127.0.0.1:"),line.contains("?token="),let url=URL(string:line){loaded=true;startupTiming?.mark("backendReady");launchURL=url;startupTimer?.invalidate();webView?.load(URLRequest(url:url));if var components=URLComponents(url:url,resolvingAgainstBaseURL:false),let token=components.queryItems?.first(where:{$0.name=="token"})?.value{components.query=nil;components.path="/";if let base=components.url{observer=JournalObserver(server:base,token:token);observer?.onStatus={ [weak self] state in self?.updateTrackingMenu(state) };observer?.reload{ [weak self] in guard let self=self,self.backgroundLaunch,self.observer?.networkError.isEmpty==true else{return};self.startupTiming?.mark("monitorReady") }}};return}}}
  func showError(_ text:String){startupTimer?.invalidate();let alert=NSAlert();alert.messageText="项目手记暂时无法启动";alert.informativeText=String(text.prefix(1600));alert.runModal();terminating=true;if task?.isRunning==true{task?.terminate()};NSApp.terminate(nil)}
- func windowShouldClose(_ sender:NSWindow)->Bool{flushWindow{[weak self] ok in guard let self=self,ok else{return};self.webView?.configuration.userContentController.removeScriptMessageHandler(forName:"journalNative");self.webView?.navigationDelegate=nil;self.webView?.uiDelegate=nil;self.window?.delegate=nil;self.window?.contentView=nil;self.window?.close();self.window=nil;self.webView=nil;NSApp.setActivationPolicy(.accessory)};return false}
+ func windowShouldClose(_ sender:NSWindow)->Bool{flushWindow{[weak self] ok in guard let self=self,ok else{return};self.webView?.configuration.userContentController.removeScriptMessageHandler(forName:"journalNative");self.webView?.navigationDelegate=nil;self.webView?.uiDelegate=nil;self.window?.delegate=nil;self.window?.contentView=nil;self.window?.close();self.window=nil;self.webView=nil;self.launchSurface=nil;self.titleDragArea=nil;self.headerControlRects=[];NSApp.setActivationPolicy(.accessory)};return false}
  func applicationShouldTerminateAfterLastWindowClosed(_ sender:NSApplication)->Bool{return false}
  func applicationShouldTerminate(_ sender:NSApplication)->NSApplication.TerminateReply{if terminating || !loaded{return .terminateNow};flushWindow{[weak self] ok in guard let self=self else{return};if !ok{let alert=NSAlert();alert.messageText="自动保存尚未完成";alert.informativeText="内容仍保留在窗口中。请检查填写内容或同步提示，再退出。";alert.runModal();NSApp.reply(toApplicationShouldTerminate:false);return};self.terminating=true;if let observer=self.observer{observer.flush{NSApp.reply(toApplicationShouldTerminate:true)}}else{NSApp.reply(toApplicationShouldTerminate:true)}};return .terminateLater}
 
@@ -244,11 +289,12 @@ if CommandLine.arguments.count>3 && CommandLine.arguments[1]=="--observer-test" 
  let timer=Timer.scheduledTimer(withTimeInterval:duration,repeats:false){_ in observer.flush{print("OBSERVER_TEST_DONE");fflush(stdout);exit(0)}}
  withExtendedLifetime(timer){RunLoop.main.run()};return
 }
-let startupTiming=JournalStartupTiming()
+let backgroundLaunch=CommandLine.arguments.contains("--background")
+let startupTiming=JournalStartupTiming(source:backgroundLaunch ? "backgroundStart":"coldStart")
 let app=NSApplication.shared
 let delegate=JournalApp()
 delegate.startupTiming=startupTiming
 app.delegate=delegate
-app.setActivationPolicy(.regular)
+app.setActivationPolicy(backgroundLaunch ? .accessory:.regular)
 app.run()
 }}
