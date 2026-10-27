@@ -137,6 +137,10 @@ final class JournalLaunchSurface:NSView {
   var lastFadeEnd:CFTimeInterval=0
   CATransaction.begin();CATransaction.setDisableActions(true)
   for (i,tile) in pieces.enumerated(){
+   // A longer background diffusion must not restart an already landed tile.
+   if let wave=tile.animation(forKey:"ripple")?.copy() as? CAAnimation{
+    wave.repeatCount=Float(sweep+1);tile.add(wave,forKey:"ripple")
+   }
    // Finish this shared sweep, including tiles that have already landed. Never
    // wrap an early diagonal into the following sweep while later ones fade.
    let elapsed=now-(waveStarts[i]+sweep*waveCycleDuration)
@@ -169,12 +173,16 @@ final class JournalLaunchSurface:NSView {
     let tileFade=pieces[index].animation(forKey:"fallingFade")!
     let spread=CAKeyframeAnimation(keyPath:"locations")
     spread.values=[[0,0,0,0,0,0,0,1],finalLocations]
-    let dissolve=CABasicAnimation(keyPath:"colors");dissolve.fromValue=opaqueColors;dissolve.toValue=finalColors
-    let duration=max(0.18,tileFade.duration)
+    // Open a visible center early, then let its soft edge travel outward.
+    // Growing radius and transparency together under one easing hid most of
+    // the old 180-ms diffusion until its final frames.
+    let dissolve=CAKeyframeAnimation(keyPath:"colors")
+    dissolve.values=[opaqueColors,finalColors,finalColors];dissolve.keyTimes=[0,0.3,1]
+    let duration=max(cold ? 0.6:0.44,tileFade.duration)
     spread.duration=duration;dissolve.duration=duration
     let opening=CAAnimationGroup();opening.animations=[spread,dissolve]
     opening.beginTime=tileFade.beginTime;opening.duration=duration
-    opening.timingFunction=CAMediaTimingFunction(name:.easeInEaseOut)
+    opening.timingFunction=CAMediaTimingFunction(name:.linear)
     opening.fillMode = .both;opening.isRemovedOnCompletion=false
     field.add(opening,forKey:"localReveal")
     if let previous=fields.last{previous.mask=field}else{surface.mask=field;revealMasks.append(field)}
@@ -185,7 +193,7 @@ final class JournalLaunchSurface:NSView {
   layoutRevealMasks()
   CATransaction.commit()
   // Remove the overlay after the last diagonal in this sweep has disappeared.
-  DispatchQueue.main.asyncAfter(deadline:.now()+lastFadeEnd){[weak self] in
+  DispatchQueue.main.asyncAfter(deadline:.now()+lastFadeEnd+1.0/30){[weak self] in
    self?.pieces.forEach{$0.removeAllAnimations()};self?.revealFields.flatMap{$0}.forEach{$0.removeAllAnimations()};self?.removeFromSuperview();completion()
   }
  }

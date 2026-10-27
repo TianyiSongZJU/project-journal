@@ -65,7 +65,9 @@ func check(_ cold:Bool,_ loading:Double){
     let opening=field.animation(forKey:"localReveal")!
     let fade=surface.pieces[index].animation(forKey:"fallingFade")!
     assert(abs(opening.beginTime-fade.beginTime)<0.001,"Background diffusion must start with its own tile")
-    assert(opening.duration>=0.18,"Already landed tiles must still dissolve softly")
+    assert(opening.duration>=(cold ? 0.6:0.44),"Diffusion must have enough time to be visible")
+    let centerFade=(opening as! CAAnimationGroup).animations![1] as! CAKeyframeAnimation
+    assert(centerFade.keyTimes==[0,0.3,1],"Center opens early, leaving most of the time for outward expansion")
     let center=surface.revealCenter(index)
     assert(abs(field.startPoint.x*surface.bounds.width-center.x)<0.001)
     assert(abs(field.startPoint.y*surface.bounds.height-center.y)<0.001)
@@ -95,7 +97,8 @@ func check(_ cold:Bool,_ loading:Double){
     if let presented=field.presentation(),let colors=presented.colors as? [CGColor]{
      if progress < -0.025{assert(colors[0].alpha>0.99,"Future regions must remain covered")}
      if progress>0.25 && progress<0.75{
-      assert(colors[0].alpha<0.99 && colors[0].alpha>0.01,"Center must fade gradually as its radius grows")
+      assert(colors[0].alpha<0.25,"The center must already be visibly open while the edge expands")
+      if progress>0.4{assert(colors[0].alpha<0.01,"Center stays clear during the outward spread")}
       assert(colors.last!.alpha>0.99,"The outside of each radial region stays opaque")
       assert((presented.locations?[1].doubleValue ?? 0)>0,"The clear core must expand outward")
       sawSpatialReveal=true
@@ -108,6 +111,14 @@ func check(_ cold:Bool,_ loading:Double){
    }
   }
   assert(sawSpatialReveal,"Must observe the expanding radial background regions in real presentation layers")
+  // Inspect the composed image, not just animation values, before removal.
+  if let presented=surface.layer?.presentation(){
+   let context=CGContext(data:nil,width:224,height:144,bitsPerComponent:8,bytesPerRow:896,space:CGColorSpaceCreateDeviceRGB(),bitmapInfo:CGImageAlphaInfo.premultipliedLast.rawValue)!
+   context.scaleBy(x:0.2,y:0.2);presented.render(in:context)
+   let pixels=context.data!.assumingMemoryBound(to:UInt8.self)
+   let maximum=(0..<(224*144)).map{Int(pixels[$0*4+3])}.max()!
+   assert(maximum<16,"Overlay must already be visually clear before it is removed")
+  }
  }
  RunLoop.main.run(until:Date().addingTimeInterval(max(0,end-CACurrentMediaTime())+0.1))
  assert(completed==1 && surface.superview==nil)
