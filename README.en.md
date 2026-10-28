@@ -14,7 +14,7 @@ This is an early desktop app for **macOS and Windows**, maintained by an individ
 - Projects and groups, Markdown project notes, daily entries, deadlines and completed-project archives.
 - A daily timeline for allocating time in 15-minute increments. Other manually entered time is recorded separately.
 - Optional foreground activity and folder-change collection. Suggested time blocks include their evidence and device sources.
-- Annual and monthly heatmaps, project/group distributions, and hours/days display in the annual review.
+- Annual and monthly heatmaps, time-of-day review, project/group distributions, and hours/days display in the annual review.
 - Local JSON storage partitioned by project, month and device; history recovery, sync-copy warnings and folder relocation.
 - Restores the previous view and display preferences. macOS has a menu-bar app and background-only login startup.
 
@@ -27,6 +27,14 @@ All screenshots use reproducible, fictional sample data. They contain no real us
 **Monthly review and daily progress**
 
 ![Monthly review](docs/images/month-review.png)
+
+**Time-of-day review**
+
+Compare dates in 15-minute increments, using an 08:00–24:00 axis or a full-day view. Filter by date and project, switch between effort and project colors, and inspect cumulative time by time of day. Only confirmed allocations are included; daily totals without timestamps remain separate.
+
+This feature is available on the main branch for local builds. The existing 2.1.0 download does not include it yet.
+
+![Time-of-day review with confirmed project allocations and cumulative totals](docs/images/time-review.png)
 
 **Project notes, deadlines and daily entries**
 
