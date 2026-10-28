@@ -238,3 +238,10 @@ html.native-mac:has(#page-review.time-view:not([hidden])){border-radius:0 0 16px
 
 .tr-controls #tr-today{height:32px;min-height:32px;padding:0 10px;border:1px solid #dfe5d6;border-radius:8px;background:#f7f8f2;color:#617653}
 .tr-controls #tr-today:hover{background:#e8ecdf;color:var(--green)}
+
+/* Give the active day's date and totals the same clear visual emphasis. */
+.tr-row:is(.is-hovered,:has(:focus-visible)) .tr-day-label strong{font-size:12px;font-weight:750;color:#315c46}
+.tr-row:is(.is-hovered,:has(:focus-visible)) .tr-day-label small{font-weight:600;color:#57704d}
+.tr-days.is-dense .tr-row:is(.is-hovered,:has(:focus-visible)) .tr-day-label strong{font-size:10px}
+.tr-row:is(.is-hovered,:has(:focus-visible)) .tr-day-total,.tr-days.is-dense .tr-row:is(.is-hovered,:has(:focus-visible)) .tr-day-total{font-size:min(16px,calc(var(--tr-row-height,24px) - 2px));font-weight:700;color:#294f39;text-shadow:0 1px 2px #fff}
+.tr-day-tip-date>time{font-size:12px;font-weight:650;letter-spacing:.025em;color:#456940}

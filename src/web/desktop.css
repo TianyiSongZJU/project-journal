@@ -318,7 +318,7 @@
  :is(.native-windows,.native-mac) #inspector-content .inspector-project-row{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;row-gap:4px;padding:5px 6px}
  :is(.native-windows,.native-mac) #inspector-content .inspector-project-row>.inspector-project-label{grid-column:1/-1;grid-row:1;width:100%;padding-bottom:4px;border-bottom:1px solid #e5eadf}
  :is(.native-windows,.native-mac) #inspector-content .inspector-project-row>.inspector-project-label .shared-project-picker>summary{padding-left:3px;padding-right:3px}
- :is(.native-windows,.native-mac) #inspector-content .inspector-project-row>#inspector-duration{grid-column:2;grid-row:2;justify-self:end;padding:0;background:none}
+ :is(.native-windows,.native-mac) #inspector-content .inspector-project-row>#inspector-duration{grid-column:1;grid-row:2;justify-self:end;padding:0;background:none}
  :is(.native-windows,.native-mac) #inspector-content .inspector-project-row>#inspector-duration .inspector-time-editor>summary{justify-content:flex-end;padding:0 4px}
- :is(.native-windows,.native-mac) #inspector-content .inspector-project-row>.inspector-tabs{grid-column:1;grid-row:2;justify-self:start;width:auto;margin:0;padding:2px 0;gap:2px}
+ :is(.native-windows,.native-mac) #inspector-content .inspector-project-row>.inspector-tabs{grid-column:2;grid-row:2;justify-self:end;width:auto;margin:0;padding:2px 0;gap:2px}
 }
