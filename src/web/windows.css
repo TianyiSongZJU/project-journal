@@ -1,0 +1,42 @@
+@import url("./desktop.css");
+
+/* Loaded only by the native Windows host. Keep macOS typography unchanged. */
+:root {
+  --serif: "Noto Serif SC", "Source Han Serif SC", "Microsoft YaHei UI", serif;
+  font-family: "Segoe UI Variable Text", "Segoe UI", "Noto Sans SC", "Microsoft YaHei UI", sans-serif;
+}
+
+/* The native title bar already displays the application name. */
+.app-header { display: none; }
+main { height: 100vh; }
+
+dialog h2 { font-family: inherit; }
+
+/* Match the year/month control without changing the shared navigation. */
+.workspace-nav {
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  background: #dfe2d7;
+}
+
+.workspace-nav button {
+  min-height: 30px;
+  padding: 3px 12px;
+  border-radius: 6px;
+}
+
+.workspace-nav button.active {
+  background: var(--panel);
+  box-shadow: 0 1px 3px #30352d17;
+}
+
+.workspace-nav button:not(.active):hover { background: #d5dacd; }
+
+/* A compact 16px cursor keeps the precise hotspot at the cross intersection. */
+.calendar-surface.selection-mode [data-date],
+.calendar-surface.selection-mode [data-open-day-ddl],
+.calendar-surface.brush-mode [data-date],
+.dt-select-lane {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M8.5 3.5v10M3.5 8.5h10' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M8.5 3.5v10M3.5 8.5h10' fill='none' stroke='%23465640' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") 8 8, crosshair;
+}

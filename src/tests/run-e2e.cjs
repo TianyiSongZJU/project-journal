@@ -1,0 +1,10 @@
+const {spawn}=require('node:child_process');
+const path=require('node:path');
+const core=process.env.JOURNAL_CORE||'/private/tmp/journal-core-v2';
+const data=process.env.JOURNAL_TEST_DATA||'/private/tmp/journal-v2-final-e2e-data';
+const server=spawn(core,['--no-open','--window-url','--data-dir',data,'--port','0'],{stdio:['ignore','pipe','pipe']});
+let ready=false;
+const timeout=setTimeout(()=>{server.kill();console.error('Test server startup timed out');process.exitCode=1},15000);
+server.stdout.on('data',chunk=>{if(ready||!chunk.toString().includes('http://127.0.0.1:'))return;ready=true;clearTimeout(timeout);const test=spawn(process.execPath,[process.env.JOURNAL_TEST_SCRIPT?path.resolve(process.env.JOURNAL_TEST_SCRIPT):path.join(__dirname,'e2e.cjs')],{stdio:'inherit',env:{...process.env,JOURNAL_TEST_DATA:data}});test.on('exit',code=>{server.kill();process.exitCode=code||0});});
+server.on('exit',code=>{clearTimeout(timeout);if(!ready){console.error('Test server failed',code);process.exitCode=1}});
+server.stderr.on('data',c=>process.stderr.write(c));

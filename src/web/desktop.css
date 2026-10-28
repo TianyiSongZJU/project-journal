@@ -1,0 +1,313 @@
+/* Device lanes use the same quiet green text, paper surfaces and compact rhythm. */
+:is(.native-windows,.native-mac) .dt-scroll { scrollbar-width:none; scrollbar-gutter:auto; }
+:is(.native-windows,.native-mac) .dt-scroll::-webkit-scrollbar { display:none; width:0; height:0; }
+:is(.native-windows,.native-mac) .dt-axis-caption { position:relative; z-index:15; height:34px; box-sizing:border-box; padding-top:0; padding-bottom:0; align-items:center; }
+:is(.native-windows,.native-mac) .dt-axis-caption>span,:is(.native-windows,.native-mac) .dt-axis-caption>div { display:flex; flex-direction:row; align-items:center; align-self:center; min-height:24px; line-height:20px; }
+:is(.native-windows,.native-mac) .dt-axis-caption strong { line-height:20px; }
+:is(.native-windows,.native-mac) .dt-surface { overflow:visible; border-radius:14px; }
+:is(.native-windows,.native-mac) .dt-surface .dt-toolbar { border-radius:14px 14px 0 0; }
+:is(.native-windows,.native-mac) .dt-axis-caption .dt-legend-file { display:none; }
+.dt-client-picker { position:relative; font-family:inherit; color:var(--muted); }
+.dt-client-picker>summary { display:flex; align-items:center; gap:6px; height:24px; min-height:24px; padding:0 5px; margin:0; border-radius:4px; list-style:none; cursor:pointer; font-family:inherit; font-size:10px; font-weight:500; line-height:20px; color:#617555; }
+.dt-client-picker>summary::-webkit-details-marker { display:none; }
+.dt-client-picker>summary:hover,.dt-client-picker[open]>summary { background:#e8edde; color:var(--green); }
+.dt-client-count { font-size:9px; font-weight:400; color:#909c83; font-variant-numeric:tabular-nums; }
+.dt-client-picker svg { width:12px; height:12px; fill:none; stroke:currentColor; stroke-width:1.2; }
+:is(.native-windows,.native-mac) .dt-axis-caption .dt-client-layout { height:24px; min-height:24px; margin:0; padding:0 6px; border:0; border-radius:4px; box-shadow:none; background:transparent; color:#909c83; font-family:inherit; font-size:10px; line-height:20px; white-space:nowrap; }
+:is(.native-windows,.native-mac) .dt-axis-caption .dt-client-layout:hover,:is(.native-windows,.native-mac) .dt-axis-caption .dt-client-layout[aria-pressed=true] { background:#e8edde; color:#617555; }
+.dt-client-menu { position:absolute; left:-5px; top:calc(100% + 9px); width:278px; max-width:calc(100vw - 100px); box-sizing:border-box; padding:13px; border:1px solid #dce3d2; border-radius:9px; background:#fbfcf8; box-shadow:0 5px 18px #34492c20; z-index:60; }
+.dt-client-menu-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:24px; }
+.dt-client-menu-heading strong { font-family:inherit; font-size:11px; font-weight:600; line-height:20px; color:#536a48; }
+.dt-client-menu-heading button.quiet { min-height:24px; height:24px; padding:0 4px; font-size:10px; line-height:24px; color:#748768; border:0; background:transparent; box-shadow:none; }
+.dt-client-menu-heading button:hover { color:var(--green); background:#edf1e5; }
+.dt-client-menu p { margin:3px 0 11px; font-size:9px; line-height:16px; color:#939c88; }
+.dt-client-options { max-height:234px; overflow-y:auto; scrollbar-width:thin; }
+.dt-client-options label { display:flex; align-items:center; gap:8px; margin:0; padding:8px 6px; border-radius:5px; cursor:pointer; min-width:0; }
+.dt-client-options label:hover { background:#edf1e5; }
+.dt-client-options input { flex:none; width:13px; height:13px; min-height:0; margin:0; padding:0; accent-color:#617d50; box-shadow:none; }
+.dt-client-options label>span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; line-height:18px; color:#53634b; }
+.dt-client-options label>small { margin-left:auto; flex:none; color:#9aa48e; font-size:9px; }
+.dt-client-menu-empty { padding:8px 6px; color:#939c88; font-size:10px; }
+.dt-client-headings { flex:none; overflow:hidden; padding:0 10px; background:#f7f8f2; border-bottom:1px solid #e4e7dc; }
+.dt-client-head-grid { display:grid; grid-template-columns:44px minmax(0,1fr) 102px; min-height:29px; align-items:center; }
+.dt-client-heading-guide { position:relative; margin-right:7px; min-width:0; }
+.dt-client-heading-group { display:grid; grid-template-columns:repeat(var(--client-count),minmax(0,1fr)); width:var(--dt-activity-width,55%); margin-left:5px; }
+.dt-client-heading-group>span,.dt-client-heading-group>button { display:flex; align-items:center; gap:5px; min-width:0; padding:0 7px; box-sizing:border-box; }
+.dt-client-heading-group>button { height:29px; min-height:29px; margin:0; border:0; border-radius:0; box-shadow:none; background:transparent; font-family:inherit; text-align:left; }
+.dt-client-heading-group>button:hover { background:#e8edde; }
+.dt-client-heading-group>button:focus-visible { outline:1px solid #91a581; outline-offset:-3px; }
+.dt-client-heading-group b { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:10px; font-weight:500; line-height:27px; color:#66775b; }
+.dt-client-heading-group small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#939c88; font-size:9px; font-weight:400; line-height:27px; }
+.dt-client-heading-group i { flex:none; width:5px; height:5px; border-radius:50%; background:#8fa280; }
+.dt-client-heading-empty { font-size:9px; line-height:27px; color:#a0a793; }
+.dt-client-file-heading { position:absolute; top:0; left:calc(var(--dt-activity-width,55%) + 12px); line-height:27px; font-size:9px; color:#9a8b69; }
+.dt-client-column { position:absolute; top:0; bottom:0; left:calc(5px + var(--client-index) * var(--dt-activity-width,55%) / var(--client-count)); width:calc(var(--dt-activity-width,55%) / var(--client-count)); border-right:1px solid #dce2d480; box-sizing:border-box; background:#e9eee41c; }
+.dt-client-column:nth-of-type(even) { background:#e9eee440; }
+.dt-client-column>.dt-app-area { left:5px!important; right:auto!important; width:calc(100% - 10px)!important; }
+.dt-client-column .dt-area-name { font-family:inherit; }
+.dt-client-evidence { margin-top:10px; padding-top:8px; border-top:1px solid #e4e7dc; }
+.dt-client-evidence>span { display:block; margin-bottom:4px; color:#939c88; font-size:9px; }
+.dt-client-evidence>div { display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:10px; line-height:20px; }
+.dt-client-evidence>div span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dt-client-evidence b { font-weight:500; white-space:nowrap; }
+.dt-client-evidence small { display:block; margin-top:5px; color:#939c88; font-size:9px; line-height:15px; }
+:is(.native-windows,.native-mac) .dt-clock { position:sticky; left:0; z-index:11; background:var(--panel); }
+:is(.native-windows,.native-mac) .dt-select-lane { position:sticky; right:0; z-index:12; background-color:var(--panel); box-shadow:-4px 0 9px #fafaf780; }
+@media(max-width:1000px) {
+  .dt-client-head-grid { grid-template-columns:38px minmax(0,1fr) 86px; }
+}
+@media(max-width:800px) {
+  .dt-client-head-grid { grid-template-columns:32px minmax(0,1fr) 75px; }
+  .dt-client-headings { padding:0 7px; }
+}
+@media(max-width:650px) {
+  .dt-client-head-grid { grid-template-columns:38px minmax(0,1fr) 86px; }
+  .dt-client-headings { padding:0 9px; }
+}
+
+/* One quiet timeline heading; secondary display controls live in its menu. */
+:is(.native-windows,.native-mac) .dt-range-caption,:is(.native-windows,.native-mac) #dt-inline-save:not(.auto-error) { display:none; }
+:is(.native-windows,.native-mac) .dt-axis-caption { height:32px; }
+:is(.native-windows,.native-mac) .dt-axis-caption>div:first-of-type { display:block; position:relative; margin-right:7px; min-width:0; }
+:is(.native-windows,.native-mac) .dt-axis-caption .dt-client-picker { display:inline-block; vertical-align:middle; }
+:is(.native-windows,.native-mac) .dt-axis-caption .dt-caption-files { position:absolute; left:calc(var(--dt-activity-width) + 12px); top:0; display:flex; align-items:center; height:24px; font-size:9px; color:#9a8b69; white-space:nowrap; }
+:is(.native-windows,.native-mac) .dt-axis-caption .dt-client-menu .dt-client-layout { display:block; width:100%; margin-top:9px; padding:4px 6px; height:30px; line-height:22px; text-align:left; border-top:1px solid #e4e7dc; border-radius:0; }
+:is(.native-windows,.native-mac) .dt-client-heading-group { margin-left:5px; }
+
+/* Project deadlines: one header, one readable row per date, no nested cards. */
+:is(.native-windows,.native-mac) #project-deadline-panel>summary { display:flex; align-items:center; gap:10px; min-height:40px; }
+:is(.native-windows,.native-mac) #project-deadline-panel .fold-meta { margin-left:0; font-size:10px; color:#9ba38e; }
+:is(.native-windows,.native-mac) #project-deadline-panel .fold-meta:empty { display:none; }
+:is(.native-windows,.native-mac) #project-show-done-deadlines { order:2; margin-left:auto; font-size:10px; font-family:inherit; }
+:is(.native-windows,.native-mac) #project-deadline-panel .win-node-add { order:3; margin-left:auto; }
+:is(.native-windows,.native-mac) #project-show-done-deadlines:not([hidden])~.win-node-add { margin-left:0; }
+:is(.native-windows,.native-mac) .win-node-add { font-family:inherit; font-size:10px; line-height:24px; height:26px; min-height:26px; padding:0 5px; border:0; background:transparent; box-shadow:none; color:#6b805f; }
+:is(.native-windows,.native-mac) .win-node-add:hover { background:#edf1e5; }
+:is(.native-windows,.native-mac) #project-deadline-panel .fold-content { padding:0 0 8px; }
+:is(.native-windows,.native-mac) .win-deadline-empty { margin:0; padding:4px 0 8px 22px; font-size:11px; line-height:22px; color:#9aa18f; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card { display:block; margin:0; padding:11px 0; border:0; border-bottom:1px solid #e8ebe2; background:transparent; box-shadow:none; border-radius:0; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card:last-of-type { border-bottom:0; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card::before,:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card::after { display:none; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-surface { display:grid; grid-template-columns:66px minmax(0,1fr); gap:12px; padding:0 8px 0 22px; border:0; box-shadow:none; background:transparent; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-surface>time { align-self:start; display:flex; flex-direction:column; gap:3px; padding:3px 0 0; background:transparent; border:0; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-surface>time strong { font-family:inherit; font-size:15px; font-weight:500; line-height:22px; color:#617555; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-surface>time small { font-family:inherit; font-size:9px; color:#9ba38e; }
+:is(.native-windows,.native-mac) #project-deadline-panel .timeline-content { display:block; min-width:0; padding:0; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card-heading { display:grid; grid-template-columns:minmax(0,1fr) 16px; align-items:center; gap:4px 12px; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card-heading>button { grid-column:1; grid-row:1; min-width:0; max-width:none; padding:0; min-height:24px; text-align:left; font-family:inherit; font-size:12px; font-weight:500; line-height:22px; white-space:normal; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card-heading>input { grid-column:2; grid-row:1; margin:0; width:13px; height:13px; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-inline-note { grid-column:1/-1; max-width:none; max-height:48px; font-family:inherit; font-size:10px; line-height:19px; color:#919b86; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-meta { display:flex; align-items:center; gap:12px; margin-top:4px; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-state { position:static; display:inline; padding:0; background:transparent; border:0; font-family:inherit; font-size:10px; font-weight:400; line-height:18px; color:#8c9980; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-state b { font:inherit; }
+:is(.native-windows,.native-mac) #project-deadline-panel .is-overdue .deadline-state { color:#ac7c62; }
+:is(.native-windows,.native-mac) #project-deadline-panel .priority-badge { font-family:inherit; font-size:9px; padding:0; background:transparent; color:#9ca48f; }
+:is(.native-windows,.native-mac) #project-deadline-panel .priority-high { color:#a47e61; }
+
+/* Record totals use the same popover structure as review totals. */
+:is(.native-windows,.native-mac) #record-duration .inspector-time-editor{grid-column:2;grid-row:1;position:relative;min-width:0;margin:0 5px;align-self:stretch}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-editor>summary{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;position:relative;list-style:none;height:100%;min-height:40px;padding:0 22px 0 10px;box-sizing:border-box;border-radius:6px;cursor:pointer;color:#8b9583;font:9px/14px system-ui}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-editor>summary::-webkit-details-marker{display:none}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-editor>summary:after{content:'⌄';position:absolute;right:7px;top:50%;transform:translateY(-50%);font:12px/1 system-ui;color:#7c8d71}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-editor>summary strong{font:600 18px/22px var(--serif);color:#818a7a;font-variant-numeric:tabular-nums;white-space:nowrap}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-editor>summary:hover,:is(.native-windows,.native-mac) #record-duration .inspector-time-editor[open]>summary{background:#e8eedf}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-editor>summary:focus-visible{outline:2px solid #a9bc98;outline-offset:2px}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-popover{position:absolute;z-index:80;top:calc(100% + 12px);left:50%;transform:translateX(-50%);width:330px;max-width:calc(100vw - 48px);box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:14px;background:var(--panel);border:1px solid #dce5d1;border-radius:11px;box-shadow:0 8px 26px #34492c20}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-popover .duration-heading{display:flex;align-items:center;justify-content:space-between;position:static;grid-column:1/-1;grid-row:auto;font:10px/20px system-ui;color:#7d8e70;min-height:20px}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-done{border:0;background:transparent;box-shadow:none;color:#617c50;font:10px/20px system-ui;min-height:20px;padding:0 3px}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-popover .rough-choices{grid-column:1/-1!important;grid-row:auto!important;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-popover .rough-choices button{font-size:10px;min-height:30px;height:30px}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-popover .hour-choice{grid-column:1!important;grid-row:auto!important;display:grid;grid-template-columns:58px minmax(0,1fr);gap:10px;min-width:0}
+:is(.native-windows,.native-mac) #record-duration .inspector-time-popover .duration-clear{position:static;grid-column:2;grid-row:auto;align-self:center;opacity:1;visibility:visible;min-height:26px;width:24px;padding:0}
+
+/* Compact day editor: one project row, one time row, visible nodes before writing. */
+:is(.native-windows,.native-mac) .inspector-project-row { display:flex; align-items:center; gap:4px; margin:0 0 8px; padding:2px; border:1px solid #e0e5d8; border-radius:8px; background:var(--panel); }
+:is(.native-windows,.native-mac) .inspector-project-row .inspector-project-label { flex:1; min-width:0; margin:0!important; }
+:is(.native-windows,.native-mac) .inspector-project-row .shared-project-picker>summary { height:32px; min-height:32px; box-sizing:border-box; padding:0 7px; border:0; background:transparent; }
+:is(.native-windows,.native-mac) .inspector-project-row .shared-project-picker>summary:hover { background:transparent; }
+:is(.native-windows,.native-mac) .inspector-project-row .shared-project-picker>summary:hover .project-summary-name { text-decoration:underline; text-decoration-color:#a6b49a; text-underline-offset:3px; }
+:is(.native-windows,.native-mac) .inspector-project-row>.inspector-tabs { display:flex; flex:none; align-items:center; align-self:center; gap:2px; height:32px; box-sizing:border-box; margin:0; padding:2px; border:0; border-radius:6px; background:transparent; }
+:is(.native-windows,.native-mac) .inspector-project-row .inspector-tabs button { height:26px; min-height:26px; box-sizing:border-box; padding:0 8px; border:0; border-radius:5px; background:transparent; box-shadow:none; font-family:inherit; font-size:10px; line-height:26px; color:#8b9581; white-space:nowrap; }
+:is(.native-windows,.native-mac) .inspector-project-row .inspector-tabs button.active { background:var(--green); color:#fff; box-shadow:0 1px 3px #315c4626; }
+:is(.native-windows,.native-mac) .inspector-project-row .inspector-tabs button:not(.active):hover { background:#e3e9db; color:#617555; }
+/* The daily total is the only always-visible time control. */
+:is(.native-windows,.native-mac) .inspector-project-row { position:relative; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration).duration-control { position:static; display:block; flex:none; width:auto; min-width:0; min-height:32px; padding:0 3px; margin:0; border:0; background:linear-gradient(#dce3d3,#dce3d3) left center/1px 16px no-repeat,linear-gradient(#dce3d3,#dce3d3) right center/1px 16px no-repeat; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration)::before,:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration)::after,:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration)>.time-source-summary { display:none; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .inspector-time-editor { position:static; display:block; margin:0; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .inspector-time-editor>summary { display:flex; align-items:center; justify-content:center; height:32px; min-height:32px; padding:0 8px; border-radius:5px; white-space:nowrap; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .inspector-time-editor>summary>span,:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .inspector-time-editor>summary:after { display:none; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .inspector-time-editor>summary strong { font:500 18px/26px var(--serif); color:var(--green); font-variant-numeric:tabular-nums; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .inspector-time-editor>summary small { font-family:inherit; font-size:9px; color:#8d9983; margin-left:4px; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .inspector-time-popover { position:absolute; left:auto; right:0; top:calc(100% + 6px); transform:none; width:min(300px,100%); max-width:100%; box-sizing:border-box; padding:12px; border-radius:9px; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .win-time-breakdown { grid-column:1/-1; display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:0 0 9px; border-bottom:1px solid #e6eadf; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .win-time-breakdown .duration-timeline,:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .win-time-other { display:flex; flex-direction:column!important; align-items:flex-start; justify-content:center; gap:2px; min-height:0; padding:0; border:0; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .win-time-breakdown span { font-family:inherit; font-size:10px; line-height:18px; color:#8b987f; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .win-time-breakdown strong { font:500 16px/24px var(--serif); color:#617555; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .win-time-breakdown small { font-family:inherit; font-size:9px; color:#8d9983; margin-left:3px; }
+:is(.native-windows,.native-mac) #inspector-daily-fields>.form-grid { display:none; }
+:is(.native-windows,.native-mac) .win-time-peek { position:absolute; z-index:80; top:calc(100% + 6px); right:0; display:none; width:220px; max-width:100%; box-sizing:border-box; padding:11px 12px; background:var(--panel); border:1px solid #dce5d1; border-radius:9px; box-shadow:0 5px 18px #34492c20; pointer-events:none; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration):hover>.win-time-peek,:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration):focus-within>.win-time-peek { display:block; }
+:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration):has(.inspector-time-editor[open])>.win-time-peek { display:none; }
+:is(.native-windows,.native-mac) .win-time-peek>div { display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:10px; line-height:24px; color:#8b987f; }
+:is(.native-windows,.native-mac) .win-time-peek strong { font:500 15px/24px var(--serif); color:#617555; }
+:is(.native-windows,.native-mac) .win-time-peek strong small { margin-left:3px; font-size:9px; font-family:inherit; }
+:is(.native-windows,.native-mac) .win-time-peek>small { display:block; padding-top:5px; margin-top:4px; border-top:1px solid #e7ebe1; font-size:9px; color:#9ba38e; line-height:18px; }
+:is(.native-windows,.native-mac) #windows-project-nodes { flex:none; margin:0 0 10px; padding:2px 0 4px; border:0; border-radius:7px; background:#f3f5ef; }
+:is(.native-windows,.native-mac) .win-node-heading { display:flex; align-items:center; gap:7px; min-height:30px; padding:0 10px; }
+:is(.native-windows,.native-mac) .win-node-title { font-size:10px; color:#6b7b5e; flex:none; }
+:is(.native-windows,.native-mac) .win-node-count { font-size:9px; color:#9ba38e; white-space:nowrap; }
+:is(.native-windows,.native-mac) #windows-project-nodes #inspector-show-done-deadlines { margin-left:auto; font-family:inherit; font-size:9px; min-height:24px; padding:0 3px; }
+:is(.native-windows,.native-mac) #windows-project-nodes .win-node-add { margin-left:auto; white-space:nowrap; flex:none; font-size:9px; }
+:is(.native-windows,.native-mac) #windows-project-nodes #inspector-show-done-deadlines:not([hidden])+.win-node-add { margin-left:0; }
+:is(.native-windows,.native-mac) #inspector-project-ddl-panel { border:0; margin:0; padding:0; }
+:is(.native-windows,.native-mac) #inspector-project-ddl-panel .inspector-context-heading { display:none; }
+:is(.native-windows,.native-mac) #inspector-project-deadlines { max-height:100px; gap:0; }
+:is(.native-windows,.native-mac) .inspector-project-node { padding:3px 10px; border:0; grid-template-columns:36px minmax(0,1fr) 16px; gap:8px; min-height:27px; border-radius:4px; }
+:is(.native-windows,.native-mac) .inspector-project-node:hover { background:#f2f5ec; }
+:is(.native-windows,.native-mac) .inspector-project-node>button { display:flex; align-items:center; min-height:24px; padding:0 3px; }
+:is(.native-windows,.native-mac) .inspector-project-node>button strong { font-family:inherit; font-size:11px; }
+:is(.native-windows,.native-mac) .inspector-project-node>button span { display:none; }
+:is(.native-windows,.native-mac) .inspector-project-node>time { font-family:inherit; font-size:10px; }
+:is(.native-windows,.native-mac) .inspector-day-deadlines { background:#f6f4ec; border-color:#e7e2d5; }
+:is(.native-windows,.native-mac) .inspector-node-copy { flex-direction:row; align-items:baseline; gap:8px; }
+:is(.native-windows,.native-mac) .inspector-node-copy>strong,:is(.native-windows,.native-mac) .inspector-node-copy>span { max-width:100%; font-family:inherit; }
+:is(.native-windows,.native-mac) #inspector-daily-fields>.editor-label { min-height:120px; }
+:is(.native-windows,.native-mac) .month-inspector { overflow-y:auto; scrollbar-width:thin; scrollbar-color:#c4cbb9 transparent; }
+:is(.native-windows,.native-mac) #inspector-daily-fields>.editor-label>span,:is(.native-windows,.native-mac) #inspector-project-fields>.editor-label>span { padding:0 10px; }
+:is(.native-windows,.native-mac) .month-inspector .editor-clear-actions { padding-left:10px; padding-right:10px; }
+:is(.native-windows,.native-mac) .month-inspector textarea,:is(.native-windows,.native-mac) .month-inspector .markdown-preview { padding:10px; border-color:#e5e8df; background:#f7f8f3; border-radius:7px; }
+:is(.native-windows,.native-mac) .month-inspector .editor-label>span,:is(.native-windows,.native-mac) .month-inspector .markdown-preview-toggle { font-family:inherit; font-size:10px; }
+:is(.native-windows,.native-mac) .month-inspector .markdown-preview-toggle { min-height:24px; padding:0 3px; line-height:24px; }
+:is(.native-windows,.native-mac) .month-inspector .markdown-preview-toggle:hover { background:#eaf0e1; }
+:is(.native-windows,.native-mac) #inspector-daily-fields>.editor-clear-actions { display:none; }
+:is(.native-windows,.native-mac) #inspector-daily-fields>.editor-label { margin-bottom:0; }
+:is(.native-windows,.native-mac) #inspector-daily-fields>.editor-label>.markdown-heading { display:flex; align-items:center; gap:10px; height:28px; min-height:28px; box-sizing:border-box; }
+:is(.native-windows,.native-mac) #inspector-daily-fields .markdown-heading>#inspector-save-status { display:inline-flex; align-items:center; flex:none; height:24px; margin-top:0; margin-bottom:0; font-family:inherit; font-size:10px; line-height:24px; }
+:is(.native-windows,.native-mac) #inspector-daily-fields .markdown-heading>.markdown-mode { display:flex; align-items:center; height:24px; min-height:24px; margin:0; }
+:is(.native-windows,.native-mac) #inspector-daily-fields .win-note-clear,:is(.native-windows,.native-mac) #inspector-daily-fields .markdown-preview-toggle { display:inline-flex; align-items:center; justify-content:center; flex:none; height:24px; min-height:24px; box-sizing:border-box; margin:0; padding:0 2px; border:0; border-radius:4px; background:transparent; box-shadow:none; font-family:inherit; font-size:10px; line-height:24px; color:#87957c; }
+:is(.native-windows,.native-mac) #inspector-daily-fields .win-note-clear:hover:not(:disabled) { color:#9b6951; background:#f1ece3; }
+:is(.native-windows,.native-mac) #inspector-daily-fields .win-note-clear:disabled { opacity:.4; cursor:default; }
+:is(.native-windows,.native-mac) .month-inspector { --win-note-inset:clamp(16px,2vw,22px); padding-left:var(--win-note-inset); padding-right:var(--win-note-inset); padding-bottom:var(--win-note-inset); }
+:is(.native-windows,.native-mac) #month-inspector { display:flex; flex-direction:column; }
+:is(.native-windows,.native-mac) #inspector-content { flex:1; min-height:0; }
+:is(.native-windows,.native-mac) #inspector-daily-fields:not([hidden]),:is(.native-windows,.native-mac) #inspector-project-fields:not([hidden]) { display:flex; flex-direction:column; flex:1; min-height:0; }
+:is(.native-windows,.native-mac) #inspector-daily-fields>.editor-label,:is(.native-windows,.native-mac) #inspector-project-fields>.editor-label { display:flex; flex-direction:column; flex:1; min-height:0; margin-bottom:0; }
+:is(.native-windows,.native-mac) #inspector-note,:is(.native-windows,.native-mac) #inspector-project-note { flex:1; min-height:140px; resize:none; }
+:is(.native-windows,.native-mac) #inspector-daily-fields .markdown-editor { margin-bottom:0; }
+:is(.native-windows,.native-mac) .month-inspector .inspector-day-total>span,:is(.native-windows,.native-mac) .month-inspector .inspector-day-total small { font-family:inherit; }
+:is(.native-windows,.native-mac) #project-detail .deadline-surface,:is(.native-windows,.native-mac) #project-detail .win-deadline-empty { padding-left:22px; }
+
+/* Small, aligned note actions with accessible status and tooltips. */
+:is(.native-windows,.native-mac) .desktop-save-state,
+:is(.native-windows,.native-mac) #inspector-daily-fields .win-note-clear,
+:is(.native-windows,.native-mac) .desktop-note-action { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; min-height:24px; padding:0; flex:none; box-sizing:border-box; }
+:is(.native-windows,.native-mac) .desktop-save-state svg,
+:is(.native-windows,.native-mac) .win-note-clear svg,
+:is(.native-windows,.native-mac) .desktop-note-action svg { width:15px; height:15px; flex:none; }
+:is(.native-windows,.native-mac) .desktop-save-state { color:#8b9d80; }
+:is(.native-windows,.native-mac) .desktop-save-state[data-state="error"] { color:#ab735c; }
+:is(.native-windows,.native-mac) .desktop-save-state[data-state="saving"] svg { animation:desktop-saving 1.5s linear infinite; }
+@keyframes desktop-saving { to { transform:rotate(360deg); } }
+@media(prefers-reduced-motion:reduce) { :is(.native-windows,.native-mac) .desktop-save-state[data-state="saving"] svg { animation:none; } }
+:is(.native-windows,.native-mac) .month-inspector .markdown-editor { position:relative; min-height:140px; }
+:is(.native-windows,.native-mac) .desktop-note-resize { position:absolute; bottom:1px; right:1px; width:20px; height:20px; display:grid; place-items:center; color:#a3ad97; cursor:ns-resize; touch-action:none; border-radius:0 0 6px 0; }
+:is(.native-windows,.native-mac) .desktop-note-resize svg { width:15px; height:15px; }
+:is(.native-windows,.native-mac) .desktop-note-resize:hover { color:var(--green); }
+:is(.native-windows,.native-mac) .desktop-note-resize:focus-visible { outline:1px solid var(--green); outline-offset:-2px; }
+/* The current-time guide crosses evidence, clock and recorded intervals. */
+:is(.native-windows,.native-mac) .dt-grid>.dt-now { left:0; right:0; height:0; min-height:0; z-index:25; pointer-events:none; border-color:#bd6c5e; box-shadow:0 0 4px #c8736266,0 0 9px #c873622e; }
+:is(.native-windows,.native-mac) .dt-grid>.dt-now span { position:sticky; left:0; right:auto; top:auto; float:left; transform:translateY(-100%); box-sizing:border-box; width:38px; padding:2px 4px; text-align:center; font-size:10px; line-height:14px; background:transparent; color:#af6154; border-radius:3px; font-variant-numeric:tabular-nums; }
+/* Project sections share a calm header and compact, clearly grouped rows. */
+:is(.native-windows,.native-mac) #project-detail :is(#project-deadline-panel,#project-record-panel) { border:0; margin-top:14px; padding:0; }
+:is(.native-windows,.native-mac) #project-detail :is(#project-deadline-panel,#project-record-panel)>summary { min-height:36px; padding:3px 10px; box-sizing:border-box; border-radius:7px; background:#f1f4ed; gap:9px; }
+:is(.native-windows,.native-mac) #project-detail :is(#project-deadline-panel,#project-record-panel)>.fold-content { padding:8px 10px 0; }
+:is(.native-windows,.native-mac) #project-detail .win-deadline-empty { padding:5px 0 9px; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card { padding:10px; margin:0 0 5px; border:0; border-radius:7px; background:#f7f8f3; }
+:is(.native-windows,.native-mac) #project-detail .deadline-surface { padding:0; grid-template-columns:60px minmax(0,1fr); gap:10px; }
+:is(.native-windows,.native-mac) #project-record-panel .daily-month+.daily-month { margin-top:16px; }
+:is(.native-windows,.native-mac) #project-record-panel .daily-month-heading { align-items:center; min-height:26px; padding:0 0 5px; }
+:is(.native-windows,.native-mac) #project-record-panel .daily-month-records { display:grid; gap:4px; border:0; }
+:is(.native-windows,.native-mac) #project-record-panel .daily-record-row { min-height:54px; padding:8px; gap:10px; grid-template-columns:38px minmax(0,1fr) max-content 12px; border:0; border-radius:7px; background:#f7f8f3; }
+:is(.native-windows,.native-mac) #project-record-panel .daily-record-row:hover { background:#edf2e7; }
+:is(.native-windows,.native-mac) #project-record-panel .daily-record-row .daily-duration { font-family:inherit; background:#eaf0e2; }
+
+/* Denser project navigation and single-line milestone metadata. */
+:is(.native-windows,.native-mac) #project-list .project-item { min-height:42px; padding:6px 9px; margin:1px 0; }
+:is(.native-windows,.native-mac) #project-list .project-item small { margin-top:3px; line-height:13px; }
+:is(.native-windows,.native-mac) #project-list .project-list-row { margin:0; }
+:is(.native-windows,.native-mac) #project-list .project-group-heading { min-height:26px; padding-top:4px; padding-bottom:3px; }
+:is(.native-windows,.native-mac) #project-list .project-group-section { margin-bottom:3px; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card { padding:7px 10px; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-surface { align-items:center; grid-template-columns:54px minmax(0,1fr); }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-surface>time { align-self:center; padding:0; gap:1px; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-surface>time strong { font-size:14px; line-height:20px; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-surface>time small { line-height:12px; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card-heading { grid-template-columns:minmax(0,1fr) max-content max-content 14px; column-gap:10px; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card-heading>button { grid-column:1; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card-heading>.priority-badge { grid-column:2; grid-row:1; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card-heading>.deadline-state { grid-column:3; grid-row:1; white-space:nowrap; line-height:24px; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-state b { font:500 20px/24px var(--serif); color:var(--green); padding:0 3px; font-variant-numeric:tabular-nums; }
+:is(.native-windows,.native-mac) #project-deadline-panel .is-overdue .deadline-state b { color:#ac7c62; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card-heading>input { grid-column:4; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-inline-note { grid-row:2; grid-column:1/-1; max-height:19px; overflow:hidden; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; }
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-meta { display:none; }
+/* Note tools form a single close-set icon group. */
+:is(.native-windows,.native-mac) #inspector-daily-fields>.editor-label>.markdown-heading,
+:is(.native-windows,.native-mac) .project-detail-section>.editor-heading,
+:is(.native-windows,.native-mac) #record-form .markdown-heading { gap:2px; }
+:is(.native-windows,.native-mac) .project-detail-section>.editor-heading>.markdown-mode { margin-left:0; }
+:is(.native-windows,.native-mac) #inspector-daily-fields .win-note-clear,
+:is(.native-windows,.native-mac) .desktop-note-action,
+:is(.native-windows,.native-mac) .desktop-save-state { width:22px; }
+/* The record dialog follows the review editor's project/total row and note area. */
+:is(.native-windows,.native-mac) #record-dialog { width:560px; max-width:calc(100vw - 32px); height:min(700px,calc(100dvh - 48px)); max-height:calc(100dvh - 48px); box-sizing:border-box; padding:22px; overflow:visible; }
+:is(.native-windows,.native-mac) #record-form { display:flex; flex-direction:column; height:100%; min-height:0; }
+:is(.native-windows,.native-mac) #record-form>.dialog-heading { gap:12px; flex:none; margin-bottom:14px; }
+:is(.native-windows,.native-mac) #record-form .auto-save-hint { display:none; }
+:is(.native-windows,.native-mac) #record-date { margin-left:auto; width:136px; height:30px; min-height:30px; padding:3px 6px; font-family:inherit; font-size:11px; border:0; background:#f1f4ed; }
+:is(.native-windows,.native-mac) #record-form>.dialog-heading>.close-dialog { margin-left:0; }
+:is(.native-windows,.native-mac) #record-form>.form-grid,
+:is(.native-windows,.native-mac) #record-form>.editor-clear-actions { display:none; }
+:is(.native-windows,.native-mac) #record-form>.desktop-record-row { flex:none; margin-bottom:12px; }
+:is(.native-windows,.native-mac) #record-form>.editor-label { display:flex; flex-direction:column; flex:1; min-height:140px; margin:0; }
+:is(.native-windows,.native-mac) #record-form .markdown-heading { padding:0 10px; min-height:28px; font-size:10px; }
+:is(.native-windows,.native-mac) #record-form .markdown-editor { flex:1; min-height:140px; position:relative; margin:0; }
+:is(.native-windows,.native-mac) #record-note,
+:is(.native-windows,.native-mac) #record-form .markdown-preview { flex:1; min-height:140px; height:100%; padding:10px; resize:none; border:1px solid #e5e8df; border-radius:8px; background:linear-gradient(115deg,#e8eee3,#f1f4ec 45%,var(--panel)); }
+:is(.native-windows,.native-mac) #record-form .win-note-clear { display:inline-flex; align-items:center; justify-content:center; width:22px; height:24px; min-height:24px; padding:0; border:0; background:transparent; box-shadow:none; color:#87957c; }
+:is(.native-windows,.native-mac) #record-form .win-note-clear:disabled { opacity:.4; }
+:is(.native-windows,.native-mac) #record-form>.danger { flex:none; align-self:flex-start; margin-top:8px; min-height:24px; padding:0 2px; font-size:10px; }
+/* Floating project tags stay within their own track, including at the top edge. */
+:is(.native-windows,.native-mac) .dt-file-project .dt-file-project-name { position:absolute; margin-left:7px; width:calc(100% - 10px); max-width:none; }
+/* Today's identity and the selected-day outline are independent cues. */
+:is(.native-windows,.native-mac) :is(.heat-day,.month-day).today-mark:is(.inspected,.selected) { outline:2px solid #a46d4d!important; outline-offset:-2px; }
+@media(max-width:850px) {
+  :is(.native-windows,.native-mac) #project-deadline-panel .deadline-card-heading { column-gap:6px; }
+  :is(.native-windows,.native-mac) #project-deadline-panel .deadline-card-heading>.priority-badge { display:none; }
+  :is(.native-windows,.native-mac) #project-deadline-panel .deadline-card-heading { grid-template-columns:minmax(0,1fr) max-content 14px; }
+  :is(.native-windows,.native-mac) #project-deadline-panel .deadline-card-heading>.deadline-state { grid-column:2; }
+  :is(.native-windows,.native-mac) #project-deadline-panel .deadline-card-heading>input { grid-column:3; }
+}
+
+/* Completed deadlines remain easy to find when scanning from the year legend. */
+:is(.native-windows,.native-mac) #page-review:not(.month-view):has(.ddl-legend-trigger:is(:hover,:focus-visible)) #year-calendar .heat-day.ddl-complete {
+  outline:2px solid #45693c!important;
+  outline-offset:-1px;
+  box-shadow:0 0 0 1.5px #fff,0 0 5px #45693c52!important;
+}
+:is(.native-windows,.native-mac) #page-review:not(.month-view):has(.ddl-legend-trigger:is(:hover,:focus-visible)) #year-calendar .heat-day.ddl-complete .year-ddl-corner {
+  width:10px;
+  height:10px;
+  background:#315c46;
+}
+@media(max-width:850px) {
+  :is(.native-windows,.native-mac) .inspector-project-row { gap:3px; }
+  :is(.native-windows,.native-mac) .inspector-project-row>.inspector-tabs { gap:2px; }
+  :is(.native-windows,.native-mac) .inspector-project-row .inspector-tabs button { font-size:9px; padding:0 6px; }
+  :is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .inspector-time-editor>summary { padding:0 5px; }
+  :is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .duration-timeline,:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration) .inspector-time-editor>summary,:is(.native-windows,.native-mac) :is(#inspector-duration,#record-duration)>.time-source-summary>span { gap:3px; }
+}
+
+/* Let the live time replace nearby hour labels instead of overprinting them. */
+:is(.native-windows,.native-mac) .dt-clock time.now-overlap { visibility:hidden; }

@@ -1,0 +1,82 @@
+import {unionSpans} from './auto-timeline.js';
+// Shares describe observed active evidence within the quarter, not inferred work time.
+export function activitySlots(activities,start,end){
+ const slots=[];
+ for(let at=start;at<end;at+=15){
+  const hits=activities.filter(a=>a.start<at+15&&a.end>at);if(!hits.length)continue;
+  const apps=new Map();for(const a of hits){if(!apps.has(a.app))apps.set(a.app,[]);apps.get(a.app).push(a)}
+  const ranked=[...apps].map(([app,items])=>{const devices=new Map();for(const a of items){const key=a.deviceId||a.device||'local';if(!devices.has(key))devices.set(key,[]);devices.get(key).push(a)}const seconds=Math.max(...[...devices.values()].map(xs=>{const raw=xs.filter(a=>a.seconds==null);return unionSpans(raw.map(a=>({start:Math.max(at,a.start),end:Math.min(at+15,a.end)}))).reduce((n,s)=>n+(s.end-s.start)*60,0)+xs.filter(a=>a.seconds!=null).reduce((n,a)=>n+a.seconds,0)}));return {app,items,seconds:Math.min(900,seconds)}}).filter(a=>a.seconds>0).sort((a,b)=>b.seconds-a.seconds||a.app.localeCompare(b.app));
+  const total=ranked.reduce((n,a)=>n+a.seconds,0);if(!total)continue;
+  for(const a of ranked){const exact=a.seconds/total*100;a.percent=Math.floor(exact);a.remainder=exact-a.percent}
+  const remainder=100-ranked.reduce((n,a)=>n+a.percent,0);[...ranked].sort((a,b)=>b.remainder-a.remainder).slice(0,remainder).forEach(a=>a.percent++);
+  const major=ranked.filter((a,i)=>i===0||(i<2&&a.percent>=20)),minor=ranked.filter(a=>!major.includes(a));
+  slots.push({at,app:ranked[0].app,name:ranked[0].items.find(a=>a.name&&a.name!==a.app)?.name||'',projectId:ranked[0].items[0].projectId,apps:ranked,major,minor,otherPercent:minor.reduce((n,a)=>n+a.percent,0),others:minor.length,activeSeconds:Math.min(900,total),hits});
+ }
+ return slots;
+}
+export function fileSlots(files,start,end){
+ const groups=new Map();for(const file of files){if(file.at<start||file.at>=end)continue;const at=Math.floor(file.at/15)*15;if(!groups.has(at))groups.set(at,[]);groups.get(at).push(file)}
+ return [...groups].sort((a,b)=>a[0]-b[0]).map(([at,items])=>{const by=new Map();for(const f of items){const id=f.path||((f.projectId||'')+'/'+f.name);if(!by.has(id))by.set(id,{name:f.name,path:id,count:0,first:f.at,last:f.at,legacy:true});const g=by.get(id);g.count++;g.first=Math.min(g.first,f.at);g.last=Math.max(g.last,f.at);g.legacy&&=!!f.legacy}return {at,items,files:[...by.values()],names:[...new Set(items.map(f=>f.name))]}});
+}
+// Join adjacent quarters only when their physical file sets are identical.
+export function fileRuns(files,start,end){
+ const runs=[];
+ for(const slot of fileSlots(files,start,end)){
+  const signature=JSON.stringify([...new Set(slot.items.map(f=>f.path||((f.projectId||'')+'/'+f.name)))].sort()),last=runs.at(-1);
+  if(last&&last.end===slot.at&&last.signature===signature){last.end=slot.at+15;last.items.push(...slot.items)}
+  else runs.push({...slot,end:slot.at+15,signature,items:[...slot.items]});
+ }
+ return runs.map(run=>{const grouped=fileSlots(run.items.map(f=>({...f,at:run.at})),run.at,run.at+15)[0];const by=new Map();for(const f of run.items){const id=f.path||((f.projectId||'')+'/'+f.name);if(!by.has(id))by.set(id,{first:f.at,last:f.at});const x=by.get(id);x.first=Math.min(x.first,f.at);x.last=Math.max(x.last,f.at)};const bounds=[...by.values()];grouped.files.forEach((f,i)=>Object.assign(f,bounds[i]));return {...run,files:grouped.files}});
+}
+// Decide locally first; the daily ranking only stabilizes horizontal column order.
+export function applicationRuns(activities,start,end){
+ const slots=activitySlots(activities,start,end),usage=new Map();
+ for(const slot of slots){
+  const total=slot.apps.reduce((n,a)=>n+a.seconds,0);
+  slot.shown=new Set(slot.apps.filter((a,i)=>i===0||a.seconds>=Math.max(900,total)*.2).map(a=>a.app));
+  for(const a of slot.apps)usage.set(a.app,(usage.get(a.app)||0)+a.seconds);
+ }
+ // Keep a small rank fluctuation connected only where that application was observed.
+ // An empty quarter or a substantial competing application always breaks the run.
+ const initial=slots.map(slot=>new Set(slot.shown));
+ for(let i=1;i<slots.length-1;i++){
+  const slot=slots[i];
+  if(slots[i-1].at+15!==slot.at||slot.at+15!==slots[i+1].at)continue;
+  for(const a of slot.apps)if(!slot.shown.has(a.app)&&initial[i-1].has(a.app)&&initial[i+1].has(a.app)&&slot.apps.every(b=>b.app===a.app||b.seconds<180))slot.shown.add(a.app);
+ }
+ const major=[...usage].filter(([app])=>slots.some(slot=>slot.shown.has(app))).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).map(([app])=>app),hasOther=slots.some(slot=>slot.apps.some(a=>!slot.shown.has(a.app))),columns=[...major,...(hasOther?['其他']:[])],runs=[];
+ const shownApps=(slot,lane)=>slot.apps.filter(a=>lane===major.length?!slot.shown.has(a.app):slot.shown.has(a.app)&&a.app===major[lane]);
+ columns.forEach((app,lane)=>{let current=null;for(const slot of slots){
+  const apps=shownApps(slot,lane);if(!apps.length){current=null;continue}
+  if(!current||current.end!==slot.at){current={app,lane,start:slot.at,end:slot.at,seconds:0,slots:[],apps:new Map()};runs.push(current)}
+  current.end=slot.at+15;
+  const seconds=apps.reduce((n,a)=>n+a.seconds,0),total=slot.apps.reduce((n,a)=>n+a.seconds,0),denominator=Math.max(900,total),before=columns.slice(0,lane).reduce((n,_,index)=>n+shownApps(slot,index).reduce((sum,a)=>sum+a.seconds,0),0);
+  current.seconds+=seconds;current.slots.push({at:slot.at,seconds,left:before/denominator*100,width:seconds/denominator*100});
+  for(const a of apps)current.apps.set(a.app,(current.apps.get(a.app)||0)+a.seconds);
+ }});
+ return {columns,runs};
+}
+
+
+// Repeat names when a run becomes visually disconnected or expands after a thin neck.
+export function applicationLabels(slots,start,scale){
+ const segments=[];let segment;
+ for(const slot of slots){
+  const previous=segment?.at(-1),overlap=previous?Math.min(previous.left+previous.width,slot.left+slot.width)-Math.max(previous.left,slot.left):0;
+  if(!previous||previous.at+15!==slot.at||overlap<=Math.min(previous.width,slot.width)*.2||(previous.width<12&&slot.width>=12)){segment=[];segments.push(segment)}
+  segment.push(slot);
+ }
+ const labels=[],height=scale<1?12:15;
+ for(const group of segments){
+  const end=(group.at(-1).at+15-start)*scale;
+  for(let i=0;i<group.length;i++){
+   const slot=group[i],top=(slot.at-start)*scale+2;
+   if(end-top<height+1)continue;
+   let left=slot.left,right=slot.left+slot.width;
+   // Keep the text inside the application even at compressed zoom levels.
+   for(let j=i+1;j<group.length&&(group[j].at-start)*scale<top+height;j++){left=Math.max(left,group[j].left);right=Math.min(right,group[j].left+group[j].width)}
+   if(right-left>=12){labels.push({left,width:right-left,top,at:slot.at});break}
+  }
+ }
+ return labels;
+}

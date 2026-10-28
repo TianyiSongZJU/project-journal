@@ -1,0 +1,8 @@
+* text=auto
+*.sh text eol=lf
+*.go text eol=lf
+*.swift text eol=lf
+*.png binary
+*.icns binary
+*.ico binary
+*.syso binary
