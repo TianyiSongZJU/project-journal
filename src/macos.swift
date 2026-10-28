@@ -34,7 +34,7 @@ final class JournalStartupTiming {
  }
 }
 
-// Vector layers only: the wallpaper is composed once, then animated by Core Animation.
+// Native tile layers, with one small shared alpha image during the reveal.
 final class JournalLaunchSurface:NSView {
  let tiles=CALayer()
  let artwork=CALayer()
@@ -46,8 +46,30 @@ final class JournalLaunchSurface:NSView {
  var finishing=false
  var pieces:[CALayer]=[]
  var waveStarts:[CFTimeInterval]=[]
- var revealMasks:[CAGradientLayer]=[]
- var revealFields:[[CAGradientLayer]]=[]
+ struct RevealPlan{
+  let index:Int
+  let begin:CFTimeInterval
+  let duration:CFTimeInterval
+  let times:[CFTimeInterval]
+  let radii:[CGFloat]
+  func radius(at time:CFTimeInterval)->CGFloat{
+   guard time>begin else{return 0}
+   guard time<times.last! else{return radii.last!}
+   var upper=1
+   while upper<times.count-1 && times[upper]<time{upper+=1}
+   let fraction=CGFloat((time-times[upper-1])/(times[upper]-times[upper-1]))
+   return radii[upper-1]+(radii[upper]-radii[upper-1])*fraction
+  }
+ }
+ var revealMasks:[CALayer]=[]
+ var revealPlans:[RevealPlan]=[]
+ var revealTimer:Timer?
+ var revealGray:CGContext?
+ var revealRGBA:CGContext?
+ let revealGradient:CGGradient={
+  let grays:[CGFloat]=[0,0,0.074,0.259,0.5,0.741,0.926,1]
+  return CGGradient(colorsSpace:CGColorSpaceCreateDeviceGray(),colors:grays.map{CGColor(gray:$0,alpha:1)} as CFArray,locations:[0,0.45,0.53,0.61,0.69,0.77,0.85,1])!
+ }()
  var revealSources:[Int]=[]
  var revealOuterRadius:CGFloat=1
  let restingOpacity:Float=0.28
@@ -96,6 +118,7 @@ final class JournalLaunchSurface:NSView {
   light.colors=[color(1,1,0.98,0.28),color(1,1,0.98,0)];light.startPoint=CGPoint(x:0.2,y:1);light.endPoint=CGPoint(x:0.7,y:0.2);layer?.addSublayer(light)
  }
  required init?(coder:NSCoder){fatalError("init(coder:) has not been implemented")}
+ deinit{revealTimer?.invalidate()}
  override func layout(){
   super.layout();CATransaction.begin();CATransaction.setDisableActions(true)
   backdrop.frame=bounds;artwork.frame=bounds;light.frame=bounds
@@ -123,11 +146,42 @@ final class JournalLaunchSurface:NSView {
   let core=reach+hypot(bounds.width,bounds.height)/16+16
   let radius=core/0.45
   revealOuterRadius=radius
-  for fields in revealFields{for (field,center) in zip(fields,centers){
-   field.frame=bounds
-   field.startPoint=CGPoint(x:(center.x-bounds.minX)/bounds.width,y:(center.y-bounds.minY)/bounds.height)
-   field.endPoint=CGPoint(x:field.startPoint.x+radius/bounds.width,y:field.startPoint.y+radius/bounds.height)
+  for mask in revealMasks{mask.frame=bounds}
+ }
+ // Merge radial clear regions by their strongest contribution. Multiplying
+ // dozens of overlapping alpha masks erased everything in a few frames.
+ // A small shared image also avoids a deep full-window compositing chain.
+ func updateRevealMask(at time:CFTimeInterval){
+  guard !revealPlans.isEmpty,bounds.width>0,bounds.height>0 else{return}
+  let scale=min(320/bounds.width,320/bounds.height)
+  let width=max(1,Int(ceil(bounds.width*scale))),height=max(1,Int(ceil(bounds.height*scale)))
+  if revealGray?.width != width || revealGray?.height != height{
+   revealGray=CGContext(data:nil,width:width,height:height,bitsPerComponent:8,bytesPerRow:0,space:CGColorSpaceCreateDeviceGray(),bitmapInfo:CGImageAlphaInfo.none.rawValue)
+   revealRGBA=CGContext(data:nil,width:width,height:height,bitsPerComponent:8,bytesPerRow:0,space:CGColorSpaceCreateDeviceRGB(),bitmapInfo:CGImageAlphaInfo.premultipliedLast.rawValue)
+  }
+  guard let gray=revealGray,let rgba=revealRGBA else{return}
+  gray.saveGState();gray.setBlendMode(.copy);gray.setFillColor(CGColor(gray:1,alpha:1))
+  gray.fill(CGRect(x:0,y:0,width:width,height:height))
+  gray.scaleBy(x:CGFloat(width)/bounds.width,y:CGFloat(height)/bounds.height)
+  gray.setBlendMode(.darken)
+  for plan in revealPlans where time>plan.begin{
+   let radius=plan.radius(at:time)*revealOuterRadius
+   guard radius>0.5 else{continue}
+   let center=revealCenter(plan.index)
+   gray.setAlpha(min(1,CGFloat((time-plan.begin)/0.18)))
+   gray.drawRadialGradient(revealGradient,startCenter:center,startRadius:0,endCenter:center,endRadius:radius,options:[])
+  }
+  gray.restoreGState()
+  let input=gray.data!.assumingMemoryBound(to:UInt8.self),output=rgba.data!.assumingMemoryBound(to:UInt8.self)
+  for y in 0..<height{for x in 0..<width{
+   let offset=y*rgba.bytesPerRow+x*4
+   output[offset]=0;output[offset+1]=0;output[offset+2]=0;output[offset+3]=input[y*gray.bytesPerRow+x]
   }}
+  if let image=rgba.makeImage(){
+   CATransaction.begin();CATransaction.setDisableActions(true)
+   for mask in revealMasks{mask.contents=image}
+   CATransaction.commit()
+  }
  }
  func finish(_ completion:@escaping()->Void){
   guard !finishing else{return};finishing=true
@@ -137,6 +191,9 @@ final class JournalLaunchSurface:NSView {
   let fadePoint=half+half*0.61
   let sweep=floor(max(0,now-waveStarts[0])/waveCycleDuration)
   var lastFadeEnd:CFTimeInterval=0
+  let projectedRects=pieces.map{tiles.convert($0.frame,to:layer).insetBy(dx:-12,dy:-12)}
+  revealSources=pieces.indices.filter{bounds.intersects(projectedRects[$0])}
+  let firstVisibleDiagonal=revealSources.map{$0/5+$0%5}.min() ?? 0
   CATransaction.begin();CATransaction.setDisableActions(true)
   for (i,tile) in pieces.enumerated(){
    // A longer background diffusion must not restart an already landed tile.
@@ -147,37 +204,29 @@ final class JournalLaunchSurface:NSView {
    // wrap an early diagonal into the following sweep while later ones fade.
    let elapsed=now-(waveStarts[i]+sweep*waveCycleDuration)
    let reachedFadePoint=elapsed>=fadePoint
-   let wait=max(0,fadePoint-elapsed)
+   let naturalWait=max(0,fadePoint-elapsed)
+   let visible=revealSources.contains(i)
+   let stagger=visible ? Double(max(0,i/5+i%5-firstVisibleDiagonal))*0.085:0
+   let wait=max(naturalWait,stagger)
    let remainingFall=max(0,wavePeriod-max(elapsed,fadePoint))
-   let duration=min(0.32,remainingFall)
+   let duration=visible ? max(cold ? 0.48:0.36,min(0.32,remainingFall)):min(0.32,remainingFall)
    let opacity=reachedFadePoint ? (tile.presentation()?.opacity ?? tile.opacity):crestOpacity
    let fade=CABasicAnimation(keyPath:"opacity");fade.fromValue=opacity;fade.toValue=0
    fade.beginTime=now+wait;fade.duration=max(0.001,duration);fade.timingFunction=CAMediaTimingFunction(name:.easeInEaseOut)
    // The ripple rests flat after its descent until the next shared sweep.
-   // Already landed tiles disappear immediately; the others fade as they fall.
+   // Visible tiles retain a readable fade even if loading ends after they land.
    fade.fillMode = .forwards;fade.isRemovedOnCompletion=false;tile.opacity=0;tile.add(fade,forKey:"fallingFade")
    lastFadeEnd=max(lastFadeEnd,wait+duration)
   }
-  let projection=tiles.affineTransform()
-  let margin=354*max(hypot(projection.a,projection.b),hypot(projection.c,projection.d))
-  revealSources=pieces.indices.filter{bounds.insetBy(dx:-margin,dy:-margin).contains(revealCenter($0))}
   layoutRevealMasks()
   let fadeEnds=pieces.map{tile -> CFTimeInterval in
    let fade=tile.animation(forKey:"fallingFade")!
    return fade.beginTime+fade.duration
   }
-  let protectedRects=pieces.map{tiles.convert($0.frame,to:layer).insetBy(dx:-12,dy:-12)}
-  let diffusion:CFTimeInterval=cold ? 0.6:0.44
+  let protectedRects=projectedRects
+  let diffusion:CFTimeInterval=cold ? 0.82:0.66
   let revealEnd=fadeEnds.max()!+diffusion
-  for surface in [backdrop,light]{
-   var fields:[CAGradientLayer]=[]
-   for index in revealSources{
-    let field=CAGradientLayer();field.type = .radial
-    let alphas:[CGFloat]=[0,0,0.074,0.259,0.5,0.741,0.926,1,1]
-    let finalColors=alphas.map{NSColor.black.withAlphaComponent($0).cgColor}
-    let opaqueColors=alphas.map{_ in NSColor.black.cgColor}
-    let finalLocations:[NSNumber]=[0,0.45,0.53,0.61,0.69,0.77,0.85,1,1]
-    field.colors=finalColors;field.locations=finalLocations
+  for index in revealSources{
     // The tile must finish its own fade before it can open the background.
     let begin=fadeEnds[index],duration=revealEnd-begin,center=revealCenter(index)
     // Clip each expanding circle outside every tile that is still visible.
@@ -199,30 +248,24 @@ final class JournalLaunchSurface:NSView {
      let radius=min(safeRadius,previousRadius+speed*max(0,time-previousTime))
      radii.append(radius/revealOuterRadius);previousRadius=radius;previousTime=time
     }
-    let spread=CAKeyframeAnimation(keyPath:"locations")
-    spread.values=radii.map{fraction -> [NSNumber] in
-     finalLocations.dropLast().map{NSNumber(value:$0.doubleValue*Double(fraction))}+[1]
-    }
-    spread.keyTimes=times.map{NSNumber(value:($0-begin)/duration)}
-    let dissolve=CAKeyframeAnimation(keyPath:"colors")
-    dissolve.values=[opaqueColors,finalColors,finalColors]
-    dissolve.keyTimes=[0,NSNumber(value:min(0.3,0.12/duration)),1]
-    spread.duration=duration;dissolve.duration=duration
-    let opening=CAAnimationGroup();opening.animations=[spread,dissolve]
-    opening.beginTime=begin;opening.duration=duration
-    opening.timingFunction=CAMediaTimingFunction(name:.linear)
-    opening.fillMode = .both;opening.isRemovedOnCompletion=false
-    field.add(opening,forKey:"localReveal")
-    if let previous=fields.last{previous.mask=field}else{surface.mask=field;revealMasks.append(field)}
-    fields.append(field);lastFadeEnd=max(lastFadeEnd,revealEnd-now)
-   }
-   revealFields.append(fields)
+    revealPlans.append(RevealPlan(index:index,begin:begin,duration:duration,times:times,radii:radii))
   }
+  for surface in [backdrop,light]{
+   let mask=CALayer();mask.frame=bounds;mask.contentsGravity = .resize;mask.magnificationFilter = .linear
+   surface.mask=mask;revealMasks.append(mask)
+  }
+  lastFadeEnd=max(lastFadeEnd,revealEnd-now)
   layoutRevealMasks()
   CATransaction.commit()
+  updateRevealMask(at:now)
+  let timer=Timer(timeInterval:1.0/60,repeats:true){[weak self] timer in
+   guard let self=self else{timer.invalidate();return}
+   self.updateRevealMask(at:CACurrentMediaTime())
+  }
+  revealTimer=timer;RunLoop.main.add(timer,forMode:.common)
   // Remove the overlay after the last diagonal in this sweep has disappeared.
   DispatchQueue.main.asyncAfter(deadline:.now()+lastFadeEnd+1.0/30){[weak self] in
-   self?.pieces.forEach{$0.removeAllAnimations()};self?.revealFields.flatMap{$0}.forEach{$0.removeAllAnimations()};self?.removeFromSuperview();completion()
+   self?.revealTimer?.invalidate();self?.revealTimer=nil;self?.pieces.forEach{$0.removeAllAnimations()};self?.removeFromSuperview();completion()
   }
  }
  override func hitTest(_ point:NSPoint)->NSView?{nil}

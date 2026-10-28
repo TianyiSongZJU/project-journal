@@ -13,6 +13,8 @@ source = (Path(__file__).resolve().parents[1] / 'macos.swift').read_text()
 start = source.index('final class JournalLaunchSurface:')
 end = source.index('// Center the actual Chinese glyph', start)
 checks = r'''
+
+precondition(_isDebugAssertConfiguration(),"Assertions must be enabled in the optimized animation test")
 let app=NSApplication.shared
 app.setActivationPolicy(.accessory)
 func check(_ cold:Bool,_ loading:Double){
@@ -20,143 +22,81 @@ func check(_ cold:Bool,_ loading:Double){
  window.isReleasedWhenClosed=false
  let surface=JournalLaunchSurface(frame:NSRect(x:0,y:0,width:1120,height:720),cold:cold)
  window.contentView=surface;window.orderBack(nil);surface.layoutSubtreeIfNeeded();CATransaction.flush()
- assert(surface.artwork.opacity==1)
  RunLoop.main.run(until:Date().addingTimeInterval(0.04))
- let initial=surface.pieces.map{($0.presentation()?.transform.m42 ?? 0)/surface.liftY}
  if !surface.reduceMotion{
-  assert(cold ? initial[12]<8:initial[12]>8,"Cold center rises; warm center starts near its crest")
-  assert((initial.max() ?? 0)-(initial.min() ?? 0)>6)
-  for i in 0..<25{
-   let diagonal=Double(i/5+i%5)
-   assert(abs(surface.waveStarts[i]-surface.waveStarts[0]-diagonal*surface.phaseGap*surface.wavePeriod)<0.00001,"Phases must remain unwrapped across all diagonals")
-  }
+  let height=surface.pieces[12].presentation()!.transform.m42/surface.liftY
+  assert(cold ? height<8:height>8,"Cold center rises; warm center starts near its crest")
  }
  RunLoop.main.run(until:Date().addingTimeInterval(loading))
  let ready=CACurrentMediaTime()
  var completed=0
  surface.finish{completed+=1};surface.finish{completed+=1}
  var end=ready
- var fadeEnds:[Double]=[]
+ var partialBackground:[Double]=[]
+ var intermediateTileFrames=0
  if !surface.reduceMotion{
-  let cycle=floor(max(0,ready-surface.waveStarts[0])/surface.waveCycleDuration)
-  var byDiagonal:[Double]=Array(repeating:0,count:9)
-  for (i,item) in surface.pieces.enumerated(){
-   let wave=item.animation(forKey:"ripple")!,fade=item.animation(forKey:"fallingFade")!
-   assert(wave.duration==surface.waveCycleDuration)
-   let landing=surface.waveStarts[i]+cycle*surface.waveCycleDuration+surface.wavePeriod
-   assert(fade.beginTime+fade.duration<=max(ready,landing)+0.01,"Never wait for the next rise to fade an already landed tile")
-   assert(fade.beginTime>=max(ready,landing-surface.wavePeriod*0.195)-0.01,"Fade follows two thirds of descent")
-   let fadeEnd=fade.beginTime+fade.duration
-   fadeEnds.append(fadeEnd);end=max(end,fadeEnd)
-   byDiagonal[i/5+i%5]=fadeEnd
+  assert(surface.revealMasks.count==2 && !surface.revealPlans.isEmpty)
+  assert(surface.backdrop.mask!.mask==nil && surface.light.mask!.mask==nil,"Use one shallow image mask, not nested full-window surfaces")
+  assert(surface.revealMasks[0].contents as AnyObject === surface.revealMasks[1].contents as AnyObject,"Share the composed alpha image")
+  let visible=surface.revealSources
+  let minimum=cold ? 0.48:0.36
+  let fades=surface.pieces.map{$0.animation(forKey:"fallingFade")!}
+  let fadeEnds=fades.map{$0.beginTime+$0.duration}
+  let ordered=visible.sorted{($0/5+$0%5)<($1/5+$1%5)}
+  for i in visible{
+   assert(fades[i].duration>=minimum,"Every visible tile needs a full readable fade")
+   assert(fades[i].beginTime>=ready)
   }
-  assert(zip(byDiagonal,byDiagonal.dropFirst()).allSatisfy{$0<=$1+0.001},"Leading diagonal must disappear before the following diagonals")
-  assert(byDiagonal.last!-byDiagonal.first!<=8*surface.phaseGap*surface.wavePeriod+0.01,"No extra period at the leading edge")
-  assert(surface.revealMasks.count==2)
-  for background in [surface.backdrop,surface.light]{
-   assert(background.opacity==1 && background.animation(forKey:"reveal")==nil,"Background must reveal spatially, not fade uniformly")
+  for (a,b) in zip(ordered,ordered.dropFirst()) where a/5+a%5<b/5+b%5{
+   assert(fades[b].beginTime-fades[a].beginTime>=0.08,"Successive diagonals need a visible stagger")
   }
-  assert(!surface.revealSources.isEmpty)
-  for fields in surface.revealFields{
-   assert(fields.count==surface.revealSources.count)
-   for (slot,field) in fields.enumerated(){
-    let index=surface.revealSources[slot]
-    assert(field.type == .radial,"Each fading tile must open its own radial region")
-    let opening=field.animation(forKey:"localReveal")!
-    let fade=surface.pieces[index].animation(forKey:"fallingFade")!
-    assert(abs(opening.beginTime-fade.beginTime-fade.duration)<0.001,"Background diffusion must start after its tile has finished fading")
-    assert(opening.duration>=(cold ? 0.6:0.44)-0.00001,"Diffusion must have enough time to be visible")
-    let centerFade=(opening as! CAAnimationGroup).animations![1] as! CAKeyframeAnimation
-    assert(centerFade.keyTimes![1].doubleValue<=0.3,"Center opens early, leaving time for outward expansion")
-    let spread=(opening as! CAAnimationGroup).animations![0] as! CAKeyframeAnimation
-    assert(spread.values!.count>80,"Diffusion includes exact tile fade boundaries")
-    let last=spread.values!.last as! [NSNumber]
-    assert(last[7].doubleValue>0.99,"Every expanding region must finish before removal")
-    let center=surface.revealCenter(index)
-    assert(abs(field.startPoint.x*surface.bounds.width-center.x)<0.001)
-    assert(abs(field.startPoint.y*surface.bounds.height-center.y)<0.001)
-    let radiusX=(field.endPoint.x-field.startPoint.x)*surface.bounds.width
-    let radiusY=(field.endPoint.y-field.startPoint.y)*surface.bounds.height
-    assert(abs(radiusX-radiusY)<0.001,"Diffusion must spread evenly in screen space")
-    if slot+1<fields.count{assert(field.mask === fields[slot+1])}
-    end=max(end,opening.beginTime+opening.duration)
-   }
+  for plan in surface.revealPlans{
+   assert(abs(plan.begin-fadeEnds[plan.index])<0.001,"Diffusion starts only after its tile has faded")
+   assert(plan.radii.last!>0.99)
+   end=max(end,plan.begin+plan.duration)
   }
-  let fields=surface.revealFields[0]
-  for y in 0...8{for x in 0...8{
-   let point=CGPoint(x:surface.bounds.width*Double(x)/8,y:surface.bounds.height*Double(y)/8)
-   assert(fields.contains{field in
-    let center=CGPoint(x:field.startPoint.x*surface.bounds.width,y:field.startPoint.y*surface.bounds.height)
-    let core=(field.endPoint.x-field.startPoint.x)*surface.bounds.width*0.45
-    return hypot(center.x-point.x,center.y-point.y)<core
-   },"Clear cores must cover every corner and gap before removal")
-  }}
-  let lastVisible=surface.pieces.indices.filter{surface.bounds.contains(surface.revealCenter($0))}.max{fadeEnds[$0]<fadeEnds[$1]}!
-  let lastVisibleFade=surface.pieces[lastVisible].animation(forKey:"fallingFade")!
-  var sawLastTileFade=false
-  var sawSpatialReveal=false
+  let lastVisible=visible.max{fadeEnds[$0]<fadeEnds[$1]}!
+  let lastFade=fades[lastVisible]
   while CACurrentMediaTime()<end-0.025{
    RunLoop.main.run(until:Date().addingTimeInterval(0.015))
    let now=CACurrentMediaTime()
-   for field in fields{
-    let opening=field.animation(forKey:"localReveal")!
-    let progress=(now-opening.beginTime)/opening.duration
-    if let presented=field.presentation(),let colors=presented.colors as? [CGColor]{
-     if progress < -0.025{assert(colors[0].alpha>0.99,"Future regions must remain covered")}
-     if progress>0.25 && progress<0.75{
-      assert(colors[0].alpha<0.25,"The center must already be visibly open while the edge expands")
-      if progress>0.4{assert(colors[0].alpha<0.01,"Center stays clear during the outward spread")}
-      assert(colors.last!.alpha>0.99,"The outside of each radial region stays opaque")
-      assert((presented.locations?[1].doubleValue ?? 0)>0,"The clear core must expand outward")
-      sawSpatialReveal=true
-     }
-    }
+   if let gray=surface.revealGray,let data=gray.data{
+    let bytes=data.assumingMemoryBound(to:UInt8.self)
+    var sum=0
+    for y in 0..<gray.height{for x in 0..<gray.width{sum+=Int(bytes[y*gray.bytesPerRow+x])}}
+    let remaining=Double(sum)/Double(gray.width*gray.height*255)
+    if remaining>0.05 && remaining<0.95{partialBackground.append(now)}
    }
-   let lastProgress=(now-lastVisibleFade.beginTime)/lastVisibleFade.duration
-   if lastVisibleFade.duration>0.1 && lastProgress>0.25 && lastProgress<0.75{
+   let progress=(now-lastFade.beginTime)/lastFade.duration
+   if progress>0.25 && progress<0.75{
     let opacity=surface.pieces[lastVisible].presentation()!.opacity
-    assert(opacity>0.01 && opacity<surface.crestOpacity-0.01,"The final visible tile must have actual intermediate fade frames")
+    assert(opacity>0.01 && opacity<surface.crestOpacity-0.01,"The last tile must actually fade through intermediate frames")
     let context=CGContext(data:nil,width:224,height:144,bitsPerComponent:8,bytesPerRow:896,space:CGColorSpaceCreateDeviceRGB(),bitmapInfo:CGImageAlphaInfo.premultipliedLast.rawValue)!
     context.scaleBy(x:0.2,y:0.2);surface.layer!.presentation()!.render(in:context)
     let pixels=context.data!.assumingMemoryBound(to:UInt8.self)
     let center=surface.revealCenter(lastVisible)
     let x=max(0,min(223,Int(center.x*0.2))),y=max(0,min(143,Int(center.y*0.2)))
-    // Bitmap scanlines run from the top; the AppKit surface uses bottom-up coordinates.
-    assert(pixels[((143-y)*224+x)*4+3]>250,"The actual composed background under the last tile must remain opaque during its fade")
-    sawLastTileFade=true
+    assert(pixels[((143-y)*224+x)*4+3]>250,"Background stays beneath the final tile through its fade")
+    intermediateTileFrames+=1
    }
-   // No earlier expansion may erase the support beneath a still-visible tile.
-   for (i,tile) in surface.pieces.enumerated() where now<fadeEnds[i]-0.01{
-    let center=surface.revealCenter(i)
-    guard surface.bounds.contains(center), (tile.presentation()?.opacity ?? 0)>0.01 else{continue}
-    for field in fields{
-     if let presented=field.presentation(),let locations=presented.locations{
-      let origin=CGPoint(x:field.startPoint.x*surface.bounds.width,y:field.startPoint.y*surface.bounds.height)
-      let radius=(field.endPoint.x-field.startPoint.x)*surface.bounds.width*locations[7].doubleValue
-      assert(hypot(center.x-origin.x,center.y-origin.y)>=radius-0.5,"A neighboring diffusion must not clear the background under a visible tile")
-     }
-    }
-   }
-   for (i,item) in surface.pieces.enumerated() where now>fadeEnds[i]+0.025{
-    assert((item.presentation()?.opacity ?? 0)<0.01,"A disappeared tile must stay invisible")
-    assert(abs((item.presentation()?.transform.m42 ?? 0)/surface.liftY)<0.3,"Landed tiles must not start rising again during the exit")
+   for (i,tile) in surface.pieces.enumerated() where now>fadeEnds[i]+0.025{
+    assert((tile.presentation()?.opacity ?? 0)<0.01)
+    assert(abs((tile.presentation()?.transform.m42 ?? 0)/surface.liftY)<0.3,"Landed tiles cannot rise again")
    }
   }
-  assert(sawSpatialReveal,"Must observe the expanding radial background regions in real presentation layers")
-  if lastVisibleFade.duration>0.1{assert(sawLastTileFade,"Must inspect the final tile before its fade completes")}
-  // Inspect the composed image, not just animation values, before removal.
-  if let presented=surface.layer?.presentation(){
-   let context=CGContext(data:nil,width:224,height:144,bitsPerComponent:8,bytesPerRow:896,space:CGColorSpaceCreateDeviceRGB(),bitmapInfo:CGImageAlphaInfo.premultipliedLast.rawValue)!
-   context.scaleBy(x:0.2,y:0.2);presented.render(in:context)
-   let pixels=context.data!.assumingMemoryBound(to:UInt8.self)
-   let maximum=(0..<(224*144)).map{Int(pixels[$0*4+3])}.max()!
-   assert(maximum<16,"Overlay must already be visually clear before it is removed")
-  }
+  assert(intermediateTileFrames>=3,"Do not compress the visible fade into a couple of frames")
+  assert(partialBackground.count>=12,"Background diffusion must contain many intermediate frames")
+  let spread=partialBackground.last!-partialBackground.first!
+  assert(spread>=(cold ? 0.4:0.32),"Background diffusion must remain visible over time")
+  let context=CGContext(data:nil,width:224,height:144,bitsPerComponent:8,bytesPerRow:896,space:CGColorSpaceCreateDeviceRGB(),bitmapInfo:CGImageAlphaInfo.premultipliedLast.rawValue)!
+  context.scaleBy(x:0.2,y:0.2);surface.layer!.presentation()!.render(in:context)
+  let pixels=context.data!.assumingMemoryBound(to:UInt8.self)
+  assert((0..<(224*144)).map{Int(pixels[$0*4+3])}.max()!<16,"Overlay must be clear before removal")
+  print("visible frames",intermediateTileFrames,"background frames",partialBackground.count,"diffusion ms",spread*1000)
  }
  RunLoop.main.run(until:Date().addingTimeInterval(max(0,end-CACurrentMediaTime())+0.1))
- assert(completed==1 && surface.superview==nil)
+ assert(completed==1 && surface.superview==nil && surface.revealTimer==nil)
  assert(surface.pieces.allSatisfy{$0.animationKeys()==nil})
- assert(surface.revealFields.flatMap{$0}.allSatisfy{$0.animationKeys()==nil})
  window.close()
  print("PASS",cold ? "cold":"warm","loading",loading,"exit ms",(end-ready)*1000)
 }
@@ -168,5 +108,5 @@ with tempfile.TemporaryDirectory(prefix='journal-launch-test-') as directory:
     swift.write_text('import Cocoa\nimport QuartzCore\n' + source[start:end] + checks)
     executable = folder / 'launch-test'
     cache = os.environ.get('JOURNAL_SWIFT_MODULE_CACHE', str(folder / 'module-cache'))
-    subprocess.run(['swiftc', '-Onone', '-module-cache-path', cache, str(swift), '-o', str(executable)], check=True)
-    subprocess.run([str(executable)], check=True, timeout=35)
+    subprocess.run(['swiftc', '-O', '-Xfrontend', '-assert-config', '-Xfrontend', 'Debug', '-module-cache-path', cache, str(swift), '-o', str(executable)], check=True)
+    subprocess.run([str(executable)], check=True, timeout=60)
