@@ -235,3 +235,6 @@ html.native-mac:has(#page-review.time-view:not([hidden])){border-radius:0 0 16px
 
 /* Let the row halo breathe into the chart padding without clipping its edges. */
 .tr-scroll,.tr-days{overflow:visible}
+
+.tr-controls #tr-today{height:32px;min-height:32px;padding:0 10px;border:1px solid #dfe5d6;border-radius:8px;background:#f7f8f2;color:#617653}
+.tr-controls #tr-today:hover{background:#e8ecdf;color:var(--green)}
