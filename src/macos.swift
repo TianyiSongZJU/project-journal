@@ -49,6 +49,7 @@ final class JournalLaunchSurface:NSView {
  var revealMasks:[CAGradientLayer]=[]
  var revealFields:[[CAGradientLayer]]=[]
  var revealSources:[Int]=[]
+ var revealOuterRadius:CGFloat=1
  let restingOpacity:Float=0.28
  let crestOpacity:Float=0.64
  var wavePeriod:CFTimeInterval{cold ? 1.6:1.0}
@@ -121,6 +122,7 @@ final class JournalLaunchSurface:NSView {
   }}
   let core=reach+hypot(bounds.width,bounds.height)/16+16
   let radius=core/0.45
+  revealOuterRadius=radius
   for fields in revealFields{for (field,center) in zip(fields,centers){
    field.frame=bounds
    field.startPoint=CGPoint(x:(center.x-bounds.minX)/bounds.width,y:(center.y-bounds.minY)/bounds.height)
@@ -159,34 +161,60 @@ final class JournalLaunchSurface:NSView {
   let projection=tiles.affineTransform()
   let margin=354*max(hypot(projection.a,projection.b),hypot(projection.c,projection.d))
   revealSources=pieces.indices.filter{bounds.insetBy(dx:-margin,dy:-margin).contains(revealCenter($0))}
+  layoutRevealMasks()
+  let fadeEnds=pieces.map{tile -> CFTimeInterval in
+   let fade=tile.animation(forKey:"fallingFade")!
+   return fade.beginTime+fade.duration
+  }
+  let protectedRects=pieces.map{tiles.convert($0.frame,to:layer).insetBy(dx:-12,dy:-12)}
+  let diffusion:CFTimeInterval=cold ? 0.6:0.44
+  let revealEnd=fadeEnds.max()!+diffusion
   for surface in [backdrop,light]{
    var fields:[CAGradientLayer]=[]
    for index in revealSources{
     let field=CAGradientLayer();field.type = .radial
-    let alphas:[CGFloat]=[0,0,0.074,0.259,0.5,0.741,0.926,1]
+    let alphas:[CGFloat]=[0,0,0.074,0.259,0.5,0.741,0.926,1,1]
     let finalColors=alphas.map{NSColor.black.withAlphaComponent($0).cgColor}
     let opaqueColors=alphas.map{_ in NSColor.black.cgColor}
-    let finalLocations:[NSNumber]=[0,0.45,0.53,0.61,0.69,0.77,0.85,1]
+    let finalLocations:[NSNumber]=[0,0.45,0.53,0.61,0.69,0.77,0.85,1,1]
     field.colors=finalColors;field.locations=finalLocations
-    // Each native radial mask opens from its own tile when that tile fades.
-    // Nested masks multiply their alpha, merging the clear regions naturally.
-    let tileFade=pieces[index].animation(forKey:"fallingFade")!
+    // The tile must finish its own fade before it can open the background.
+    let begin=fadeEnds[index],duration=revealEnd-begin,center=revealCenter(index)
+    // Clip each expanding circle outside every tile that is still visible.
+    // Include exact fade boundaries so interpolation cannot sweep across a
+    // protected tile before it has finished descending and fading.
+    var times=(0...80).map{begin+duration*Double($0)/80}
+    times += fadeEnds.filter{$0>begin && $0<revealEnd}
+    times=Array(Set(times)).sorted()
+    var previousTime=begin,previousRadius:CGFloat=0
+    let speed=revealOuterRadius/diffusion
+    var radii:[CGFloat]=[]
+    for time in times{
+     var safeRadius=revealOuterRadius
+     for (rect,end) in zip(protectedRects,fadeEnds) where time<=end+0.000001{
+      let dx=max(rect.minX-center.x,0,center.x-rect.maxX)
+      let dy=max(rect.minY-center.y,0,center.y-rect.maxY)
+      safeRadius=min(safeRadius,hypot(dx,dy))
+     }
+     let radius=min(safeRadius,previousRadius+speed*max(0,time-previousTime))
+     radii.append(radius/revealOuterRadius);previousRadius=radius;previousTime=time
+    }
     let spread=CAKeyframeAnimation(keyPath:"locations")
-    spread.values=[[0,0,0,0,0,0,0,1],finalLocations]
-    // Open a visible center early, then let its soft edge travel outward.
-    // Growing radius and transparency together under one easing hid most of
-    // the old 180-ms diffusion until its final frames.
+    spread.values=radii.map{fraction -> [NSNumber] in
+     finalLocations.dropLast().map{NSNumber(value:$0.doubleValue*Double(fraction))}+[1]
+    }
+    spread.keyTimes=times.map{NSNumber(value:($0-begin)/duration)}
     let dissolve=CAKeyframeAnimation(keyPath:"colors")
-    dissolve.values=[opaqueColors,finalColors,finalColors];dissolve.keyTimes=[0,0.3,1]
-    let duration=max(cold ? 0.6:0.44,tileFade.duration)
+    dissolve.values=[opaqueColors,finalColors,finalColors]
+    dissolve.keyTimes=[0,NSNumber(value:min(0.3,0.12/duration)),1]
     spread.duration=duration;dissolve.duration=duration
     let opening=CAAnimationGroup();opening.animations=[spread,dissolve]
-    opening.beginTime=tileFade.beginTime;opening.duration=duration
+    opening.beginTime=begin;opening.duration=duration
     opening.timingFunction=CAMediaTimingFunction(name:.linear)
     opening.fillMode = .both;opening.isRemovedOnCompletion=false
     field.add(opening,forKey:"localReveal")
     if let previous=fields.last{previous.mask=field}else{surface.mask=field;revealMasks.append(field)}
-    fields.append(field);lastFadeEnd=max(lastFadeEnd,opening.beginTime-now+duration)
+    fields.append(field);lastFadeEnd=max(lastFadeEnd,revealEnd-now)
    }
    revealFields.append(fields)
   }
