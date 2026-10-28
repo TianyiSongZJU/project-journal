@@ -5,9 +5,9 @@
 
 ![Annual review with project time distribution and daily notes](docs/images/year-review.png)
 
-Project Journal keeps project notes, daily progress, deadlines and time records in one place. You can enter notes and time directly, or use optional foreground activity and file-change clues to recall your work. Review suggested time blocks and confirm their project before adding them to your records.
+Project Journal keeps project notes, daily progress, deadlines and time records in one place. You can enter notes and time directly, or use optional foreground activity and file-change clues to recall your work. Check suggested time blocks and their project assignments before adding them to your records.
 
-This is an early desktop app for **macOS and Windows**, maintained by an individual. The interface is currently primarily in Chinese. It requires no account and provides no hosted service.
+This desktop app for **macOS and Windows** is maintained by one person and is still in development. The interface is mainly in Chinese. It requires no account and provides no hosted service.
 
 ## What it does
 
@@ -15,7 +15,7 @@ This is an early desktop app for **macOS and Windows**, maintained by an individ
 - A daily timeline for allocating time in 15-minute increments. Other manually entered time is recorded separately.
 - Optional foreground activity and folder-change collection. Suggested time blocks include their evidence and device sources.
 - Annual and monthly heatmaps, time-of-day review, project/group distributions, and hours/days display in the annual review.
-- Local JSON storage partitioned by project, month and device; history recovery, sync-copy warnings and folder relocation.
+- Local JSON storage organized by project, month and device; history recovery, sync-copy warnings and folder relocation.
 - Restores the previous view and display preferences. macOS has a menu-bar app and background-only login startup.
 
 **Activity clues do not measure work time.** Suggestions help you recall your day and require review and confirmation before they count toward project time. If evidence from multiple devices points to different projects, you need to decide where the time belongs.
@@ -30,11 +30,18 @@ All screenshots use reproducible, fictional sample data. They contain no real us
 
 **Time-of-day review**
 
-Compare dates in 15-minute increments, using an 08:00–24:00 axis or a full-day view. Filter by date and project, switch between effort and project colors, and inspect cumulative time by time of day. Only confirmed allocations are included; daily totals without timestamps remain separate.
+Compare confirmed time blocks across dates in 15-minute increments.
+
+- Show a fixed span of 7, 14 or 30 days. Changing either date adjusts the other to preserve that span. Arrows and scrolling move the window one day at a time; 今天 (Today) sets the end date to today.
+- Use the default 08:00–24:00 axis or switch to a full day. Filter projects, enable project colors, and optionally distinguish weekend rows.
+- Hover over a row to highlight the day and see the time spent on each project and its share of the total. Click to open daily notes while keeping the full time axis visible. Today has its own marker.
+- Compare daily average time in the bottom chart. Each bar represents a 15-minute interval, and the scale adjusts to the highest average. Enable project colors to stack the bars by project. Hover over a project name in the legend to highlight it; the bars then show only that project’s time.
+
+The chart includes only confirmed time blocks. The overview label 总投入 (Total time) is their sum across the selected dates and projects. Other records without timestamps are listed separately; the app does not infer when they occurred. The bottom chart covers the visible hours, so the 08:00–24:00 view excludes earlier time blocks.
 
 This feature is available on the main branch for local builds. The existing 2.1.0 download does not include it yet.
 
-![Time-of-day review with confirmed project allocations and cumulative totals](docs/images/time-review.png)
+![Time-of-day review with confirmed project time blocks and daily averages](docs/images/time-review.png)
 
 **Project notes, deadlines and daily entries**
 
@@ -69,7 +76,7 @@ The Mac universal build has been built and signature-verified locally. The Windo
 2. Use 记一笔 (New entry) to record progress and time. A note without time is fine.
 3. Optionally enable foreground activity or bind a project folder under 记录 → 记录设置 (Record → Settings).
 4. In 记录 (Record), select or adopt suggested time blocks, assign projects, review, then choose 计入项目 (Apply).
-5. Use 回顾 (Review) to explore monthly/annual work and deadlines.
+5. Use 回顾 (Review) to explore annual/monthly work and deadlines, or compare work hours across dates in 时段 (Time of day).
 
 Monitoring is optional. Access to window titles depends on OS permissions, including macOS Accessibility permissions. File watching records metadata without reading document contents. The app does not record screenshots, keystroke contents, audio or video. Once an idle period exceeds the configured threshold, that idle time is deducted retrospectively. Computer activity may still differ from actual work.
 
@@ -79,7 +86,7 @@ The app stores records in a sibling data/ folder. Keep the entire folder, includ
 
 To share records between Mac and Windows, sync **all of data/** with your own sync tool. The app has no built-in cloud service. Source documents are stored separately, so bind their local folder on each device. Keep local preferences, monitoring settings and absolute folder paths specific to each device.
 
-Finish saving and syncing on one device before editing on the next. The app checks revisions, warns about conflict copies and merges activity clues. These measures do not guarantee conflict-free real-time editing through every file-sync service. Keep independent backups. Local files are not encrypted. When updating, preserve your data and device settings and replace only the application files.
+Finish saving and syncing on one device before editing on the next. The app checks revisions, warns about conflict copies and merges activity clues. Editing on multiple devices at once through a file-sync service can still cause conflicts. Keep independent backups. Local files are not encrypted. When updating, preserve your data and device settings and replace only the application files.
 
 More details: [data and privacy](docs/privacy.md) (Chinese).
 

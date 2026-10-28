@@ -25,6 +25,8 @@ const root=path.resolve(__dirname,'..'),parent=fs.mkdtempSync(path.join(os.tmpdi
   await page.locator('.heat-day[data-date="2026-10-28"]').click();
   await shot('year-review');
   await page.locator('#mode-month').click();await shot('month-review');
+  await page.locator('#mode-time').click();await page.locator('[data-tr-preset="7"]').click();await page.locator('#tr-today').click();
+  await page.locator('#tr-by-project').click();await page.locator('#tr-weekends').click();await shot('time-review');
   await page.locator('[data-page="projects"]').click();
   await page.locator('[data-select-project="demo-research"]').click();
   await page.locator('#project-note').waitFor({state:'attached'});
@@ -42,7 +44,7 @@ const root=path.resolve(__dirname,'..'),parent=fs.mkdtempSync(path.join(os.tmpdi
   await page.locator('.dt-evidence-tip').waitFor();
   await page.screenshot({path:path.join(output,'clue-details.png')});
   if(errors.length)throw Error(errors.join('\n'));
-  console.log('Saved five real UI screenshots from isolated synthetic data.');
+  console.log('Saved six real UI screenshots from isolated synthetic data.');
  }finally{
   await browser?.close();
   if(server){server.kill();await new Promise(resolve=>{if(server.exitCode!==null)return resolve();server.once('exit',resolve);setTimeout(resolve,3000)});}
