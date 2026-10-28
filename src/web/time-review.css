@@ -90,3 +90,27 @@
 
 #tr-project-filter-host{margin-left:0}.tr-summary-total{transition:opacity .15s}
 .tr-summary-limit{right:15px;top:17px;width:48px;text-align:right;line-height:10px;background:#f7f8f2;padding-left:3px}
+#tr-controls-host[hidden]{display:none!important}
+.time-view>.toolbar{justify-content:flex-start;align-items:center;gap:12px}
+.time-view>.toolbar>.segmented{order:0}.time-view>.toolbar>.filters{display:none}
+#tr-controls-host{order:1;margin-left:auto;min-width:0}
+#tr-controls-host .tr-controls{margin:0;min-height:31px;gap:10px;justify-content:flex-end}
+.tr-date-fields{display:flex;align-items:center;gap:3px;border:1px solid #dfe5d6;border-radius:8px;background:#f7f8f2;padding:0 3px;height:32px}
+.tr-date-fields input{width:119px;min-height:28px;height:28px;line-height:22px;margin:0;padding:3px 4px;font-size:11px;text-align:center;color:#617653}
+.tr-date-fields input::-webkit-date-and-time-value{text-align:center}
+.tr-date-fields #tr-prev,.tr-date-fields #tr-next{display:grid;place-items:center;flex:none;width:25px;height:28px;min-height:28px;padding:0;border-radius:5px;line-height:1}
+.tr-date-fields svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;display:block}
+.tr-date-separator{color:#a6b09b;line-height:28px;font-size:10px;flex:none}
+#time-workspace{position:relative;margin-top:16px}
+.tr-overview{padding-right:118px;min-height:36px;align-items:center;margin-bottom:14px}
+.tr-outside-tools{position:absolute;right:0;top:3px;display:flex;justify-content:flex-end}
+.tr-outside-tools .filter-popover{left:auto!important;right:0!important}
+.tr-chart-tools{min-height:28px;margin-bottom:8px}
+.tr-range-caption{display:flex;align-items:baseline;gap:9px;font-size:11px;font-variant-numeric:tabular-nums;letter-spacing:.02em;color:#7e9270}
+.tr-range-caption>span{color:#b1bba7}
+.tr-display-controls #tr-by-project{border:1px solid #dfe6d6;border-radius:6px;padding:0 10px}
+.tr-display-controls #tr-by-project.active{background:#e0e9d6;color:#456b37}
+@media(max-width:850px){.time-view>.toolbar{gap:8px}#tr-controls-host .tr-controls{gap:6px}.tr-date-fields input{width:112px}.tr-range-caption{gap:6px;font-size:10px}}
+@media(max-width:650px){#tr-controls-host{flex-basis:100%}#tr-controls-host .tr-controls{justify-content:flex-start;gap:6px}.tr-date-fields{gap:0;padding:0 2px}.tr-date-fields input{width:111px}.tr-date-fields #tr-prev,.tr-date-fields #tr-next{width:20px}.tr-overview{padding-right:0;padding-bottom:28px}.tr-outside-tools{top:auto;transform:translateY(-31px)}.tr-range-caption{font-size:9px;gap:4px}.tr-chart-tools .tr-display-controls{gap:5px}.tr-display-controls #tr-by-project,.tr-display-controls #tr-full-day{padding:0 6px}}
+
+.tr-chart{position:relative}
