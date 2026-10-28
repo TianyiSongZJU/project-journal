@@ -131,7 +131,12 @@ final class JournalLaunchSurface:NSView {
   CATransaction.commit()
  }
  func revealCenter(_ index:Int)->CGPoint{
-  tiles.convert(pieces[index].position,to:layer)
+  let center=tiles.convert(pieces[index].position,to:layer)
+  let visible=tiles.convert(pieces[index].frame,to:layer).intersection(bounds)
+  // Edge tiles may have their geometric center outside the window. Open
+  // from the visible portion, so their diffusion doesn't arrive off-screen.
+  if !bounds.contains(center),!visible.isNull,!visible.isEmpty{return CGPoint(x:visible.midX,y:visible.midY)}
+  return center
  }
  func layoutRevealMasks(){
   guard !revealSources.isEmpty,bounds.width>0,bounds.height>0 else{return}
@@ -190,7 +195,6 @@ final class JournalLaunchSurface:NSView {
   // With this easing, 61% of descent time is approximately two thirds of its travel.
   let fadePoint=half+half*0.61
   let sweep=floor(max(0,now-waveStarts[0])/waveCycleDuration)
-  var lastFadeEnd:CFTimeInterval=0
   let projectedRects=pieces.map{tiles.convert($0.frame,to:layer).insetBy(dx:-12,dy:-12)}
   revealSources=pieces.indices.filter{bounds.intersects(projectedRects[$0])}
   let firstVisibleDiagonal=revealSources.map{$0/5+$0%5}.min() ?? 0
@@ -216,31 +220,31 @@ final class JournalLaunchSurface:NSView {
    // The ripple rests flat after its descent until the next shared sweep.
    // Visible tiles retain a readable fade even if loading ends after they land.
    fade.fillMode = .forwards;fade.isRemovedOnCompletion=false;tile.opacity=0;tile.add(fade,forKey:"fallingFade")
-   lastFadeEnd=max(lastFadeEnd,wait+duration)
   }
   layoutRevealMasks()
-  let fadeEnds=pieces.map{tile -> CFTimeInterval in
-   let fade=tile.animation(forKey:"fallingFade")!
-   return fade.beginTime+fade.duration
-  }
+  let fades=pieces.map{$0.animation(forKey:"fallingFade")!}
+  // Retain the background during the substantial part of each tile's fade,
+  // then allow the local dissolve to overlap its disappearing tail.
+  let protectionEnds=fades.map{$0.beginTime+$0.duration*0.62}
   let protectedRects=projectedRects
   let diffusion:CFTimeInterval=cold ? 0.82:0.66
-  let revealEnd=fadeEnds.max()!+diffusion
+  let revealEnd=protectionEnds.max()!+diffusion
   for index in revealSources{
-    // The tile must finish its own fade before it can open the background.
-    let begin=fadeEnds[index],duration=revealEnd-begin,center=revealCenter(index)
-    // Clip each expanding circle outside every tile that is still visible.
-    // Include exact fade boundaries so interpolation cannot sweep across a
-    // protected tile before it has finished descending and fading.
+    // Start the local dissolve halfway through the tile fade, with a short
+    // protection overlap so the center opens as the tile's tail disappears.
+    let begin=fades[index].beginTime+fades[index].duration*0.5
+    let duration=revealEnd-begin,center=revealCenter(index)
+    // Protect tiles through the first 62% of their fade. Exact release
+    // boundaries keep earlier regions from cutting across a still-solid tile.
     var times=(0...80).map{begin+duration*Double($0)/80}
-    times += fadeEnds.filter{$0>begin && $0<revealEnd}
+    times += protectionEnds.filter{$0>begin && $0<revealEnd}
     times=Array(Set(times)).sorted()
     var previousTime=begin,previousRadius:CGFloat=0
     let speed=revealOuterRadius/diffusion
     var radii:[CGFloat]=[]
     for time in times{
      var safeRadius=revealOuterRadius
-     for (rect,end) in zip(protectedRects,fadeEnds) where time<=end+0.000001{
+     for (rect,end) in zip(protectedRects,protectionEnds) where time<=end+0.000001{
       let dx=max(rect.minX-center.x,0,center.x-rect.maxX)
       let dy=max(rect.minY-center.y,0,center.y-rect.maxY)
       safeRadius=min(safeRadius,hypot(dx,dy))
@@ -254,19 +258,22 @@ final class JournalLaunchSurface:NSView {
    let mask=CALayer();mask.frame=bounds;mask.contentsGravity = .resize;mask.magnificationFilter = .linear
    surface.mask=mask;revealMasks.append(mask)
   }
-  lastFadeEnd=max(lastFadeEnd,revealEnd-now)
   layoutRevealMasks()
   CATransaction.commit()
   updateRevealMask(at:now)
   let timer=Timer(timeInterval:1.0/60,repeats:true){[weak self] timer in
    guard let self=self else{timer.invalidate();return}
-   self.updateRevealMask(at:CACurrentMediaTime())
+   let time=CACurrentMediaTime()
+   self.updateRevealMask(at:time)
+   // Use the same frame clock for drawing and removal, retaining the fully
+   // transparent image for two frames before releasing the surface.
+   if time>=revealEnd+1.0/30{
+    timer.invalidate();self.revealTimer=nil
+    self.pieces.forEach{$0.removeAllAnimations()}
+    self.removeFromSuperview();completion()
+   }
   }
   revealTimer=timer;RunLoop.main.add(timer,forMode:.common)
-  // Remove the overlay after the last diagonal in this sweep has disappeared.
-  DispatchQueue.main.asyncAfter(deadline:.now()+lastFadeEnd+1.0/30){[weak self] in
-   self?.revealTimer?.invalidate();self?.revealTimer=nil;self?.pieces.forEach{$0.removeAllAnimations()};self?.removeFromSuperview();completion()
-  }
  }
  override func hitTest(_ point:NSPoint)->NSView?{nil}
 }
