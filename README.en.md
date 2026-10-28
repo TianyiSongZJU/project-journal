@@ -1,38 +1,38 @@
 <p align="center"><img src="src/web/app-icon.png" width="96" alt="Project Journal icon"></p>
 <h1 align="center">Project Journal · 项目手记</h1>
-<p align="center">A local-first work journal for long-running projects.</p>
+<p align="center">Local project notes, time records and work reviews.</p>
 <p align="center"><a href="https://github.com/TianyiSongZJU/project-journal/releases/latest">Download</a> · <a href="README.md">中文</a> · <a href="docs/development.md">Build & development</a></p>
 
 ![Annual review with project time distribution and daily notes](docs/images/year-review.png)
 
-Keep project notes, daily progress, deadlines and time records together. Optionally collect foreground activity and file-change clues, review suggested time blocks, and confirm what belongs to each project.
+Project Journal keeps project notes, daily progress, deadlines and time records in one place. You can enter notes and time directly, or use optional foreground activity and file-change clues to recall your work. Review suggested time blocks and confirm their project before adding them to your records.
 
-This is an early, personally maintained desktop app for **macOS and Windows**. The interface is currently primarily in Chinese. No account or hosted service is required.
+This is an early desktop app for **macOS and Windows**, maintained by an individual. The interface is currently primarily in Chinese. It requires no account and provides no hosted service.
 
 ## What it does
 
 - Projects and groups, Markdown project notes, daily entries, deadlines and completed-project archives.
-- A daily timeline with manual allocation in 15-minute increments; other manually recorded time is accounted for separately.
-- Optional foreground activity and folder-change collection, with device/source details for suggested time blocks.
+- A daily timeline for allocating time in 15-minute increments. Other manually entered time is recorded separately.
+- Optional foreground activity and folder-change collection. Suggested time blocks include their evidence and device sources.
 - Annual and monthly heatmaps, project/group distributions, and hours/days display in the annual review.
 - Local JSON storage partitioned by project, month and device; history recovery, sync-copy warnings and folder relocation.
 - Restores the previous view and display preferences. macOS has a menu-bar app and background-only login startup.
 
-**Clues are not measured work.** Suggestions help you recall your day; they require review and confirmation. Conflicting project evidence from multiple devices needs a human decision.
+**Activity clues do not measure work time.** Suggestions help you recall your day and require review and confirmation before they count toward project time. If evidence from multiple devices points to different projects, you need to decide where the time belongs.
 
 ## Screenshots
 
-All screenshots use reproducible, fictional sample data. They show the desktop content area, without native window chrome.
+All screenshots use reproducible, fictional sample data. They contain no real user notes or activity logs and show the desktop content area without the native window title bar.
 
 **Monthly review and daily progress**
 
 ![Monthly review](docs/images/month-review.png)
 
-**Project notes, milestones and history**
+**Project notes, deadlines and daily entries**
 
 ![Project notes](docs/images/project-notes.png)
 
-**Activity clues, file changes and confirmed allocations**
+**Activity clues, file changes and time blocks**
 
 ![Daily timeline](docs/images/day-timeline.png)
 
@@ -51,9 +51,9 @@ Download a ZIP from [Releases](https://github.com/TianyiSongZJU/project-journal/
 
 Extract the full package to a writable, permanent folder. On Mac, open 项目手记.app; on Windows, run 项目手记-Windows.exe. Keep the license materials provided with the download.
 
-The Mac app is ad-hoc signed and not Apple-notarized; Windows builds do not have a paid code-signing certificate. Your OS may require explicit approval. Verify the download source before approving it. If WebView2 is missing, install it from [Microsoft](https://developer.microsoft.com/microsoft-edge/webview2/).
+The Mac app is ad-hoc signed and has not been notarized by Apple. Windows builds do not have a paid code-signing certificate. Your OS may require explicit approval. Verify the download source before approving it. If WebView2 is missing, install it from [Microsoft](https://developer.microsoft.com/microsoft-edge/webview2/).
 
-The Mac universal build has been built and signature-verified locally. Windows is cross-compiled; native device compatibility feedback is welcome.
+The Mac universal build has been built and signature-verified locally. The Windows version is cross-compiled and has not been tested on a Windows device. Compatibility reports from Windows users are welcome.
 
 ## First steps
 
@@ -63,21 +63,21 @@ The Mac universal build has been built and signature-verified locally. Windows i
 4. In 记录 (Record), select or adopt suggested time blocks, assign projects, review, then choose 计入项目 (Apply).
 5. Use 回顾 (Review) to explore monthly/annual work and deadlines.
 
-Monitoring is optional. Window title availability depends on OS permissions, including macOS Accessibility permissions. File watching records metadata, not document contents. The app does not record screenshots, keystroke contents, audio or video. Confirmed idle periods are deducted retrospectively, but activity is still an imperfect proxy for work.
+Monitoring is optional. Access to window titles depends on OS permissions, including macOS Accessibility permissions. File watching records metadata without reading document contents. The app does not record screenshots, keystroke contents, audio or video. Once an idle period exceeds the configured threshold, that idle time is deducted retrospectively. Computer activity may still differ from actual work.
 
 ## Your data
 
-The app uses a sibling data/ folder. Keep the entire folder, including .english-layout, notes/, time/, activity/, history-content/ and backups/. Older installations may use a legacy layout; do not manually rename files referenced by old indexes.
+The app stores records in a sibling data/ folder. Keep the entire folder, including .english-layout, notes/, time/, activity/, history-content/ and backups/. Older installations may use a legacy layout. Do not manually rename files referenced by old indexes.
 
-To share records between Mac and Windows, sync **all of data/** using your own sync tool. The app has no built-in cloud service. Source documents are separate; bind their local folder on each device. Local preferences, monitoring settings and absolute folder paths must remain device-specific.
+To share records between Mac and Windows, sync **all of data/** with your own sync tool. The app has no built-in cloud service. Source documents are stored separately, so bind their local folder on each device. Keep local preferences, monitoring settings and absolute folder paths specific to each device.
 
-Finish saving and syncing on one device before editing on the next. Revision checks, conflict-copy warnings and merged activity clues do not guarantee conflict-free real-time editing on arbitrary file-sync services. Keep independent backups. Local files are not encrypted. When updating, preserve your data and device settings and replace the application files only.
+Finish saving and syncing on one device before editing on the next. The app checks revisions, warns about conflict copies and merges activity clues. These measures do not guarantee conflict-free real-time editing through every file-sync service. Keep independent backups. Local files are not encrypted. When updating, preserve your data and device settings and replace only the application files.
 
 More details: [data and privacy](docs/privacy.md) (Chinese).
 
-## Try fictional data
+## Run the sample data
 
-The generator refuses to overwrite an existing output directory. Never merge demo data into your own journal.
+The generator refuses to overwrite an existing output directory. Run the demo in a new directory and keep it separate from your own journal.
 
 ```sh
 python3 scripts/make-demo.py --output /tmp/project-journal-demo
@@ -105,6 +105,6 @@ See [development notes](docs/development.md) for screenshots and license packagi
 
 ## Contribute and license
 
-Report issues with OS/app version and reproduction steps, using fictional data. See [CONTRIBUTING](CONTRIBUTING.md) and [SECURITY](SECURITY.md).
+When reporting an issue, include the OS and app version, steps to reproduce it, and the expected and actual behavior. Use fictional data. See [CONTRIBUTING](CONTRIBUTING.md) and [SECURITY](SECURITY.md).
 
 Project code is [MIT licensed](LICENSE). Dependencies retain their respective terms in [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md). The app icon was created with generative assistance; prompts and edit history are documented in assets/icons/设计说明.md.
