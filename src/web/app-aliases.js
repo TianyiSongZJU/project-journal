@@ -9,7 +9,11 @@ export const DEFAULT_APP_ALIASES = [
  {name:'Visual Studio Code',aliases:['Code','VS Code']},
  {name:'飞书',aliases:['Feishu']},
  {name:'钉钉',aliases:['DingTalk']},
- {name:'腾讯会议',aliases:['wemeetapp','Tencent Meeting','TencentMeeting']}
+ {name:'腾讯会议',aliases:['wemeetapp','Tencent Meeting','TencentMeeting']},
+ {name:'Clash Verge',aliases:['clash-verge']},
+ {name:'微信扩展',aliases:['WeChatAppEx']},
+ {name:'AppleMusic',aliases:[]},
+ {name:'项目手记',aliases:['project-journal','项目手记-Windows']}
 ];
 export const appAliasKey = name => String(name??'').trim().replace(/\.exe$/i,'').toLowerCase();
 export const appAliasGroups = settings => settings?.appAliases ?? DEFAULT_APP_ALIASES;

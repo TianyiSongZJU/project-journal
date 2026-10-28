@@ -34,10 +34,13 @@ test('missing estimates are reported rather than invented and existing other-tim
  const state=fixture();state.settings.estimates={};const m=buildTimeReview(state,options);assert.equal(m.missingEstimates,1);assert.equal(m.unlocatedHours,1);
  state.entries[0]={projectId:'a',date,kind:'hours',hours:3,otherKind:'hours',otherHours:.5};assert.equal(buildTimeReview(state,options).unlocatedHours,.5);
 });
-test('time-view preferences restore false-like choices and validate ranges and selected dates',()=>{
- const saved={start:'2026-10-01',end:date,startHour:0,colorMode:'project',preset:'custom',selectedDate:'2026-10-12',scrollTop:25,scrollLeft:0};
- assert.deepEqual(sanitizeTimeReview(saved,date),saved);assert.equal(sanitizeTimeReview({...saved,start:'2026-02-30'},date).start,'2026-10-01');
+test('fixed date windows migrate old preferences and support either endpoint across month and leap boundaries',()=>{
+ const saved={start:'2026-10-15',end:date,startHour:0,colorMode:'project',preset:'14',anchorSide:'end',selectedDate:'2026-10-20',scrollTop:25,scrollLeft:0};
+ assert.deepEqual(sanitizeTimeReview(saved,date),saved);
  assert.equal(sanitizeTimeReview({...saved,selectedDate:'2026-09-30'},date).selectedDate,'');
  const v=sanitizeViewState({mode:'time',timeReview:saved});assert.equal(v.mode,'time');assert.deepEqual(v.timeReview,saved);
- assert.deepEqual(timeReviewRange('7',date),{start:'2026-10-22',end:date,preset:'7'});assert.deepEqual(timeReviewRange('month',date),{start:'2026-10-01',end:date,preset:'month'});
+ assert.deepEqual(timeReviewRange('7',date),{start:'2026-10-22',end:date,preset:'7',anchorSide:'end'});
+ assert.deepEqual(timeReviewRange('30','2024-02-01','start'),{start:'2024-02-01',end:'2024-03-01',preset:'30',anchorSide:'start'});
+ const legacy=sanitizeTimeReview({start:'2025-01-01',end:date,preset:'custom'},date);assert.equal(timeReviewDayCount(legacy.start,legacy.end),14);
+ assert.equal(sanitizeTimeReview({end:date,preset:'28'},date).preset,'30');
 });

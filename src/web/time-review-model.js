@@ -6,18 +6,24 @@ export function validTimeDate(value){
  return dateKey(parseDate(value))===value;
 }
 export function timeReviewDayCount(start,end){const day=value=>Date.UTC(...value.split('-').map((n,i)=>Number(n)-(i===1?1:0)));return Math.round((day(end)-day(start))/86400000)+1}
-export function defaultTimeReview(today){return {start:addDays(today,-27),end:today,startHour:8,colorMode:'effort',preset:'28',selectedDate:'',scrollTop:0,scrollLeft:0}}
+export function timeReviewRange(preset,anchor,anchorSide='end'){
+ const count=preset==='7'?7:preset==='14'?14:30;
+ const shift=anchorSide==='start'?0:1-count;
+ const start=addDays(anchor,shift),end=addDays(start,count-1);
+ return {start,end,preset:String(count),anchorSide:anchorSide==='start'?'start':'end'};
+}
+export function defaultTimeReview(today){return {...timeReviewRange('14',today),startHour:8,colorMode:'effort',selectedDate:'',scrollTop:0,scrollLeft:0}}
 export function sanitizeTimeReview(raw={},today){
- const defaults=defaultTimeReview(today),out={...defaults};
+ const out=defaultTimeReview(today);
  if(raw&&typeof raw==='object'){
-  if(validTimeDate(raw.start)&&validTimeDate(raw.end)&&raw.start<=raw.end&&timeReviewDayCount(raw.start,raw.end)<=TIME_REVIEW_LIMIT){out.start=raw.start;out.end=raw.end;out.preset=['7','28','month','custom'].includes(raw.preset)?raw.preset:'custom'}
+  const preset=['7','14','30'].includes(raw.preset)?raw.preset:raw.preset==='28'||raw.preset==='month'?'30':'14',side=raw.anchorSide==='start'?'start':'end',anchor=side==='start'?raw.start:raw.end;
+  if(validTimeDate(anchor)){const range=timeReviewRange(preset,anchor,side);if(validTimeDate(range.start)&&validTimeDate(range.end))Object.assign(out,range)}
   for(const key of ['scrollTop','scrollLeft'])if(Number.isFinite(raw[key])&&raw[key]>=0&&raw[key]<=100000)out[key]=raw[key];
   out.startHour=raw.startHour===0?0:8;out.colorMode=raw.colorMode==='project'?'project':'effort';
   if(validTimeDate(raw.selectedDate)&&raw.selectedDate>=out.start&&raw.selectedDate<=out.end)out.selectedDate=raw.selectedDate;
  }
  return out;
 }
-export function timeReviewRange(preset,today){return preset==='month'?{start:today.slice(0,7)+'-01',end:today,preset}:{start:addDays(today,preset==='7'?-6:-27),end:today,preset}}
 
 // Only applied allocations have a time-of-day location. Never infer one from daily totals or evidence.
 export function buildTimeReview(state,{start,end,startHour=8,projectIds=[]}){
