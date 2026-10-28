@@ -66,9 +66,19 @@ final class JournalLaunchSurface:NSView {
  var revealTimer:Timer?
  var revealGray:CGContext?
  var revealRGBA:CGContext?
- let revealGradient:CGGradient={
-  let grays:[CGFloat]=[0,0,0.074,0.259,0.5,0.741,0.926,1]
-  return CGGradient(colorsSpace:CGColorSpaceCreateDeviceGray(),colors:grays.map{CGColor(gray:$0,alpha:1)} as CFArray,locations:[0,0.45,0.53,0.61,0.69,0.77,0.85,1])!
+ // A reusable soft rounded-square field, drawn in the same oblique plane
+ // as the tiles. One image per source keeps each frame inexpensive.
+ let revealTexture:CGImage={
+  let context=CGContext(data:nil,width:256,height:256,bitsPerComponent:8,bytesPerRow:0,space:CGColorSpaceCreateDeviceGray(),bitmapInfo:CGImageAlphaInfo.none.rawValue)!
+  context.setFillColor(CGColor(gray:1,alpha:1));context.fill(CGRect(x:0,y:0,width:256,height:256))
+  for step in stride(from:128,through:0,by:-1){
+   let t=CGFloat(step)/128,extent=128*(0.45+0.55*t)
+   context.setFillColor(CGColor(gray:t*t*(3-2*t),alpha:1))
+   let rect=CGRect(x:128-extent,y:128-extent,width:2*extent,height:2*extent)
+   let corner=extent*30/155
+   context.addPath(CGPath(roundedRect:rect,cornerWidth:corner,cornerHeight:corner,transform:nil));context.fillPath()
+  }
+  return context.makeImage()!
  }()
  var revealSources:[Int]=[]
  var revealOuterRadius:CGFloat=1
@@ -138,22 +148,31 @@ final class JournalLaunchSurface:NSView {
   if !bounds.contains(center),!visible.isNull,!visible.isEmpty{return CGPoint(x:visible.midX,y:visible.midY)}
   return center
  }
+ func revealProjection()->CGAffineTransform{
+  var transform=tiles.affineTransform()
+  transform.tx=tiles.position.x-transform.a*tiles.bounds.midX-transform.c*tiles.bounds.midY
+  transform.ty=tiles.position.y-transform.b*tiles.bounds.midX-transform.d*tiles.bounds.midY
+  return transform
+ }
  func layoutRevealMasks(){
   guard !revealSources.isEmpty,bounds.width>0,bounds.height>0 else{return}
-  let centers=revealSources.map{revealCenter($0)}
+  let inverse=revealProjection().inverted()
+  let centers=revealSources.map{revealCenter($0).applying(inverse)}
   // Cover every point, including corners and gaps, with at least one clear core.
   // The grid's half-diagonal bounds the distance between its samples.
   var reach:CGFloat=0
   for y in 0...8{for x in 0...8{
    let point=CGPoint(x:bounds.minX+bounds.width*CGFloat(x)/8,y:bounds.minY+bounds.height*CGFloat(y)/8)
-   reach=max(reach,centers.map{hypot($0.x-point.x,$0.y-point.y)}.min()!)
+   let local=point.applying(inverse)
+   reach=max(reach,centers.map{hypot($0.x-local.x,$0.y-local.y)}.min()!)
   }}
-  let core=reach+hypot(bounds.width,bounds.height)/16+16
+  let sampleMargin=(hypot(inverse.a,inverse.b)*bounds.width+hypot(inverse.c,inverse.d)*bounds.height)/16
+  let core=reach+sampleMargin+16
   let radius=core/0.45
   revealOuterRadius=radius
   for mask in revealMasks{mask.frame=bounds}
  }
- // Merge radial clear regions by their strongest contribution. Multiplying
+ // Merge oblique rounded-square fields by their strongest contribution. Multiplying
  // dozens of overlapping alpha masks erased everything in a few frames.
  // A small shared image also avoids a deep full-window compositing chain.
  func updateRevealMask(at time:CFTimeInterval){
@@ -168,13 +187,15 @@ final class JournalLaunchSurface:NSView {
   gray.saveGState();gray.setBlendMode(.copy);gray.setFillColor(CGColor(gray:1,alpha:1))
   gray.fill(CGRect(x:0,y:0,width:width,height:height))
   gray.scaleBy(x:CGFloat(width)/bounds.width,y:CGFloat(height)/bounds.height)
+  let projection=revealProjection(),inverse=projection.inverted()
+  gray.concatenate(projection);gray.interpolationQuality = .low
   gray.setBlendMode(.darken)
   for plan in revealPlans where time>plan.begin{
    let radius=plan.radius(at:time)*revealOuterRadius
    guard radius>0.5 else{continue}
-   let center=revealCenter(plan.index)
+   let center=revealCenter(plan.index).applying(inverse)
    gray.setAlpha(min(1,CGFloat((time-plan.begin)/0.18)))
-   gray.drawRadialGradient(revealGradient,startCenter:center,startRadius:0,endCenter:center,endRadius:radius,options:[])
+   gray.draw(revealTexture,in:CGRect(x:center.x-radius,y:center.y-radius,width:2*radius,height:2*radius))
   }
   gray.restoreGState()
   let input=gray.data!.assumingMemoryBound(to:UInt8.self),output=rgba.data!.assumingMemoryBound(to:UInt8.self)
@@ -210,10 +231,10 @@ final class JournalLaunchSurface:NSView {
    let reachedFadePoint=elapsed>=fadePoint
    let naturalWait=max(0,fadePoint-elapsed)
    let visible=revealSources.contains(i)
-   let stagger=visible ? Double(max(0,i/5+i%5-firstVisibleDiagonal))*0.085:0
+   let stagger=visible ? Double(max(0,i/5+i%5-firstVisibleDiagonal))*0.08:0
    let wait=max(naturalWait,stagger)
    let remainingFall=max(0,wavePeriod-max(elapsed,fadePoint))
-   let duration=visible ? max(cold ? 0.48:0.36,min(0.32,remainingFall)):min(0.32,remainingFall)
+   let duration=visible ? max(cold ? 0.44:0.33,min(0.32,remainingFall)):min(0.32,remainingFall)
    let opacity=reachedFadePoint ? (tile.presentation()?.opacity ?? tile.opacity):crestOpacity
    let fade=CABasicAnimation(keyPath:"opacity");fade.fromValue=opacity;fade.toValue=0
    fade.beginTime=now+wait;fade.duration=max(0.001,duration);fade.timingFunction=CAMediaTimingFunction(name:.easeInEaseOut)
@@ -226,14 +247,15 @@ final class JournalLaunchSurface:NSView {
   // Retain the background during the substantial part of each tile's fade,
   // then allow the local dissolve to overlap its disappearing tail.
   let protectionEnds=fades.map{$0.beginTime+$0.duration*0.62}
-  let protectedRects=projectedRects
-  let diffusion:CFTimeInterval=cold ? 0.82:0.66
+  let inverse=revealProjection().inverted()
+  let protectedRects=pieces.map{$0.frame.insetBy(dx:-12,dy:-12)}
+  let diffusion:CFTimeInterval=cold ? 0.74:0.59
   let revealEnd=protectionEnds.max()!+diffusion
   for index in revealSources{
     // Start the local dissolve halfway through the tile fade, with a short
     // protection overlap so the center opens as the tile's tail disappears.
     let begin=fades[index].beginTime+fades[index].duration*0.5
-    let duration=revealEnd-begin,center=revealCenter(index)
+    let duration=revealEnd-begin,center=revealCenter(index).applying(inverse)
     // Protect tiles through the first 62% of their fade. Exact release
     // boundaries keep earlier regions from cutting across a still-solid tile.
     var times=(0...80).map{begin+duration*Double($0)/80}
@@ -247,7 +269,7 @@ final class JournalLaunchSurface:NSView {
      for (rect,end) in zip(protectedRects,protectionEnds) where time<=end+0.000001{
       let dx=max(rect.minX-center.x,0,center.x-rect.maxX)
       let dy=max(rect.minY-center.y,0,center.y-rect.maxY)
-      safeRadius=min(safeRadius,hypot(dx,dy))
+      safeRadius=min(safeRadius,max(dx,dy))
      }
      let radius=min(safeRadius,previousRadius+speed*max(0,time-previousTime))
      radii.append(radius/revealOuterRadius);previousRadius=radius;previousTime=time

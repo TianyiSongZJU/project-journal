@@ -17,6 +17,30 @@ checks = r'''
 precondition(_isDebugAssertConfiguration(),"Assertions must be enabled in the optimized animation test")
 let app=NSApplication.shared
 app.setActivationPolicy(.accessory)
+func checkObliqueGeometry(){
+ let surface=JournalLaunchSurface(frame:NSRect(x:0,y:0,width:1120,height:720),cold:true)
+ surface.layout();surface.revealSources=[12];surface.layoutRevealMasks()
+ let projection=surface.revealProjection()
+ let local=surface.revealCenter(12).applying(projection.inverted())
+ let fraction=140/surface.revealOuterRadius
+ surface.revealPlans=[JournalLaunchSurface.RevealPlan(index:12,begin:0,duration:1,times:[0,1],radii:[fraction,fraction])]
+ surface.updateRevealMask(at:0.5)
+ let context=surface.revealGray!,bytes=context.data!.assumingMemoryBound(to:UInt8.self)
+ func sample(_ offset:CGPoint)->Int{
+  let point=CGPoint(x:local.x+offset.x,y:local.y+offset.y).applying(projection)
+  let px=point.x/1120*Double(context.width)-0.5,py=(720-point.y)/720*Double(context.height)-0.5
+  let x=Int(floor(px)),y=Int(floor(py)),dx=px-Double(x),dy=py-Double(y)
+  let a=Double(bytes[y*context.bytesPerRow+x]),b=Double(bytes[y*context.bytesPerRow+x+1])
+  let c=Double(bytes[(y+1)*context.bytesPerRow+x]),d=Double(bytes[(y+1)*context.bytesPerRow+x+1])
+  return Int((a*(1-dx)+b*dx)*(1-dy)+(c*(1-dx)+d*dx)*dy)
+ }
+ let column=sample(CGPoint(x:112,y:0)),row=sample(CGPoint(x:0,y:112))
+ assert(abs(column-row)<15 && column>20 && column<230,"Feather follows both oblique tile axes with the same profile")
+ let tilePoint=surface.tiles.convert(CGPoint(x:local.x+98,y:local.y),to:surface.layer)
+ let projected=CGPoint(x:local.x+98,y:local.y).applying(projection)
+ assert(hypot(tilePoint.x-projected.x,tilePoint.y-projected.y)<0.001,"Background uses exactly the tile projection")
+ print("PASS oblique rounded-square geometry",column,row)
+}
 func check(_ cold:Bool,_ loading:Double){
  let window=NSWindow(contentRect:NSRect(x:-12000,y:-12000,width:1120,height:720),styleMask:[.borderless],backing:.buffered,defer:false)
  window.isReleasedWhenClosed=false
@@ -40,7 +64,7 @@ func check(_ cold:Bool,_ loading:Double){
   assert(surface.backdrop.mask!.mask==nil && surface.light.mask!.mask==nil,"Use one shallow image mask, not nested full-window surfaces")
   assert(surface.revealMasks[0].contents as AnyObject === surface.revealMasks[1].contents as AnyObject,"Share the composed alpha image")
   let visible=surface.revealSources
-  let minimum=cold ? 0.48:0.36
+  let minimum=cold ? 0.44:0.33
   let fades=surface.pieces.map{$0.animation(forKey:"fallingFade")!}
   let fadeEnds=fades.map{$0.beginTime+$0.duration}
   let ordered=visible.sorted{($0/5+$0%5)<($1/5+$1%5)}
@@ -49,7 +73,7 @@ func check(_ cold:Bool,_ loading:Double){
    assert(fades[i].beginTime>=ready)
   }
   for (a,b) in zip(ordered,ordered.dropFirst()) where a/5+a%5<b/5+b%5{
-   assert(fades[b].beginTime-fades[a].beginTime>=0.08,"Successive diagonals need a visible stagger")
+   assert(fades[b].beginTime-fades[a].beginTime>=0.075,"Successive diagonals need a visible stagger")
   }
   for plan in surface.revealPlans{
    let fade=fades[plan.index]
@@ -92,7 +116,7 @@ func check(_ cold:Bool,_ loading:Double){
   assert(intermediateTileFrames>=3,"Do not compress the visible fade into a couple of frames")
   assert(partialBackground.count>=12,"Background diffusion must contain many intermediate frames")
   let spread=partialBackground.last!-partialBackground.first!
-  assert(spread>=(cold ? 0.4:0.32),"Background diffusion must remain visible over time")
+  assert(spread>=(cold ? 0.36:0.28),"Background diffusion must remain visible over time")
   let context=CGContext(data:nil,width:224,height:144,bitsPerComponent:8,bytesPerRow:896,space:CGColorSpaceCreateDeviceRGB(),bitmapInfo:CGImageAlphaInfo.premultipliedLast.rawValue)!
   context.scaleBy(x:0.2,y:0.2);surface.layer!.presentation()!.render(in:context)
   let pixels=context.data!.assumingMemoryBound(to:UInt8.self)
@@ -106,6 +130,7 @@ func check(_ cold:Bool,_ loading:Double){
  window.close()
  print("PASS",cold ? "cold":"warm","loading",loading,"exit ms",(end-ready)*1000)
 }
+checkObliqueGeometry()
 for loading in [0.12,0.7,2.6]{check(true,loading);check(false,loading)}
 '''
 with tempfile.TemporaryDirectory(prefix='journal-launch-test-') as directory:
