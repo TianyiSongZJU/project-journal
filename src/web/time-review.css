@@ -114,3 +114,22 @@
 @media(max-width:650px){#tr-controls-host{flex-basis:100%}#tr-controls-host .tr-controls{justify-content:flex-start;gap:6px}.tr-date-fields{gap:0;padding:0 2px}.tr-date-fields input{width:111px}.tr-date-fields #tr-prev,.tr-date-fields #tr-next{width:20px}.tr-overview{padding-right:0;padding-bottom:28px}.tr-outside-tools{top:auto;transform:translateY(-31px)}.tr-range-caption{font-size:9px;gap:4px}.tr-chart-tools .tr-display-controls{gap:5px}.tr-display-controls #tr-by-project,.tr-display-controls #tr-full-day{padding:0 6px}}
 
 .tr-chart{position:relative}
+/* Keep the date tools beside the view switch; give the graph range a quiet heading. */
+#tr-controls-host{margin-left:8px}
+#tr-controls-host .tr-controls{justify-content:flex-start}
+.tr-range-caption{font:500 15px/1.4 Georgia,'Times New Roman',var(--serif);color:#466a43;gap:12px;letter-spacing:.015em;font-variant-numeric:tabular-nums}
+.tr-range-caption>span{font:400 12px/1 system-ui;color:#9dae90}
+@media(max-width:850px){#tr-controls-host{margin-left:0}.tr-range-caption{font-size:14px}}
+@media(max-width:650px){.tr-range-caption{font-size:12px;gap:7px}}
+/* A narrower, centered date gutter and the same sage wash as the record toolbar. */
+.tr-grid{--tr-label:56px}
+.tr-axis-row,.tr-row,.tr-summary{column-gap:10px}
+.tr-axis-row>span:first-child{text-align:center}
+.tr-day-label{width:100%;justify-content:center;align-items:center;gap:5px;padding:0;text-align:center}
+.tr-summary-label{padding-left:0;align-items:center;justify-content:center;text-align:center}
+.tr-paper{--tr-padding-x:20px;--tr-padding-top:18px;padding:var(--tr-padding-top) var(--tr-padding-x) 17px}
+.tr-chart-tools{margin:calc(-1 * var(--tr-padding-top)) calc(-1 * var(--tr-padding-x)) 10px;padding:10px var(--tr-padding-x);min-height:44px;border-radius:15px 15px 0 0;border-bottom:1px solid var(--line);background:linear-gradient(115deg,#e9ecdf,var(--panel))}
+@media(max-width:1080px){.tr-paper{--tr-padding-x:16px;--tr-padding-top:16px}}
+@media(max-width:650px){.tr-paper{--tr-padding-x:10px;--tr-padding-top:13px}.tr-chart-tools{padding-top:8px;padding-bottom:8px}}
+.tr-day-label{justify-content:flex-end;padding:0 5px 0 0;text-align:right}
+.tr-axis-row>span:first-child{text-align:right;padding-right:5px}
