@@ -96,7 +96,7 @@ type Store struct {
 }
 
 var nativeClose = func() {}
-var uiOnly bool
+var uiOnly, backgroundOnly bool
 var showLaunchError = func(message string) { log.Print(message) }
 
 func fatalLaunch(e error) { showLaunchError(e.Error()); os.Exit(1) }
@@ -388,7 +388,7 @@ func main() {
 								}
 							}
 						}
-						if !*noOpen {
+						if !*noOpen && !backgroundOnly {
 							runWindow(existing.URL + "/?token=" + existing.Token)
 						}
 						fmt.Println(existing.URL)

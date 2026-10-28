@@ -64,6 +64,8 @@ type WindowOptions struct {
 	Height uint
 	IconId uint
 	Center bool
+	// OnCreated runs before the host is shown and before WebView2 initialization.
+	OnCreated func(hwnd uintptr)
 }
 
 type WebViewOptions struct {
@@ -332,6 +334,9 @@ func (w *webview) CreateWithOptions(opts WindowOptions) bool {
 		0,
 	)
 	setWindowContext(w.hwnd, w)
+	if opts.OnCreated != nil {
+		opts.OnCreated(w.hwnd)
+	}
 
 	_, _, _ = w32.User32ShowWindow.Call(w.hwnd, w32.SWShow)
 	_, _, _ = w32.User32UpdateWindow.Call(w.hwnd)

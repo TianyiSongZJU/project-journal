@@ -51,6 +51,7 @@ func runWindow(address string) {
 	}
 	var child *exec.Cmd
 	var mu sync.Mutex
+	warmOpen := backgroundOnly
 	open := func() {
 		mu.Lock()
 		defer mu.Unlock()
@@ -69,9 +70,14 @@ func runWindow(address string) {
 			return
 		}
 		exe, _ := os.Executable()
-		cmd := exec.Command(exe, "--ui-only", "--data-dir", currentAuto.store.dir)
+		args := []string{"--ui-only", "--data-dir", currentAuto.store.dir, "--auto-home", currentAuto.home}
+		if warmOpen {
+			args = append(args, "--warm-open")
+		}
+		cmd := exec.Command(exe, args...)
 		if cmd.Start() == nil {
 			child = cmd
+			warmOpen = true
 			go func() {
 				cmd.Wait()
 				mu.Lock()
@@ -187,7 +193,9 @@ func runWindow(address string) {
 		}
 		trayUser.NewProc("PostMessageW").Call(hwnd, 0x10, 0, 0)
 	}
-	open()
+	if !backgroundOnly {
+		open()
+	}
 	var msg trayMessage
 	for {
 		result, _, _ := trayUser.NewProc("GetMessageW").Call(uintptr(unsafe.Pointer(&msg)), 0, 0, 0)

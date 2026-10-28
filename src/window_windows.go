@@ -16,8 +16,12 @@ import (
 // The Windows resource compiler assigns ID 1 to the manifest, then ID 2 to the icon group.
 const windowsAppIconID = 2
 
+var windowsWarmOpen bool
+
 func init() {
 	runtime.LockOSThread()
+	flag.BoolVar(&backgroundOnly, "background", false, "登录后仅在后台运行")
+	flag.BoolVar(&windowsWarmOpen, "warm-open", false, "从托盘重新打开窗口")
 	showLaunchError = func(message string) { windowsMessage("项目手记 · 无法启动", message) }
 }
 func windowsMessage(title, message string) {
@@ -31,12 +35,18 @@ func runWindowUI(address string) {
 		return
 	}
 	cache, _ := os.UserCacheDir()
-	w := webview2.NewWithOptions(webview2.WebViewOptions{DataPath: filepath.Join(cache, "ProjectJournal", "WebView2"), AutoFocus: true, WindowOptions: webview2.WindowOptions{Title: "项目手记", IconId: windowsAppIconID, Width: 1120, Height: 740, Center: true}})
+	var launchCover *windowsLaunchCover
+	w := webview2.NewWithOptions(webview2.WebViewOptions{DataPath: filepath.Join(cache, "ProjectJournal", "WebView2"), AutoFocus: true, WindowOptions: webview2.WindowOptions{Title: "项目手记", IconId: windowsAppIconID, Width: 1120, Height: 740, Center: true, OnCreated: func(hwnd uintptr) { launchCover = newWindowsLaunchCover(hwnd) }}})
 	if w == nil {
 		windowsMessage("项目手记", "无法创建窗口，请确认 WebView2 Runtime 已安装。")
 		return
 	}
 	defer w.Destroy()
+	defer launchCover.dismiss()
+	w.Bind("journalLaunchPainted", func() map[string]any {
+		// WebView2 message callbacks already run on this window's UI thread.
+		return map[string]any{"removed": launchCover.dismiss(), "error": windowsCoverError}
+	})
 	// Keep display preferences local and stable across the backend's random ports.
 	viewPath := filepath.Join(autoHome(flag.Lookup("data-dir").Value.String(), flag.Lookup("auto-home").Value.String()), "windows-view.json")
 	var viewMu sync.Mutex
@@ -68,7 +78,7 @@ func runWindowUI(address string) {
 	})
 	w.SetSize(720, 550, webview2.HintMin)
 	// Keep native Windows presentation separate from the shared macOS styles.
-	w.Init(`window.journalWindowsHost = true;
+	w.Init(`window.journalLaunchWarm = ` + map[bool]string{true: "true", false: "false"}[windowsWarmOpen] + `;window.journalWindowsHost = true;
 	document.addEventListener("DOMContentLoaded", () => {
 		document.documentElement.classList.add("native-windows");
 		const style = document.createElement("link");

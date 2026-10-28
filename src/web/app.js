@@ -1,3 +1,4 @@
+import {finishWindowsLaunch,notifyWindowsLaunchPainted} from './windows-launch.js';
 import {createViewMemory,sanitizeViewState} from './view-state.js';
 import {setupAppAliasSettings} from './app-aliases.js';
 import {renderDesktopSaveStatus} from './desktop-icons.js';
@@ -281,9 +282,9 @@ $('.calendar-surface').addEventListener('pointerup',e=>{if(calendarGesture?.poin
 $('.calendar-surface').addEventListener('pointercancel',()=>finishCalendarGesture(true));$('.calendar-surface').addEventListener('lostpointercapture',()=>{if(calendarGesture)finishCalendarGesture(true)});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&calendarGesture){e.preventDefault();finishCalendarGesture(true)}else if(e.key==='Escape'&&batch&&!document.querySelector('dialog[open]')){$('#selection-clear').click()}});
 window.addEventListener('blur',()=>finishCalendarGesture(true));
-try{restoredView=await viewMemory.load();await load();restoreViewContext(restoredView);renderReview(true)}catch(e){document.documentElement.classList.remove('app-starting');$('#save-status').textContent='读取失败';$('#save-status').classList.add('error');$('main').innerHTML=`<div class="error-banner"><h2>暂时无法读取数据</h2><p>${esc(e.message)}</p><p>原数据已保留。请检查数据文件或从“备份”文件夹恢复后重新启动。</p></div>`}
+try{restoredView=await viewMemory.load();await load();restoreViewContext(restoredView);renderReview(true)}catch(e){document.documentElement.classList.remove('app-starting');$('#save-status').textContent='读取失败';$('#save-status').classList.add('error');const error=document.createElement('div');error.className='error-banner';error.innerHTML=`<h2>暂时无法读取数据</h2><p>${esc(e.message)}</p><p>原数据已保留。请检查数据文件或从“备份”文件夹恢复后重新启动。</p>`;for(const child of $('main').children)child.hidden=true;$('main').append(error)}
 window.journalHasUnsaved=()=>noteDirty||recordDirty||inspectorDirty||saving||conflict;
-automationUI=setupAutomation({initialView:restoredView.timeline||{},onViewChange:rememberView,getState:()=>state,flushMain:flushDrafts,applyEnvelope:data=>{state=data.state;revision=data.revision;renderAll()},toast,esc,...(isDesktopHost()?{getSelectedDate:()=>inspectorDate,onSelectedDateChange:date=>{focusInspectorDate(date);viewYear=Number(date.slice(0,4));viewMonth=date.slice(0,7)}}:{})});
+automationUI=state?setupAutomation({initialView:restoredView.timeline||{},onViewChange:rememberView,getState:()=>state,flushMain:flushDrafts,applyEnvelope:data=>{state=data.state;revision=data.revision;renderAll()},toast,esc,...(isDesktopHost()?{getSelectedDate:()=>inspectorDate,onSelectedDateChange:date=>{focusInspectorDate(date);viewYear=Number(date.slice(0,4));viewMonth=date.slice(0,7)}}:{})}):null;
 // Native styles arrive separately from the shared page; settle them before layout restoration.
 const startupStyleName=window.journalMacHost?'macos.css':window.journalWindowsHost?'windows.css':null;
 const startupStyle=startupStyleName&&[...document.querySelectorAll('link[rel="stylesheet"]')].find(link=>link.getAttribute('href')===startupStyleName);
@@ -296,7 +297,7 @@ if(state){
  viewMemory.enable();rememberView();
 }
 window.journalFlush=async()=>{const ok=window.journalQuitting||await flushDrafts()&&await automationUI.flush()&&await fetch('/api/auto/flush',{method:'POST'}).then(r=>r.ok);await viewMemory.flush();return ok};
-window.journalViewReady=true;document.documentElement.classList.remove('app-starting');
+window.journalViewReady=true;document.documentElement.classList.remove('app-starting');await notifyWindowsLaunchPainted();await finishWindowsLaunch();
 
 
 function renderHistory(){const h=state?.history,ready=h&&h.versions?.length&&h.cursor>=0;$('#undo-action').disabled=saving||!ready||h.cursor===0;$('#redo-action').disabled=saving||!ready||h.cursor>=h.versions.length-1;$('#history-list').innerHTML=ready?[...h.versions].map((v,i)=>`<button type="button" class="history-version ${i===h.cursor?'current':''} ${i>h.cursor?'future':''}" data-history-cursor="${i}" ${i===h.cursor?'disabled':''}><span class="history-step">${i===h.cursor?'●':i===0?'○':i}</span><span><strong>${esc(v.label)}</strong><small>${esc(new Date(v.at).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}))}</small></span><em>${i===h.cursor?'当前':i>h.cursor?'重做至此':'恢复至此'}</em></button>`).reverse().join(''):'<p class="empty">下一次保存后，这里会出现操作记录。</p>';$$('[data-history-cursor]').forEach(b=>b.onclick=()=>restoreVersion(Number(b.dataset.historyCursor),true))}
