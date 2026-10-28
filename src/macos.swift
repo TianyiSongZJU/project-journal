@@ -194,7 +194,7 @@ final class JournalLaunchSurface:NSView {
    let radius=plan.radius(at:time)*revealOuterRadius
    guard radius>0.5 else{continue}
    let center=revealCenter(plan.index).applying(inverse)
-   gray.setAlpha(min(1,CGFloat((time-plan.begin)/0.18)))
+   gray.setAlpha(min(1,CGFloat((time-plan.begin)/0.12)))
    gray.draw(revealTexture,in:CGRect(x:center.x-radius,y:center.y-radius,width:2*radius,height:2*radius))
   }
   gray.restoreGState()
@@ -246,27 +246,28 @@ final class JournalLaunchSurface:NSView {
   let fades=pieces.map{$0.animation(forKey:"fallingFade")!}
   // Retain the background during the substantial part of each tile's fade,
   // then allow the local dissolve to overlap its disappearing tail.
-  let protectionEnds=fades.map{$0.beginTime+$0.duration*0.62}
+  let protectionEnds=fades.map{$0.beginTime+$0.duration*0.5}
   let inverse=revealProjection().inverted()
-  let protectedRects=pieces.map{$0.frame.insetBy(dx:-12,dy:-12)}
-  let diffusion:CFTimeInterval=cold ? 0.74:0.59
-  let revealEnd=protectionEnds.max()!+diffusion
+  let protectedRects=revealSources.map{pieces[$0].frame.insetBy(dx:-12,dy:-12)}
+  let protectedUntil=revealSources.map{protectionEnds[$0]}
+  let diffusion:CFTimeInterval=cold ? 0.62:0.5
+  let revealEnd=protectedUntil.max()!+diffusion
   for index in revealSources{
-    // Start the local dissolve halfway through the tile fade, with a short
+    // Prepare the local dissolve early in the tile fade, with a short
     // protection overlap so the center opens as the tile's tail disappears.
-    let begin=fades[index].beginTime+fades[index].duration*0.5
+    let begin=fades[index].beginTime+fades[index].duration*0.35
     let duration=revealEnd-begin,center=revealCenter(index).applying(inverse)
-    // Protect tiles through the first 62% of their fade. Exact release
+    // Protect tiles through the first half of their fade. Exact release
     // boundaries keep earlier regions from cutting across a still-solid tile.
     var times=(0...80).map{begin+duration*Double($0)/80}
-    times += protectionEnds.filter{$0>begin && $0<revealEnd}
+    times += protectedUntil.filter{$0>begin && $0<revealEnd}
     times=Array(Set(times)).sorted()
     var previousTime=begin,previousRadius:CGFloat=0
     let speed=revealOuterRadius/diffusion
     var radii:[CGFloat]=[]
     for time in times{
      var safeRadius=revealOuterRadius
-     for (rect,end) in zip(protectedRects,protectionEnds) where time<=end+0.000001{
+     for (rect,end) in zip(protectedRects,protectedUntil) where time<=end+0.000001{
       let dx=max(rect.minX-center.x,0,center.x-rect.maxX)
       let dy=max(rect.minY-center.y,0,center.y-rect.maxY)
       safeRadius=min(safeRadius,max(dx,dy))

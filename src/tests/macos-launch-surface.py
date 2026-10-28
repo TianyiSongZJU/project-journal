@@ -59,6 +59,7 @@ func check(_ cold:Bool,_ loading:Double){
  var partialBackground:[Double]=[]
  var intermediateTileFrames=0
  var overlappingFrames=0
+ var firstOverlap:Double=1
  if !surface.reduceMotion{
   assert(surface.revealMasks.count==2 && !surface.revealPlans.isEmpty)
   assert(surface.backdrop.mask!.mask==nil && surface.light.mask!.mask==nil,"Use one shallow image mask, not nested full-window surfaces")
@@ -77,7 +78,7 @@ func check(_ cold:Bool,_ loading:Double){
   }
   for plan in surface.revealPlans{
    let fade=fades[plan.index]
-   assert(abs(plan.begin-fade.beginTime-fade.duration*0.5)<0.001,"Local diffusion must overlap the second half of its tile fade")
+   assert(abs(plan.begin-fade.beginTime-fade.duration*0.35)<0.001,"Local diffusion prepares early and overlaps the tile fade")
    assert(plan.radii.last!>0.99)
    end=max(end,plan.begin+plan.duration)
   }
@@ -103,8 +104,8 @@ func check(_ cold:Bool,_ loading:Double){
     let center=surface.revealCenter(lastVisible)
     let x=max(0,min(223,Int(center.x*0.2))),y=max(0,min(143,Int(center.y*0.2)))
     let alpha=pixels[((143-y)*224+x)*4+3]
-    if progress<0.55{assert(alpha>250,"Background remains beneath the substantial part of the tile fade")}
-    if progress>0.7 && opacity>0.01 && alpha<245{overlappingFrames+=1}
+    if progress<0.42{assert(alpha>250,"Background remains beneath the substantial part of the tile fade")}
+    if progress>0.5 && opacity>0.01 && alpha<245{overlappingFrames+=1;firstOverlap=min(firstOverlap,progress)}
     intermediateTileFrames+=1
    }
    for (i,tile) in surface.pieces.enumerated() where now>fadeEnds[i]+0.025{
@@ -112,6 +113,7 @@ func check(_ cold:Bool,_ loading:Double){
     assert(abs((tile.presentation()?.transform.m42 ?? 0)/surface.liftY)<0.3,"Landed tiles cannot rise again")
    }
   }
+  assert(firstOverlap<0.75,"Background must visibly respond before the final quarter of the tile fade")
   assert(overlappingFrames>=2,"Actual pixels must reveal background while the final tile is still fading")
   assert(intermediateTileFrames>=3,"Do not compress the visible fade into a couple of frames")
   assert(partialBackground.count>=12,"Background diffusion must contain many intermediate frames")
@@ -121,7 +123,7 @@ func check(_ cold:Bool,_ loading:Double){
   context.scaleBy(x:0.2,y:0.2);surface.layer!.presentation()!.render(in:context)
   let pixels=context.data!.assumingMemoryBound(to:UInt8.self)
   assert((0..<(224*144)).map{Int(pixels[$0*4+3])}.max()!<16,"Overlay must be clear before removal")
-  print("overlap frames",overlappingFrames,"visible frames",intermediateTileFrames,"background frames",partialBackground.count,"diffusion ms",spread*1000)
+  print("first overlap phase",firstOverlap,"overlap frames",overlappingFrames,"visible frames",intermediateTileFrames,"background frames",partialBackground.count,"diffusion ms",spread*1000)
  }
  RunLoop.main.run(until:Date().addingTimeInterval(max(0,end-CACurrentMediaTime())+0.1))
 
