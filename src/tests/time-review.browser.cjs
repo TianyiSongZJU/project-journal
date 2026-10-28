@@ -38,6 +38,14 @@ const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),cryp
   assert.match(await page.locator('.tr-overview p').innerText(),/7/);
   assert.equal(await page.locator('.tr-row .tr-cell[data-tr-cell="48"]').count(),14);
   assert.equal((await page.locator('.tr-row .tr-cell[data-tr-cell="48"]').first().getAttribute('class')).includes('has-time'),false,'unconfirmed blocks never fill the review');
+  const beforeArrow=await page.locator('#tr-start').inputValue();await page.locator('#tr-prev').click();assert.equal(await page.locator('#tr-start').inputValue(),'2026-10-14');assert.equal(await page.locator('.tr-row').count(),14);assert.equal(await page.locator('.tr-today-tag').count(),0);await page.locator('#tr-next').click();assert.equal(await page.locator('#tr-start').inputValue(),beforeArrow);
+  const symmetry=await page.evaluate(()=>{const r=id=>document.getElementById(id).getBoundingClientRect(),a=r('tr-start'),b=r('tr-end'),l=r('tr-prev'),rr=r('tr-next'),d=document.querySelector('.tr-date-separator').getBoundingClientRect();return [(d.x+d.width/2)-(a.x+a.width/2)-((b.x+b.width/2)-(d.x+d.width/2)),a.x-l.right-(rr.x-b.right)]});assert(symmetry.every(x=>Math.abs(x)<1),'date controls use symmetric spacing '+symmetry);
+  const todayRow=page.locator('[data-tr-row="2026-10-28"]');assert.equal(await page.locator('.tr-row.is-today').count(),1);assert.equal(await todayRow.locator('[aria-current="date"]').count(),1);assert.equal(await todayRow.locator('.tr-today-tag').innerText(),'今天');
+  await todayRow.locator('.tr-day-label').hover();await page.locator('.tr-day-tip').waitFor({state:'visible'});assert.match(await page.locator('.tr-day-tip').innerText(),/今天/);assert.match(await page.locator('.tr-day-tip').innerText(),/文献与方法笔记/);assert.match(await page.locator('.tr-day-tip').innerText(),/0.5 小时未指定时段/);
+  const shares=await page.locator('.tr-day-tip-projects b').allTextContents();assert(shares.length>1);const bar=await page.locator('.tr-day-tip-bar i').evaluateAll(els=>els.map(el=>parseFloat(el.style.width)));assert(Math.abs(bar.reduce((n,v)=>n+v,0)-100)<.01);assert(bar.every((v,i)=>!i||bar[i-1]>=v),'projects sorted largest first');
+  await todayRow.locator('.tr-cell').last().hover();assert(await page.locator('.tr-day-tip').isVisible(),'hovering an empty cell still shows the whole day distribution');
+  const earlyRow=page.locator('[data-tr-row="2026-10-15"]');await earlyRow.locator('.tr-day-label').hover();assert.match(await page.locator('.tr-day-tip').innerText(),/1.25 小时/,'day hover includes early confirmed reading');
+  await page.mouse.move(0,0);await page.locator('.tr-day-tip').waitFor({state:'hidden'});
   await page.locator('#tr-by-project').click();
   assert.equal(await page.locator('#tr-by-project').getAttribute('aria-pressed'),'true');
   await page.locator('#tr-full-day').click();assert.equal(await page.locator('.tr-row').first().locator('.tr-cell').count(),96);
@@ -46,10 +54,13 @@ const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),cryp
   await page.locator('#tr-full-day').click();
   await page.locator('[data-tr-preset="30"]').click();assert.equal(await page.locator('.tr-row').count(),30);assert.equal(await page.locator('#tr-end').inputValue(),'2026-10-28');
   const shotDir=process.env.JOURNAL_SCREENSHOTS||'/private/tmp/journal-time-review-shots';fs.mkdirSync(shotDir,{recursive:true});
-  await page.mouse.move(0,0);await page.screenshot({path:path.join(shotDir,'time-review-projects.png')});
+  await todayRow.locator('.tr-day-label').hover();await page.screenshot({path:path.join(shotDir,'time-review-day-hover.png')});await page.mouse.move(0,0);await page.locator('.tr-day-tip').waitFor({state:'hidden'});await page.screenshot({path:path.join(shotDir,'time-review-projects.png')});
   const activeCell=page.locator('.tr-row .tr-cell.has-time').first();await activeCell.focus();await page.keyboard.press('ArrowRight');assert(await page.locator('.tr-tip').isVisible());
   await page.locator('.tr-row [data-tr-date="2026-10-01"]').first().click();assert(await page.locator('.tr-inspector-host').isVisible());
   assert.equal(await page.locator('.tr-inspector-host #month-inspector').count(),1);
+  await page.waitForFunction(()=>Math.abs(document.querySelector('.tr-inspector-host').getBoundingClientRect().top-document.querySelector('#page-review>.toolbar').getBoundingClientRect().top)<2);
+  const ticks=await page.locator('.tr-axis').evaluateAll(axes=>axes.map(axis=>[...axis.children].filter(el=>!el.hidden).map(el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right}})));assert(ticks.every(axis=>axis.every((r,i)=>!i||r.left>=axis[i-1].right+7)),'time labels do not overlap with inspector open');
+  await page.mouse.move(0,0);await page.locator('.tr-tip').waitFor({state:'hidden'});await page.screenshot({path:path.join(shotDir,'time-review-inspector.png')});
   await page.locator('#tr-close-inspector').click();await page.locator('[data-tr-row="2026-10-01"] .tr-cell[data-tr-cell="20"]').click();assert.equal(await page.locator('#inspector-project').inputValue(),'reading');await page.locator('#tr-close-inspector').click();assert.equal(await page.locator('.tr-inspector-host').isVisible(),false);
   await page.locator('#project-filter>summary').click();await page.locator('#filter-options input[value="paper"]').check();
   await page.locator('#project-filter>summary').click();assert.equal(await page.locator('.tr-legend').getByText('文献与方法笔记',{exact:true}).count(),0);
@@ -63,8 +74,8 @@ const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),cryp
   await page.locator('#tr-start').fill('2026-10-01');await page.locator('#tr-start').dispatchEvent('change');assert.equal(await page.locator('#tr-end').inputValue(),'2026-10-30');await page.locator('#tr-end').fill('2026-10-29');await page.locator('#tr-end').dispatchEvent('change');assert.equal(await page.locator('#tr-start').inputValue(),'2026-09-30');await page.locator('#tr-start').fill('2026-10-01');await page.locator('#tr-start').dispatchEvent('change');assert.equal(await page.locator('.tr-row').first().getAttribute('data-tr-row'),'2026-10-01');
   await page.locator('#tr-start').fill('');await page.locator('#tr-start').dispatchEvent('change');assert(await page.locator('#tr-range-error').isVisible());
 
-  await page.locator('[data-tr-preset="7"]').click();assert.equal(await page.locator('.tr-row').count(),7);
-  await page.locator('.tr-days').hover();await page.mouse.wheel(0,80);await page.waitForFunction(()=>document.querySelector('.tr-row').dataset.trRow!=='2026-10-01');assert.equal(await page.locator('.tr-row').count(),7);assert.equal(await page.locator('.tr-row').first().getAttribute('data-tr-row'),'2026-10-03');
+  await page.locator('[data-tr-preset="7"]').click();assert.equal(await page.locator('.tr-row').count(),7);await page.screenshot({path:path.join(shotDir,'time-review-week.png')});
+  await page.locator('.tr-days').hover();await page.mouse.wheel(0,40);await page.waitForTimeout(50);assert.equal(await page.locator('.tr-row').first().getAttribute('data-tr-row'),'2026-10-01','small scrolls do not accidentally skip a day');await page.mouse.wheel(0,1000);await page.waitForFunction(()=>document.querySelector('.tr-row').dataset.trRow==='2026-10-02');await page.waitForTimeout(220);assert.equal(await page.locator('.tr-row').first().getAttribute('data-tr-row'),'2026-10-02','a large wheel event still advances only one day');await page.mouse.wheel(0,180);await page.waitForFunction(()=>document.querySelector('.tr-row').dataset.trRow==='2026-10-03');assert.equal(await page.locator('.tr-row').count(),7);
   await page.locator('#tr-by-project').click();
   await page.locator('.tr-scroll').evaluate(el=>el.scrollLeft=40);
   await page.evaluate(()=>window.journalFlush());
@@ -72,7 +83,7 @@ const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),cryp
   await context.close();
   ({context,page}=await open(1180,'windows'));assert.equal(await page.locator('#mode-time').getAttribute('aria-pressed'),'true');assert.equal(await page.locator('.tr-row').count(),7);assert.equal(await page.locator('#tr-by-project').getAttribute('aria-pressed'),'false');
   await page.locator('[data-tr-preset="30"]').click();await page.screenshot({path:path.join(shotDir,'time-review-effort.png')});
-  for(const width of [760,390]){await page.setViewportSize({width,height:850});await page.waitForTimeout(50);const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);assert(overflow<=1,'page overflow at '+width+': '+overflow);const g=await page.locator('.tr-scroll').evaluate(el=>({scroll:el.scrollWidth,client:el.clientWidth}));assert(g.scroll>=g.client);}
+  for(const width of [760,390]){await page.setViewportSize({width,height:850});await page.waitForTimeout(50);const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);assert(overflow<=1,'page overflow at '+width+': '+overflow);const g=await page.locator('.tr-scroll').evaluate(el=>({scroll:el.scrollWidth,client:el.clientWidth}));assert(g.scroll>=g.client);await page.locator('.tr-row').first().locator('.tr-day-label').hover();const popup=await page.locator('.tr-day-tip').boundingBox();assert(popup.x>=0&&popup.x+popup.width<=width,'daily popover fits narrow viewport');await page.mouse.move(0,0);}
   await page.setViewportSize({width:1180,height:860});
   await page.locator('#mode-month').click();assert(await page.locator('#month-workspace').isVisible());assert.equal(await page.locator('#review-bottom>#month-inspector').count(),1);
   await page.locator('#mode-year').click();assert(await page.locator('#year-calendar').isVisible());

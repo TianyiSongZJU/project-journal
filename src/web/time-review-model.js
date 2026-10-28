@@ -40,8 +40,8 @@ export function buildTimeReview(state,{start,end,startHour=8,projectIds=[]}){
    if(!known.has(block.projectId)||!Number.isInteger(block.start)||!Number.isInteger(block.end)||block.start<0||block.end>1440||block.start>=block.end)continue;
    for(let n=block.start;n<block.end;n++){if(minutes[n]===null)minutes[n]=block.projectId;else if(minutes[n]!==block.projectId)minutes[n]='!conflict'}
   }
-  let dailyTotal=0,dailyVisible=0;
-  for(const id of minutes)if(id!==null){dailyTotal++;if(id!=='!conflict')usedProjects.add(id);else conflictMinutes++}
+  let dailyTotal=0,dailyVisible=0,dailyUnlocatedHours=0,dailyMissingEstimates=0;const dailyParts=new Map();
+  for(const id of minutes)if(id!==null){dailyParts.set(id,(dailyParts.get(id)||0)+1);dailyTotal++;if(id!=='!conflict')usedProjects.add(id);else conflictMinutes++}
   const cells=summary.map((_,i)=>{
    const start=(first+i)*15,parts=new Map();let total=0;
    for(let n=start;n<start+15;n++)if(minutes[n]!==null){total++;parts.set(minutes[n],(parts.get(minutes[n])||0)+1)}
@@ -50,9 +50,9 @@ export function buildTimeReview(state,{start,end,startHour=8,projectIds=[]}){
   });
   for(const e of entriesByDate.get(date)||[]){
    const other=otherEntry(state,e.projectId,date),hours=entryHours(other,state.settings?.estimates||{});
-   if(hours===null){missingEstimates++;continue}unlocatedHours+=Math.max(0,hours||0);if(other.kind!=='hours'&&other.kind!=='none')estimatedHours+=Math.max(0,hours||0);
+   if(hours===null){missingEstimates++;dailyMissingEstimates++;continue}dailyUnlocatedHours+=Math.max(0,hours||0);unlocatedHours+=Math.max(0,hours||0);if(other.kind!=='hours'&&other.kind!=='none')estimatedHours+=Math.max(0,hours||0);
   }
-  totalMinutes+=dailyTotal;visibleMinutes+=dailyVisible;rows.push({date,totalMinutes:dailyTotal,visibleMinutes:dailyVisible,cells});
+  totalMinutes+=dailyTotal;visibleMinutes+=dailyVisible;rows.push({date,totalMinutes:dailyTotal,visibleMinutes:dailyVisible,projectMinutes:[...dailyParts].map(([projectId,minutes])=>({projectId,minutes})).sort((a,b)=>b.minutes-a.minutes||a.projectId.localeCompare(b.projectId)),unlocatedHours:dailyUnlocatedHours,missingEstimates:dailyMissingEstimates,cells});
  }
  return {start,end,startHour:first/4,projects,usedProjects:[...usedProjects],rows,summary:summary.map(s=>({...s,parts:[...s.parts].map(([projectId,minutes])=>({projectId,minutes}))})),totalMinutes,visibleMinutes,hiddenMinutes:totalMinutes-visibleMinutes,unlocatedHours,estimatedHours,missingEstimates,conflictMinutes,recordedDays:rows.filter(r=>r.totalMinutes>0).length};
 }

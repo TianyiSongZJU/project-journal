@@ -5,10 +5,20 @@ const clock=n=>n===1440?'24:00':`${String(Math.floor(n/60)).padStart(2,'0')}:${S
 const duration=n=>n>=60?fmt(n/60)+' 小时':fmt(n)+' 分钟';
 const color=value=>/^#[0-9a-f]{3,8}$/i.test(value||'')?value:'#8ba682';
 export function createTimeReview(root,{today,onChange,onSelect,onTimeline,onScroll}){
- let model=null,options=null,tip=null,highlighted='',wheelAmount=0,wheelTimer=0;
- const fit=()=>{const days=root.querySelector('.tr-days'),paper=root.querySelector('.tr-paper');if(!days||!root.getBoundingClientRect().width)return;const main=root.closest('main'),bottom=Math.min(innerHeight,main?.getBoundingClientRect().bottom||innerHeight),reserve=paper.getBoundingClientRect().bottom-days.getBoundingClientRect().bottom,available=Math.max(140,bottom-days.getBoundingClientRect().top-reserve-16),rowHeight=Math.max(10,Math.min(27,available/model.rows.length));days.style.height=rowHeight*model.rows.length+'px';days.classList.toggle('is-dense',rowHeight<19);days.style.setProperty('--tr-label-step',rowHeight<19?3:1)};
- const hideTip=()=>{if(tip)tip.hidden=true};
+ let model=null,options=null,tip=null,highlighted='',wheelAmount=0,wheelTimer=0,tipHideTimer=0,lastWheelStep=0;
+ const fit=()=>{
+  const days=root.querySelector('.tr-days'),paper=root.querySelector('.tr-paper');if(!days||!root.getBoundingClientRect().width)return;
+  const main=root.closest('main'),mainRect=main?.getBoundingClientRect(),bottom=Math.min(innerHeight,mainRect?.bottom||innerHeight)-parseFloat(main?getComputedStyle(main).paddingBottom:0),reserve=paper.getBoundingClientRect().bottom-days.getBoundingClientRect().bottom,available=Math.max(140,bottom-days.getBoundingClientRect().top-reserve),rowHeight=Math.max(10,available/model.rows.length);
+  days.style.height=rowHeight*model.rows.length+'px';days.classList.toggle('is-dense',rowHeight<19);
+  const axes=[...root.querySelectorAll('.tr-axis')],ticks=[...(axes[0]?.children||[])];ticks.forEach(t=>t.hidden=false);const hours=ticks.length-1,width=axes[0]?.getBoundingClientRect().width||1,widest=Math.max(0,...ticks.map(t=>t.getBoundingClientRect().width)),step=Array.from({length:hours},(_,i)=>i+1).find(n=>hours%n===0&&width/hours*n>=widest*1.5+8)||hours;
+  ticks.forEach((tick,i)=>{for(const axis of axes)axis.children[i].hidden=i%step!==0});
+  const layout=root.closest('.tr-layout'),sidebar=layout?.querySelector('.tr-inspector-host'),toolbar=root.closest('#page-review')?.querySelector('.toolbar');
+  if(sidebar&&toolbar){const split=!sidebar.hidden&&getComputedStyle(layout).gridTemplateColumns.split(' ').length>1;sidebar.style.marginTop=split?Math.min(0,toolbar.getBoundingClientRect().top-root.getBoundingClientRect().top)+'px':'0px';const top=sidebar.getBoundingClientRect().top,actions=sidebar.querySelector('.tr-inspector-actions').getBoundingClientRect().height;sidebar.style.setProperty('--tr-detail-height',Math.max(220,bottom-top-actions-8)+'px')}
+ };
+ const hideTip=()=>{clearTimeout(tipHideTimer);if(tip)tip.hidden=true};
+ const scheduleHide=()=>{clearTimeout(tipHideTimer);tipHideTimer=setTimeout(hideTip,100)};
  const request=next=>{hideTip();void onChange(next)};
+ function advanceWheel(){clearTimeout(wheelTimer);wheelTimer=0;if(Math.abs(wheelAmount)<180)return;const wait=160-(performance.now()-lastWheelStep);if(wait>0){wheelTimer=setTimeout(advanceWheel,wait);return}const direction=Math.sign(wheelAmount);wheelAmount=0;lastWheelStep=performance.now();shiftWindow(direction)}
  const lookup=id=>model.projects.find(p=>p.id===id);
  function paint(cell){
   if(!cell.minutes)return '';
@@ -28,9 +38,21 @@ export function createTimeReview(root,{today,onChange,onSelect,onTimeline,onScro
   const label=`${date} ${clock(cell.start)}–${clock(cell.start+15)}，${cell.minutes?cell.parts.map(p=>(lookup(p.projectId)?.name||'重叠待核对')+' '+duration(p.minutes)).join('，'):'无已确认时间段'}`;
   return `<button type="button" class="tr-cell ${cell.minutes?'has-time':''} ${connected(previous)?'joins-before':''} ${connected(next)?'joins-after':''}" data-tr-date="${date}" data-tr-cell="${index}" aria-label="${esc(label)}" ${index?'tabindex="-1"':''}>${paint(cell)}</button>`;
  }
+ function ensureTip(){clearTimeout(tipHideTimer);if(!tip){tip=document.createElement('div');tip.id='time-review-tip';tip.setAttribute('role','tooltip');tip.onpointerenter=()=>clearTimeout(tipHideTimer);tip.onpointerleave=hideTip;document.body.append(tip)}return tip}
+ function positionTip(target,event){
+  const rect=target.getBoundingClientRect(),box=tip.getBoundingClientRect(),x=event?.clientX??rect.left,y=event?.clientY??rect.bottom;
+  tip.style.left=Math.max(12,Math.min(x+14,innerWidth-box.width-12))+'px';
+  tip.style.top=(y+box.height+18<innerHeight?y+14:Math.max(12,y-box.height-14))+'px';
+ }
+ function showDayTip(target,event){
+  const row=model.rows.find(r=>r.date===target.dataset.trRow);if(!row)return;
+  ensureTip();tip.className='tr-tip tr-day-tip';const d=parseDate(row.date),weekday=['日','一','二','三','四','五','六'][d.getDay()];
+  tip.innerHTML=`<div class="tr-day-tip-date"><time>${row.date.replaceAll('-','/')} · 周${weekday}</time>${row.date===today?'<span>今天</span>':''}</div><div class="tr-day-tip-total"><span>已定位时间</span><strong>${duration(row.totalMinutes)}</strong></div>${row.projectMinutes.length?`<div class="tr-day-tip-bar" aria-hidden="true">${row.projectMinutes.map(p=>`<i class="${p.projectId==='!conflict'?'tr-conflict':''}" style="width:${p.minutes/row.totalMinutes*100}%;background:${color(lookup(p.projectId)?.color)}"></i>`).join('')}</div><div class="tr-day-tip-projects">${row.projectMinutes.map(p=>`<div><i class="${p.projectId==='!conflict'?'tr-conflict':''}" style="background:${color(lookup(p.projectId)?.color)}"></i><span>${esc(lookup(p.projectId)?.name||'重叠待核对')}</span><b>${duration(p.minutes)}</b><small>${fmt(p.minutes/row.totalMinutes*100)}%</small></div>`).join('')}</div>`:'<p class="tr-day-tip-empty">当天还没有已确认的时间段</p>'}${row.unlocatedHours||row.missingEstimates?`<div class="tr-day-tip-other">${row.unlocatedHours?`另有 ${fmt(row.unlocatedHours)} 小时未指定时段`:''}${row.missingEstimates?`${row.unlocatedHours?' · ':''}${row.missingEstimates} 条时长待配置`:''}</div>`:''}`;
+  tip.hidden=false;positionTip(target,event);
+ }
  function showTip(target){
   const row=target.closest('[data-tr-row]'),index=Number(target.dataset.trCell),cell=row?model.rows.find(r=>r.date===row.dataset.trRow)?.cells[index]:model.summary[index];if(!cell)return;
-  if(!tip){tip=document.createElement('div');tip.className='tr-tip';tip.id='time-review-tip';tip.setAttribute('role','tooltip');document.body.append(tip)}
+  ensureTip();tip.className='tr-tip';
   const date=row?`${row.dataset.trRow} · `:'时段累计 · ';const parts=!row&&highlighted?cell.parts.filter(p=>p.projectId===highlighted):cell.parts,total=parts.reduce((n,p)=>n+p.minutes,0);
   tip.innerHTML=`<small>${esc(date)}</small><div class="tr-tip-heading"><strong>${clock(cell.start)}–${clock(cell.start+15)}</strong><span>${duration(total)}</span></div>${parts.length?`<div class="tr-tip-projects">${parts.map(p=>`<div><i style="background:${color(lookup(p.projectId)?.color)}"></i><span>${esc(lookup(p.projectId)?.name||'重叠待核对')}</span><b>${duration(p.minutes)}</b></div>`).join('')}</div>`:'<p>没有已确认的时间段，不能据此判断这时没有工作。</p>'}${!row?`<p>柱高为 ${model.rows.length} 天的日均值：${duration(total/model.rows.length)}；上限 15 分钟。</p>`:'<p>点击查看当天记录 · 方向键切换时间格</p>'}`;
   tip.hidden=false;const rect=target.getBoundingClientRect(),box=tip.getBoundingClientRect();tip.style.left=Math.max(12,Math.min(rect.left,innerWidth-box.width-12))+'px';tip.style.top=(rect.bottom+box.height+12<innerHeight?rect.bottom+8:Math.max(8,rect.top-box.height-8))+'px';
@@ -41,11 +63,11 @@ export function createTimeReview(root,{today,onChange,onSelect,onTimeline,onScro
   const first=options.startHour===0?0:8,hours=24-first,slots=hours*4;
   const ticks=Array.from({length:hours+1},(_,i)=>`<span style="left:${i/hours*100}%">${String(first+i).padStart(2,'0')}:00</span>`).join('');
   const rows=model.rows.map(row=>{const d=parseDate(row.date),weekend=[0,6].includes(d.getDay()),weekStart=d.getDay()===1;
-   return `<div class="tr-row ${weekend?'is-weekend':''} ${weekStart?'starts-week':''} ${next.selectedDate===row.date?'is-selected':''}" data-tr-row="${row.date}"><button class="tr-day-label" data-tr-date="${row.date}" aria-label="查看 ${row.date} 当日记录"><strong>${Number(row.date.slice(5,7))}.${Number(row.date.slice(8))}</strong><small>${['日','一','二','三','四','五','六'][d.getDay()]}</small></button><div class="tr-cells">${row.cells.map((c,i)=>cellHTML(c,i,row.date,row.cells[i-1],row.cells[i+1])).join('')}</div><span class="tr-day-total" title="全天已确认时长，包括当前横轴未显示的时段">${row.totalMinutes?fmt(row.totalMinutes/60)+'h':'—'}</span></div>`;
+   return `<div class="tr-row ${weekend?'is-weekend':''} ${weekStart?'starts-week':''} ${row.date===today?'is-today':''} ${next.selectedDate===row.date?'is-selected':''}" data-tr-row="${row.date}"><button class="tr-day-label" data-tr-date="${row.date}" aria-label="查看 ${row.date}${row.date===today?'，今天':''} 当日记录" ${row.date===today?'aria-current="date"':''}><strong>${Number(row.date.slice(5,7))}.${Number(row.date.slice(8))}</strong>${row.date===today?'<span class="tr-today-tag" aria-hidden="true">今天</span>':`<small>${['日','一','二','三','四','五','六'][d.getDay()]}</small>`}</button><div class="tr-cells">${row.cells.map((c,i)=>cellHTML(c,i,row.date,row.cells[i-1],row.cells[i+1])).join('')}</div><span class="tr-day-total" title="全天已确认时长，包括当前横轴未显示的时段">${row.totalMinutes?fmt(row.totalMinutes/60)+'h':'—'}</span></div>`;
   }).join('');
   const legend=next.colorMode==='project'?model.projects.filter(p=>model.usedProjects.includes(p.id)).map(p=>`<button type="button" data-tr-highlight="${esc(p.id)}" aria-label="突出显示 ${esc(p.name)}"><i style="background:${color(p.color)}"></i>${esc(p.name)}</button>`).join(''):`<span><i class="tr-ink tr-level-5"></i>已确认</span>`;
   const side=next.anchorSide==='start'?'start':'end';
-  root.innerHTML=`<div class="tr-controls"><div class="tr-presets" aria-label="显示天数">${[['7','一周'],['14','两周'],['30','一个月']].map(([key,label])=>`<button type="button" data-tr-preset="${key}" aria-pressed="${next.preset===key}" class="quiet ${next.preset===key?'active':''}" title="固定显示 ${key} 天">${label}</button>`).join('')}</div><div class="tr-date-fields"><button id="tr-prev" aria-label="前一段日期"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m12 5-5 5 5 5"/></svg></button><input id="tr-start" type="date" min="1900-01-01" max="2200-12-31" value="${next.start}" aria-label="时段开始日期"><span class="tr-date-separator">—</span><input id="tr-end" type="date" min="1900-01-01" max="2200-12-31" value="${next.end}" aria-label="时段结束日期"><button id="tr-next" aria-label="后一段日期"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m8 5 5 5-5 5"/></svg></button></div></div><p id="tr-range-error" class="tr-error" role="alert" hidden></p>
+  root.innerHTML=`<div class="tr-controls"><div class="tr-presets" aria-label="显示天数">${[['7','一周'],['14','两周'],['30','一个月']].map(([key,label])=>`<button type="button" data-tr-preset="${key}" aria-pressed="${next.preset===key}" class="quiet ${next.preset===key?'active':''}" title="固定显示 ${key} 天">${label}</button>`).join('')}</div><div class="tr-date-fields"><button id="tr-prev" aria-label="前一天"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m12 5-5 5 5 5"/></svg></button><input id="tr-start" type="date" min="1900-01-01" max="2200-12-31" value="${next.start}" aria-label="时段开始日期"><span class="tr-date-separator">—</span><input id="tr-end" type="date" min="1900-01-01" max="2200-12-31" value="${next.end}" aria-label="时段结束日期"><button id="tr-next" aria-label="后一天"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m8 5 5 5-5 5"/></svg></button></div></div><p id="tr-range-error" class="tr-error" role="alert" hidden></p>
   <div class="tr-overview"><div><span>已定位时间</span><strong>${fmt(model.totalMinutes/60)}<small>小时</small></strong><span class="tr-days-count">${model.recordedDays} / ${model.rows.length} 天</span><p>另有 <b>${fmt(model.unlocatedHours)}</b> 小时未指定时段${model.estimatedHours?'（含估算）':''}${model.missingEstimates?` · ${model.missingEstimates} 条待配置估算`:''}</p></div></div>
   <div class="tr-outside-tools"><div id="tr-project-filter-host" class="filters"></div></div><section class="tr-paper" aria-label="日期与时间段热力图"><div class="tr-chart-tools"><div class="tr-range-caption"><time datetime="${next.start}">${next.start.replaceAll('-','/')}</time><span>—</span><time datetime="${next.end}">${next.end.replaceAll('-','/')}</time></div><div class="tr-display-controls"><button type="button" id="tr-by-project" aria-pressed="${next.colorMode==='project'}" class="quiet ${next.colorMode==='project'?'active':''}">分项目</button><button id="tr-full-day" class="quiet ${first===0?'active':''}" aria-pressed="${first===0}">全天</button></div></div>
   ${model.conflictMinutes?'<p class="tr-outside">部分已确认区间重叠，已去重；项目归属请到记录页核对。</p>':''}
@@ -57,23 +79,26 @@ export function createTimeReview(root,{today,onChange,onSelect,onTimeline,onScro
   root.querySelectorAll('[data-tr-preset]').forEach(b=>b.onclick=()=>request({...timeReviewRange(b.dataset.trPreset,next[side],side),selectedDate:'',scrollTop:0}));
   root.querySelector('#tr-by-project').onclick=()=>request({colorMode:next.colorMode==='project'?'effort':'project'});
   root.querySelector('#tr-full-day').onclick=()=>request({startHour:first===0?8:0});
-  root.querySelector('#tr-prev').onclick=()=>shiftWindow(-model.rows.length);root.querySelector('#tr-next').onclick=()=>shiftWindow(model.rows.length);
+  root.querySelector('#tr-prev').onclick=()=>shiftWindow(-1);root.querySelector('#tr-next').onclick=()=>shiftWindow(1);
+  for(const id of ['tr-start','tr-end'])root.querySelector('#'+id).onclick=e=>{try{e.currentTarget.showPicker?.()}catch{}};
   for(const [id,side]of [['tr-start','start'],['tr-end','end']])root.querySelector('#'+id).onchange=e=>{const anchor=e.target.value,notice=root.querySelector('#tr-range-error'),range=validTimeDate(anchor)?timeReviewRange(next.preset,anchor,side):null,valid=range&&validTimeDate(range.start)&&validTimeDate(range.end);notice.hidden=!!valid;if(!valid){notice.textContent='请选择有效日期。';return}request({...range,selectedDate:'',scrollTop:0})};
-  root.querySelector('.tr-days').addEventListener('wheel',e=>{if(Math.abs(e.deltaX)>=Math.abs(e.deltaY)||e.ctrlKey||e.metaKey)return;e.preventDefault();wheelAmount+=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?200:1);clearTimeout(wheelTimer);wheelTimer=setTimeout(()=>{const steps=Math.trunc(wheelAmount/35);wheelAmount=0;if(steps)shiftWindow(Math.max(-model.rows.length,Math.min(model.rows.length,steps)))},100)},{passive:false});
+  root.querySelector('.tr-days').addEventListener('wheel',e=>{if(Math.abs(e.deltaX)>=Math.abs(e.deltaY)||e.ctrlKey||e.metaKey)return;e.preventDefault();wheelAmount=Math.max(-240,Math.min(240,wheelAmount+e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?180:1)));advanceWheel()},{passive:false});
   root.querySelectorAll('[data-tr-highlight]').forEach(b=>{b.onpointerenter=()=>highlight(b.dataset.trHighlight);b.onpointerleave=()=>highlight('');b.onfocus=()=>highlight(b.dataset.trHighlight);b.onblur=()=>highlight('')});
   root.querySelectorAll('[data-tr-date]').forEach(b=>b.onclick=()=>{hideTip();const row=model.rows.find(r=>r.date===b.dataset.trDate),cell=b.dataset.trCell!==undefined?row?.cells[Number(b.dataset.trCell)]:null,id=cell?.parts.length===1&&lookup(cell.parts[0].projectId)?cell.parts[0].projectId:null;void onSelect(b.dataset.trDate,id)});
+  root.querySelectorAll('[data-tr-row]').forEach(row=>{row.onpointerenter=e=>showDayTip(row,e);row.onpointerleave=scheduleHide;row.onpointermove=e=>{if(tip&&!tip.hidden&&tip.classList.contains('tr-day-tip'))positionTip(row,e)};const date=row.querySelector('.tr-day-label');date.onfocus=()=>showDayTip(row);date.onblur=hideTip});
   wireCells();
   root.querySelector('.tr-days').onscroll=()=>{hideTip();onScroll?.({scrollTop:root.querySelector('.tr-days').scrollTop})};root.querySelector('.tr-scroll').onscroll=()=>{hideTip();onScroll?.({scrollLeft:root.querySelector('.tr-scroll').scrollLeft})};
   requestAnimationFrame(()=>{fit();root.querySelector('.tr-days').scrollTop=oldTop;root.querySelector('.tr-scroll').scrollLeft=oldLeft});
   root.querySelector('#tr-open-records')?.addEventListener('click',()=>onTimeline(next.end));
  }
  function wireCells(){
-  root.querySelectorAll('.tr-cell,.tr-summary-cell').forEach(b=>{b.onpointerenter=()=>showTip(b);b.onpointerleave=hideTip;b.onfocus=()=>showTip(b);b.onblur=hideTip;b.onkeydown=e=>{
+  root.querySelectorAll('.tr-cell,.tr-summary-cell').forEach(b=>{b.onpointerenter=e=>{const row=b.closest('[data-tr-row]');row?showDayTip(row,e):showTip(b)};b.onpointerleave=()=>{if(!b.closest('[data-tr-row]'))hideTip()};b.onfocus=()=>showTip(b);b.onblur=hideTip;b.onkeydown=e=>{
    if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(e.key))return;e.preventDefault();const row=b.closest('.tr-row'),items=[...b.parentElement.children],i=items.indexOf(b);let target;
    if(e.key==='Home')target=items[0];else if(e.key==='End')target=items.at(-1);else if(e.key==='ArrowLeft'||e.key==='ArrowRight')target=items[i+(e.key==='ArrowLeft'?-1:1)];else if(row){const sibling=e.key==='ArrowUp'?row.previousElementSibling:row.nextElementSibling;target=sibling?.querySelectorAll('.tr-cell')[i]}
    if(target){b.tabIndex=-1;target.tabIndex=0;target.focus({preventScroll:true});target.scrollIntoView({block:'nearest',inline:'nearest'})}
   }});
  }
- window.addEventListener('scroll',hideTip,true);window.addEventListener('resize',()=>{hideTip();fit()});
+ new ResizeObserver(fit).observe(root);
+ window.addEventListener('scroll',e=>{if(!tip?.contains(e.target))hideTip()},true);window.addEventListener('resize',()=>{hideTip();fit()});
  return {render,hideTip};
 }
