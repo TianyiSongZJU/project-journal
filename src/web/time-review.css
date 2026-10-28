@@ -21,9 +21,9 @@
 .tr-overview>div{display:flex;align-items:baseline;gap:10px}.tr-overview strong{font:500 32px/1.2 Georgia,var(--serif);color:var(--green);font-variant-numeric:tabular-nums}.tr-overview strong small{font:11px system-ui;margin-left:5px;color:#86947a}.tr-days-count{padding-left:12px;border-left:1px solid #dce2d4;font-variant-numeric:tabular-nums}.tr-overview p{margin:0}.tr-overview b{font-weight:500;color:#718365}
 .tr-paper{padding:18px 20px 14px;background:#f7f8f2;border:1px solid #dfe5d7;border-radius:16px;min-width:0}
 .tr-paper-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;font-size:10px;color:#8f9c83}.tr-paper-heading>div{display:flex;align-items:baseline;gap:13px;flex-wrap:wrap}.tr-paper-heading h2{font-size:13px;font-weight:600;margin:0;color:#526a45}.tr-paper-heading span{font-variant-numeric:tabular-nums;white-space:nowrap}
-.tr-scroll{overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:#cbd4c1 transparent;min-width:0;padding-bottom:3px}
-.tr-grid{--tr-label:70px;--tr-total:48px;min-width:650px}
-.tr-grid:has(.tr-cells>.tr-cell:nth-child(96)){min-width:780px}
+.tr-scroll{overflow-x:hidden;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:#cbd4c1 transparent;min-width:0;padding-bottom:3px}
+.tr-grid{--tr-label:70px;--tr-total:48px;min-width:0}
+.tr-grid:has(.tr-cells>.tr-cell:nth-child(96)){min-width:0}
 .tr-axis-row,.tr-row,.tr-summary{display:grid;grid-template-columns:var(--tr-label) minmax(0,1fr) var(--tr-total);align-items:center;column-gap:12px}
 .tr-axis-row{height:28px;color:#93a088;font-size:9px}.tr-axis-row>span:last-child{text-align:right;padding-right:3px}.tr-axis{position:relative;height:20px;font-variant-numeric:tabular-nums}.tr-axis span{position:absolute;top:2px;transform:translateX(-50%);white-space:nowrap;font-size:9px}.tr-axis span:first-child{transform:none}.tr-axis span:last-child{transform:translateX(-100%)}
 .tr-days{max-height:min(56vh,610px);overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#cbd4c1 transparent;scrollbar-gutter:stable}
@@ -72,7 +72,7 @@
 .tr-row{min-height:0;height:auto;padding:0}.tr-row.starts-week:not(:first-child){margin-top:0;padding-top:0;border-top:0;border-radius:4px}
 .tr-row.starts-week:not(:first-child) .tr-day-label{color:#47663f}
 .tr-cell{height:min(16px,100%)}.tr-row .tr-cells{height:100%}
-.tr-days.is-dense .tr-day-label{height:100%;min-height:0;line-height:1;font-size:9px}.tr-days.is-dense .tr-day-label small{display:none}
+.tr-days.is-dense .tr-day-label{height:100%;min-height:0;line-height:1;font-size:9px}.tr-days.is-dense .tr-day-label small{display:inline;font-size:8px}
 .tr-days.is-dense .tr-row:not(:nth-child(3n + 1)):not(:last-child) .tr-day-label{color:transparent}
 .tr-days.is-dense .tr-row:not(:nth-child(3n + 1)):not(:last-child) .tr-day-label:hover,.tr-days.is-dense .tr-day-label:focus-visible{color:#687b5d}
 .tr-days.is-dense .tr-day-total{font-size:8px}
@@ -173,3 +173,55 @@
 @media(max-width:1080px){.tr-inspector-host{position:static;margin-top:0!important}.tr-inspector-host #month-inspector{max-height:none}}
 @media(max-width:650px){.tr-date-fields{grid-template-columns:18px 100px 10px 100px 18px;gap:2px}.tr-date-fields input{width:100%}}
 html.native-mac:has(#page-review.time-view:not([hidden])){border-radius:0 0 16px 16px;overflow:hidden}
+
+/* The visible dates have their own centered text boxes; the native picker is an overlay. */
+.tr-date-fields{height:32px;align-items:center}
+.tr-date-input{position:relative;display:grid;place-items:center;width:100%;height:28px;min-width:0;margin:0;padding:0;border:0}
+.tr-date-text{display:flex;align-items:center;justify-content:center;width:100%;height:28px;padding:0;margin:0;font:500 11px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:0;color:#617653;white-space:nowrap}
+.tr-date-fields .tr-date-input input{position:absolute;inset:0;width:100%;height:100%;min-height:0;margin:0;padding:0;border:0;opacity:0;cursor:pointer}
+.tr-date-fields .tr-date-input input:focus-visible{opacity:1;background:#f7f8f2}
+.tr-date-input:has(input:focus-visible) .tr-date-text{visibility:hidden}
+.tr-date-input:has(input:focus-visible){outline:1px solid #aabd97;border-radius:4px}
+.tr-date-fields .tr-date-separator{display:flex;align-items:center;justify-content:center;height:28px;line-height:1}
+/* Fit all quarters into the chart, including when the day inspector is open. */
+.tr-grid{width:100%;min-width:0;--tr-label:72px}
+.tr-scroll{overflow-x:hidden;min-width:0}
+.tr-row{position:relative;isolation:isolate;padding-left:6px;padding-right:6px;border-radius:7px}
+.tr-axis-row,.tr-summary{padding-left:6px;padding-right:18px}
+.tr-day-label{display:grid;grid-template-columns:18px minmax(0,1fr) 9px;align-items:center;gap:3px;padding:0 4px;position:relative}
+.tr-day-label strong{grid-column:2;grid-row:1;justify-self:end}
+.tr-day-label small{grid-column:3;grid-row:1;justify-self:center}
+.tr-day-label:hover{background:transparent}
+.tr-row.is-today{background:transparent}
+.tr-row.is-today::before{content:'';position:absolute;inset:2px;border-radius:6px;background:linear-gradient(90deg,#e5eddd99,#f3f7ed44);pointer-events:none;z-index:-1}
+.tr-row.is-today .tr-day-label{gap:3px}
+.tr-today-tag{grid-column:1;grid-row:1;order:0;justify-self:center;width:auto;min-width:0;padding:0;height:auto;background:transparent;border-radius:0;font-size:8px;font-weight:500;color:#6e865f;line-height:1}
+.tr-row:is(.is-hovered,:has(:focus-visible)){background:#fafcf5aa;box-shadow:inset 0 0 0 1px #ffffffee,0 0 0 1px #dce6d17a,0 0 9px #ffffffb3;z-index:2}
+.tr-row.is-hovered .tr-day-label{color:#426342}
+.tr-row.is-hovered .tr-day-label strong{font-weight:600}
+.tr-cell:hover,.tr-cell:focus-visible{outline:0;box-shadow:none;border-radius:0;background:transparent}
+.tr-row .tr-day-total{line-height:1;font-variant-numeric:tabular-nums;transition:color .14s ease}
+.tr-row:is(.is-hovered,:has(:focus-visible)) .tr-day-total{font:600 14px/1 Georgia,'Times New Roman',var(--serif);color:#365e3d}
+.tr-days.is-dense .tr-row:is(.is-hovered,:has(:focus-visible)) .tr-day-total{font-size:11px}
+
+/* Explicit row-relative heights also work in WebKit's percentage grid sizing. */
+.tr-row .tr-cells{height:var(--tr-row-height,24px);min-height:0;align-items:center}
+.tr-row .tr-cell{height:var(--tr-cell-height,16px);min-height:0;max-height:var(--tr-cell-height,16px);padding-top:0;padding-bottom:0;box-sizing:border-box;align-self:center}
+.tr-cell::before{inset:0 .5px}
+.tr-day-label{max-height:var(--tr-row-height,24px)}
+.tr-summary-cells{height:88px}
+.tr-summary-cell{height:87px}
+
+.tr-days.is-dense .tr-row.is-hovered .tr-day-label{color:#426342!important}
+.tr-date-fields .tr-date-input.is-editing input{opacity:1;background:#f7f8f2}
+.tr-date-input.is-editing .tr-date-text{visibility:hidden}
+/* Sparse date labels and weekdays disappear together; hover reveals the whole label. */
+.tr-days.is-dense .tr-row:not(:nth-child(3n + 1)):not(:last-child):not(.is-today):not(.is-hovered) .tr-day-label:not(:hover):not(:focus-visible) small{visibility:hidden}
+.tr-days.is-dense .tr-row.is-today .tr-day-label{color:#3b6542!important}
+
+.tr-display-controls #tr-weekends{border:1px solid #dfe6d6;border-radius:6px;padding:0 10px}
+.tr-display-controls #tr-weekends.active{background:#eee6d6;border-color:#e0d5bf;color:#8c7856}
+.tr-chart.highlight-weekends .tr-row.is-weekend{background:linear-gradient(90deg,#f1e7d5b3,#f6efe373)}
+.tr-chart.highlight-weekends .tr-row.is-weekend .tr-day-label{color:#8b7857}
+.tr-chart.highlight-weekends .tr-row.is-weekend:is(.is-hovered,:has(:focus-visible)){background:linear-gradient(90deg,#f5ecdddf,#fcf8f0b3)}
+@media(max-width:650px){.tr-display-controls #tr-weekends{padding:0 5px}.tr-range-caption{font-size:11px;gap:5px}.tr-chart-tools{gap:6px}.tr-chart-tools .tr-display-controls{gap:4px}}

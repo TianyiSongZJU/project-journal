@@ -36,8 +36,8 @@ test('missing estimates are reported rather than invented and existing other-tim
  state.entries[0]={projectId:'a',date,kind:'hours',hours:3,otherKind:'hours',otherHours:.5};assert.equal(buildTimeReview(state,options).unlocatedHours,.5);
 });
 test('fixed date windows migrate old preferences and support either endpoint across month and leap boundaries',()=>{
- const saved={start:'2026-10-15',end:date,startHour:0,colorMode:'project',preset:'14',anchorSide:'end',selectedDate:'2026-10-20',scrollTop:25,scrollLeft:0};
- assert.deepEqual(sanitizeTimeReview(saved,date),saved);
+ const saved={start:'2026-10-15',end:date,startHour:0,colorMode:'project',highlightWeekends:false,preset:'14',anchorSide:'end',selectedDate:'2026-10-20',scrollTop:25,scrollLeft:0};
+ assert.deepEqual(sanitizeTimeReview(saved,date),saved);assert.equal(sanitizeTimeReview({...saved,highlightWeekends:true},date).highlightWeekends,true);assert.equal(sanitizeTimeReview({...saved,highlightWeekends:'true'},date).highlightWeekends,false);
  assert.equal(sanitizeTimeReview({...saved,selectedDate:'2026-09-30'},date).selectedDate,'');
  const v=sanitizeViewState({mode:'time',timeReview:saved});assert.equal(v.mode,'time');assert.deepEqual(v.timeReview,saved);
  assert.deepEqual(timeReviewRange('7',date),{start:'2026-10-22',end:date,preset:'7',anchorSide:'end'});
