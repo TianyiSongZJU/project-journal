@@ -33,16 +33,17 @@ export function timelineWidths({width,activities=[],fileLabels=[],compare=false,
   return {activityWidth,filesWidth,minimum,gap};
 }
 
-export function setupClientTimeline({esc}) {
+export function setupClientTimeline({esc,initialView={},onViewChange}) {
   const storageKey = window.journalMacHost?'journal-macos-hidden-clients':'journal-windows-hidden-clients';
   let hidden;
-  try { const value=JSON.parse(localStorage.getItem(storageKey)); hidden=new Set(Array.isArray(value)?value:[]); }
+  const restoredClients=Array.isArray(initialView.hiddenClients);
+  try { const value=restoredClients?initialView.hiddenClients:JSON.parse(localStorage.getItem(storageKey)); hidden=new Set(Array.isArray(value)?value:[]); }
   catch { hidden=new Set(); }
-  let root, refresh, horizontal=0, selectionVersion=0, saveTimer, compare=false;
+  let root, refresh, horizontal=0, selectionVersion=0, saveTimer, compare=initialView.compare===true;
   const includes = item => !hidden.has(clientKey(item));
   const dayClients = guides => activityClients([...guides.activities,...guides.files]);
   const persist = () => {
-    selectionVersion++;
+    selectionVersion++;onViewChange?.();
     try { localStorage.setItem(storageKey,JSON.stringify([...hidden])); } catch {}
     if(window.journalSaveHiddenClients) {
       clearTimeout(saveTimer);
@@ -52,9 +53,9 @@ export function setupClientTimeline({esc}) {
       }),0);
     }
   };
-  if(window.journalLoadHiddenClients) window.journalLoadHiddenClients().then(value=>{
+  if(!restoredClients&&window.journalLoadHiddenClients) window.journalLoadHiddenClients().then(value=>{
     if(selectionVersion||!Array.isArray(value)) return;
-    hidden=new Set(value);
+    hidden=new Set(value);onViewChange?.();
     refresh?.();
   }).catch(()=>{});
   function update(focus) {
@@ -87,7 +88,7 @@ export function setupClientTimeline({esc}) {
     layout.textContent='分端对比'; layout.setAttribute('aria-pressed',String(compare));
     layout.title='切换合并展示与按客户端分轨';
     picker.querySelector('.dt-client-menu').append(layout);
-    layout.onclick=()=>{compare=!compare;horizontal=0;refresh();root.querySelector('.dt-client-picker').open=true;root.querySelector('.dt-client-layout').focus({preventScroll:true});};
+    layout.onclick=()=>{compare=!compare;onViewChange?.();horizontal=0;refresh();root.querySelector('.dt-client-picker').open=true;root.querySelector('.dt-client-layout').focus({preventScroll:true});};
     picker.querySelector('summary>span').textContent='前台活动';
     picker.querySelector('.dt-client-count').textContent=shown.length?shown.length+' 端':'未选择';
     picker.querySelectorAll('input').forEach(input=>input.onchange=()=>{
@@ -171,5 +172,5 @@ export function setupClientTimeline({esc}) {
       return `<div><span>${esc(client.name)}</span><b>${minuteLabel(seconds)}</b></div>`;
     }).join('')}<small>各端分别观测，重叠部分不能相加为工时</small></div>`;
   }
-  return {includes,mount,renderActivities,activityDetail};
+  return {getView:()=>({hiddenClients:[...hidden],compare}),includes,mount,renderActivities,activityDetail};
 }
