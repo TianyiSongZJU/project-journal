@@ -103,7 +103,7 @@
 .tr-date-fields #tr-prev,.tr-date-fields #tr-next{display:grid;place-items:center;flex:none;width:25px;height:28px;min-height:28px;padding:0;border-radius:5px;line-height:1}
 .tr-date-fields svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;display:block}
 .tr-date-separator{color:#a6b09b;line-height:28px;font-size:10px;flex:none}
-#time-workspace{position:relative;margin-top:16px}
+#time-workspace{position:relative;margin-top:6px}
 .tr-overview{padding-right:118px;min-height:36px;align-items:center;margin-bottom:14px}
 .tr-outside-tools{position:absolute;right:0;top:3px;display:flex;justify-content:flex-end}
 .tr-outside-tools .filter-popover{left:auto!important;right:0!important}
