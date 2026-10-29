@@ -312,13 +312,22 @@
 /* Let the live time replace nearby hour labels instead of overprinting them. */
 :is(.native-windows,.native-mac) .dt-clock time.now-overlap { visibility:hidden; }
 
-/* Adapt to the day pane itself, so a narrow sidebar does not squeeze its project name. */
 :is(.native-windows,.native-mac) #inspector-content{container:inspector-content / inline-size}
+/* Keep the narrow day header on one line; the existing tab actions become a menu. */
+:is(.native-windows,.native-mac) .windows-inspector-view,:is(.native-windows,.native-mac) .windows-inspector-view-menu{display:contents}
+:is(.native-windows,.native-mac) .windows-inspector-view>.windows-inspector-view-trigger{display:none}
 @container inspector-content (max-width:460px){
- :is(.native-windows,.native-mac) #inspector-content .inspector-project-row{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;row-gap:4px;padding:5px 6px}
- :is(.native-windows,.native-mac) #inspector-content .inspector-project-row>.inspector-project-label{grid-column:1/-1;grid-row:1;width:100%;padding-bottom:4px;border-bottom:1px solid #e5eadf}
- :is(.native-windows,.native-mac) #inspector-content .inspector-project-row>.inspector-project-label .shared-project-picker>summary{padding-left:3px;padding-right:3px}
- :is(.native-windows,.native-mac) #inspector-content .inspector-project-row>#inspector-duration{grid-column:1;grid-row:2;justify-self:end;padding:0;background:none}
- :is(.native-windows,.native-mac) #inspector-content .inspector-project-row>#inspector-duration .inspector-time-editor>summary{justify-content:flex-end;padding:0 4px}
- :is(.native-windows,.native-mac) #inspector-content .inspector-project-row>.inspector-tabs{grid-column:2;grid-row:2;justify-self:end;width:auto;margin:0;padding:2px 0;gap:2px}
+ :is(.native-windows,.native-mac) #inspector-content .inspector-project-row{display:flex;align-items:center;gap:3px;padding:2px}
+ :is(.native-windows,.native-mac) #inspector-content .inspector-project-row>.inspector-project-label{width:auto;flex:1;min-width:0;padding-bottom:0;border-bottom:0}
+ :is(.native-windows,.native-mac) #inspector-content .inspector-project-row>.inspector-project-label .shared-project-picker>summary{padding-left:8px;padding-right:4px}
+ :is(.native-windows,.native-mac) #inspector-content .inspector-project-row>#inspector-duration{padding:0 3px;background:linear-gradient(#dce3d3,#dce3d3) left center/1px 14px no-repeat}
+ :is(.native-windows,.native-mac) #inspector-content .inspector-project-row>#inspector-duration .inspector-time-editor>summary{justify-content:center;padding:0 5px}
+ :is(.native-windows,.native-mac) #inspector-content .inspector-project-row>.inspector-tabs{height:32px;padding:2px;flex:none}
+ :is(.native-windows,.native-mac) .windows-inspector-view{display:block;position:relative}
+ :is(.native-windows,.native-mac) #inspector-content .inspector-project-row .windows-inspector-view>.windows-inspector-view-trigger{display:flex;align-items:center;justify-content:center;gap:5px;height:26px;min-height:26px;box-sizing:border-box;padding:0 7px;border:0;border-radius:5px;background:var(--green);color:#fff;font:inherit;font-size:10px;line-height:26px;list-style:none;white-space:nowrap;cursor:pointer;box-shadow:0 1px 3px #315c4626}
+ :is(.native-windows,.native-mac) #inspector-content .inspector-project-row .windows-inspector-view>.windows-inspector-view-trigger::after{content:"⌄";font-size:10px;opacity:.8}
+ :is(.native-windows,.native-mac) #inspector-content .inspector-project-row .windows-inspector-view>.windows-inspector-view-trigger::-webkit-details-marker{display:none}
+ :is(.native-windows,.native-mac) .windows-inspector-view-menu{display:none;position:absolute;right:0;top:calc(100% + 6px);z-index:100;min-width:108px;padding:4px;border:1px solid #e0e5d8;border-radius:8px;background:var(--panel);box-shadow:0 5px 18px #34492c20}
+ :is(.native-windows,.native-mac) .windows-inspector-view.is-open>.windows-inspector-view-menu{display:grid;gap:3px}
+ :is(.native-windows,.native-mac) #inspector-content .windows-inspector-view-menu button{width:100%;height:28px;min-height:28px;text-align:left;padding:0 10px}
 }

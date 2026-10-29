@@ -41,25 +41,7 @@ dialog h2 { font-family: inherit; }
   cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M8.5 3.5v10M3.5 8.5h10' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M8.5 3.5v10M3.5 8.5h10' fill='none' stroke='%23465640' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") 8 8, crosshair;
 }
 
-/* Keep the narrow day header on one line; the existing tab actions become a menu. */
-.native-windows .windows-inspector-view,.native-windows .windows-inspector-view-menu{display:contents}
-.native-windows .windows-inspector-view>.windows-inspector-view-trigger{display:none}
 .native-windows .shared-project-picker>summary:has(.project-completed-badge) .project-dot{position:relative;background:transparent}
 .native-windows .shared-project-picker>summary:has(.project-completed-badge) .project-dot::before{content:"";position:absolute;inset:-2px;border:1.2px solid var(--project-color);border-radius:50%;box-sizing:border-box}
 .native-windows .shared-project-picker>summary:has(.project-completed-badge) .project-dot::after{content:"";position:absolute;left:1px;top:0;width:3px;height:5px;border:solid var(--project-color);border-width:0 1.2px 1.2px 0;transform:rotate(45deg)}
 .native-windows .shared-project-picker>summary .project-completed-badge{display:none}
-@container inspector-content (max-width:460px){
- .native-windows #inspector-content .inspector-project-row{display:flex;align-items:center;gap:3px;padding:2px}
- .native-windows #inspector-content .inspector-project-row>.inspector-project-label{width:auto;flex:1;min-width:0;padding-bottom:0;border-bottom:0}
- .native-windows #inspector-content .inspector-project-row>.inspector-project-label .shared-project-picker>summary{padding-left:8px;padding-right:4px}
- .native-windows #inspector-content .inspector-project-row>#inspector-duration{padding:0 3px;background:linear-gradient(#dce3d3,#dce3d3) left center/1px 14px no-repeat}
- .native-windows #inspector-content .inspector-project-row>#inspector-duration .inspector-time-editor>summary{justify-content:center;padding:0 5px}
- .native-windows #inspector-content .inspector-project-row>.inspector-tabs{height:32px;padding:2px;flex:none}
- .native-windows .windows-inspector-view{display:block;position:relative}
- .native-windows #inspector-content .inspector-project-row .windows-inspector-view>.windows-inspector-view-trigger{display:flex;align-items:center;justify-content:center;gap:5px;height:26px;min-height:26px;box-sizing:border-box;padding:0 7px;border:0;border-radius:5px;background:var(--green);color:#fff;font:inherit;font-size:10px;line-height:26px;list-style:none;white-space:nowrap;cursor:pointer;box-shadow:0 1px 3px #315c4626}
- .native-windows #inspector-content .inspector-project-row .windows-inspector-view>.windows-inspector-view-trigger::after{content:"⌄";font-size:10px;opacity:.8}
- .native-windows #inspector-content .inspector-project-row .windows-inspector-view>.windows-inspector-view-trigger::-webkit-details-marker{display:none}
- .native-windows .windows-inspector-view-menu{display:none;position:absolute;right:0;top:calc(100% + 6px);z-index:100;min-width:108px;padding:4px;border:1px solid #e0e5d8;border-radius:8px;background:var(--panel);box-shadow:0 5px 18px #34492c20}
- .native-windows .windows-inspector-view.is-open>.windows-inspector-view-menu{display:grid;gap:3px}
- .native-windows #inspector-content .windows-inspector-view-menu button{width:100%;height:28px;min-height:28px;text-align:left;padding:0 10px}
-}

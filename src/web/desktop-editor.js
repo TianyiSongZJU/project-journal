@@ -64,7 +64,7 @@ export function refineDesktopNodes(project) {
 export function refineDesktopInspector(project) {
   const row=$('.inspector-project-row'),tabs=$('.inspector-tabs');
   if(tabs&&tabs.parentElement!==row)row.append(tabs);
-  if(window.journalWindowsHost&&tabs){
+  if((window.journalWindowsHost||window.journalMacHost)&&tabs){
     let view=tabs.querySelector('.windows-inspector-view');
     if(!view){
       view=document.createElement('div');view.className='windows-inspector-view';
@@ -73,7 +73,7 @@ export function refineDesktopInspector(project) {
       const menu=document.createElement('div');menu.className='windows-inspector-view-menu';
       menu.append(...tabs.querySelectorAll('button'));view.append(summary,menu);tabs.append(view);
       view.addEventListener('click',event=>{if(event.target.closest('.windows-inspector-view-trigger')){const open=view.classList.toggle('is-open');summary.setAttribute('aria-expanded',String(open));}else if(event.target.closest('button'))close();});
-      view.addEventListener('keydown',event=>{if(event.key==='Escape'){close();summary.focus();}});
+      document.addEventListener('keydown',event=>{if(event.key==='Escape'&&view.classList.contains('is-open')){event.preventDefault();event.stopImmediatePropagation();const restoreFocus=view.contains(document.activeElement);close();if(restoreFocus)summary.focus();}},true);
       document.addEventListener('pointerdown',event=>{if(!view.contains(event.target))close();});
     }
     view.querySelector('.windows-inspector-view-trigger').textContent=tabs.querySelector('button.active')?.textContent||'当日记录';
