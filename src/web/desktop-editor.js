@@ -64,6 +64,20 @@ export function refineDesktopNodes(project) {
 export function refineDesktopInspector(project) {
   const row=$('.inspector-project-row'),tabs=$('.inspector-tabs');
   if(tabs&&tabs.parentElement!==row)row.append(tabs);
+  if(window.journalWindowsHost&&tabs){
+    let view=tabs.querySelector('.windows-inspector-view');
+    if(!view){
+      view=document.createElement('div');view.className='windows-inspector-view';
+      const summary=document.createElement('button');summary.type='button';summary.className='windows-inspector-view-trigger';summary.setAttribute('aria-label','切换记录视图');summary.setAttribute('aria-haspopup','true');summary.setAttribute('aria-expanded','false');
+      const close=()=>{view.classList.remove('is-open');summary.setAttribute('aria-expanded','false');};
+      const menu=document.createElement('div');menu.className='windows-inspector-view-menu';
+      menu.append(...tabs.querySelectorAll('button'));view.append(summary,menu);tabs.append(view);
+      view.addEventListener('click',event=>{if(event.target.closest('.windows-inspector-view-trigger')){const open=view.classList.toggle('is-open');summary.setAttribute('aria-expanded',String(open));}else if(event.target.closest('button'))close();});
+      view.addEventListener('keydown',event=>{if(event.key==='Escape'){close();summary.focus();}});
+      document.addEventListener('pointerdown',event=>{if(!view.contains(event.target))close();});
+    }
+    view.querySelector('.windows-inspector-view-trigger').textContent=tabs.querySelector('button.active')?.textContent||'当日记录';
+  }
   const label=$('#inspector-ddl-panel .inspector-context-heading>span');
   if(label) {
     const text=[...label.childNodes].find(node=>node.nodeType===3);

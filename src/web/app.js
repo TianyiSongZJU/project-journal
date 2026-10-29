@@ -369,6 +369,8 @@ document.addEventListener('keydown',e=>{
  const modal=document.querySelector('dialog[open]'),scope=modal||document;
  const menus=[...scope.querySelectorAll('details[open]:not(.fold-panel):not(.auto-project-types):not([data-ui-panel])')];
  const consume=()=>{e.preventDefault();e.stopImmediatePropagation()};
+ const viewMenu=window.journalWindowsHost&&scope.querySelector('.windows-inspector-view.is-open');
+ if(viewMenu){consume();const trigger=viewMenu.querySelector('.windows-inspector-view-trigger');trigger.click();trigger.focus({preventScroll:true});return}
  if(menus.length){consume();const menu=menus.at(-1);menu.open=false;menu.querySelector('summary')?.focus({preventScroll:true});return}
  // Keep each dialog's existing cancel/save handling and block underlying page handlers.
  if(modal){e.stopImmediatePropagation();return}

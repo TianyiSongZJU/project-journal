@@ -19,7 +19,7 @@ const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('no
    const date=new Date(),day=[date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-');
    const shift=n=>{const d=new Date(date);d.setDate(d.getDate()+n);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');};
    const old=await(await fetch('/api/state')).json(),state=old.state;
-   state.projects=[{id:'a',name:'示例研究基金',group:'申报',color:'#87AB97',note:'',deadlines:[{id:'due',name:'提交完整申请书与附件',date:day,priority:'高',note:'核对预算、附件和签章，再提交最终版本。',done:false},{id:'next',name:'阶段汇报',date:shift(4),priority:'中',note:'整理研究方案和关键图示',done:false},{id:'done',name:'确定申报方案',date:shift(-3),priority:'低',note:'已与团队讨论',done:true}]},{id:'b',name:'项目手记',group:'探索',color:'#A47F85',note:'',deadlines:[]}];
+   state.projects=[{id:'a',name:'示例研究基金',group:'申报',color:'#87AB97',note:'',deadlines:[{id:'due',name:'提交完整申请书与附件',date:day,priority:'高',note:'核对预算、附件和签章，再提交最终版本。',done:false},{id:'next',name:'阶段汇报',date:shift(4),priority:'中',note:'整理研究方案和关键图示',done:false},{id:'done',name:'确定申报方案',date:shift(-3),priority:'低',note:'已与团队讨论',done:true}]},{id:'b',name:'CNCC2026报告PPT与材料整理',completed:true,group:'探索',color:'#A47F85',note:'',deadlines:[]}];
    state.entries=[{projectId:'a',date:day,kind:'hours',hours:3.5,note:''},{projectId:'b',date:day,kind:'hours',hours:4,note:''}];
    const block={id:'morning',projectId:'a',start:540,end:630};state.timelineDays={[day]:{blocks:[block],applied:[block]}};
    const response=await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:old.revision,state})});if(!response.ok)throw Error(await response.text());return day;
@@ -76,8 +76,22 @@ const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('no
   await page.setViewportSize({width:1280,height:1000});
   await choose('b');assert.equal(await page.locator('#windows-project-nodes').isVisible(),true);assert.match(await page.locator('#windows-project-nodes>.win-node-heading').innerText(),/未设置/);
   await page.locator('#inspector-add-deadline').click();await page.locator('#deadline-dialog').waitFor();assert.equal(await page.locator('#deadline-name').inputValue(),'');await page.locator('#deadline-dialog [aria-label="关闭节点窗口"]').click();
-  await page.locator('#inspector-note-tab').click();assert.equal(await page.locator('#inspector-daily-fields').isVisible(),false);assert.equal(await page.locator('#inspector-project-fields').isVisible(),true);assert.equal(await page.locator('#inspector-duration .inspector-time-editor>summary').isVisible(),true);
-  await page.locator('#inspector-daily-tab').click();await page.locator('#inspector-duration .inspector-time-editor>summary').click();await page.locator('#inspector-hours').fill('1.25');await page.locator('#inspector-hours').dispatchEvent('input');await page.evaluate(()=>window.journalFlush());
+  const switchTab=async id=>{if(!await page.locator(id).isVisible())await page.locator('.windows-inspector-view-trigger').click();await page.locator(id).click();};
+  if(platform==='windows'){
+   await page.setViewportSize({width:760,height:700});await page.waitForTimeout(80);
+   const heading=page.locator('.inspector-project-row');
+   assert((await heading.boundingBox()).height<=40,'narrow title stays in one compact row');
+   assert(!await heading.locator('.project-completed-badge').isVisible(),'completed label is replaced by the single existing marker');
+   assert.equal(await heading.locator('.shared-project-picker>summary>.project-dot').evaluate(el=>getComputedStyle(el,'::before').borderTopStyle),'solid');
+   assert.match(await heading.locator('.shared-project-picker>summary').getAttribute('title'),/CNCC2026报告PPT与材料整理.*已完成/);
+   const trigger=heading.locator('.windows-inspector-view-trigger');assert(await trigger.isVisible());
+   assert.notEqual(await trigger.evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(0, 0, 0, 0)');
+   await shot('compact-header-completed');
+   await trigger.click();assert(await page.locator('#inspector-note-tab').isVisible());await shot('compact-header-menu');
+   await page.keyboard.press('Escape');assert.equal(await trigger.getAttribute('aria-expanded'),'false');
+  }
+  await switchTab('#inspector-note-tab');assert.equal(await page.locator('#inspector-daily-fields').isVisible(),false);assert.equal(await page.locator('#inspector-project-fields').isVisible(),true);assert.equal(await page.locator('#inspector-duration .inspector-time-editor>summary').isVisible(),true);
+  await switchTab('#inspector-daily-tab');await page.locator('#inspector-duration .inspector-time-editor>summary').click();await page.locator('#inspector-hours').fill('1.25');await page.locator('#inspector-hours').dispatchEvent('input');await page.evaluate(()=>window.journalFlush());
   const saved=await page.evaluate(async()=>await(await fetch('/api/state')).json());assert.equal(saved.state.entries.find(e=>e.projectId==='b').hours,1.25);assert.equal(saved.state.entries.find(e=>e.projectId==='a').hours,3.5);
   assert.equal(await page.locator('#inspector-duration .inspector-time-editor').evaluate(el=>el.open),true,'autosave keeps the editor open');
   assert.match(await page.locator('#inspector-duration .inspector-time-editor>summary').innerText(),/1.25/);
@@ -132,6 +146,7 @@ const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('no
 
   assert.ok(await page.locator('#project-deadline-panel .deadline-card-heading>button').first().evaluate(el=>el.getBoundingClientRect().width>200),'node names use the available row width');
   await page.locator('#project-show-done-deadlines').click();assert.equal(await page.locator('#project-deadline-panel .deadline-card:not([hidden])').count(),3);
+  if(!await page.locator('#project-list [data-select-project="b"]').isVisible())await page.locator('#project-list .project-completed-toggle').click();
   await page.locator('#project-list [data-select-project="b"]').click();assert.match(await page.locator('.win-deadline-empty').innerText(),/还没有/);assert.equal(await page.locator('#project-show-done-deadlines').isVisible(),false);
   await shot('project-deadlines-empty');
   for(const width of [1000,760]){await page.setViewportSize({width,height:1000});await page.waitForTimeout(100);assert.ok(await page.locator('#project-deadline-panel').evaluate(el=>el.scrollWidth<=el.clientWidth+1),'deadline section fits');}
