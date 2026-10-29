@@ -1,2 +1,18 @@
 /* Shared desktop layout; retain the existing macOS fonts and native title bar. */
 @import url("./desktop.css");
+
+/* Keep native title text and web actions on one quiet, continuous surface. */
+.native-mac .workspace-header{
+ position:sticky;
+ top:0;
+ z-index:120;
+ isolation:isolate;
+}
+.native-mac .workspace-header::before{
+ content:"";
+ position:absolute;
+ inset:-16px -20px -14px;
+ z-index:-1;
+ pointer-events:none;
+ background:linear-gradient(to bottom,var(--paper) 0%,var(--paper) calc(100% - 12px),transparent 100%);
+}
