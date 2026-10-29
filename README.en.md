@@ -39,7 +39,7 @@ Compare confirmed time blocks across dates in 15-minute increments.
 
 The chart includes only confirmed time blocks. The overview label 总投入 (Total time) is their sum across the selected dates and projects. Other records without timestamps are listed separately; the app does not infer when they occurred. The bottom chart covers the visible hours, so the 08:00–24:00 view excludes earlier time blocks.
 
-This feature is available on the main branch for local builds. The existing 2.1.0 download does not include it yet.
+This feature is included in version 2.2.0 and later.
 
 ![Time-of-day review with confirmed project time blocks and daily averages](docs/images/time-review.png)
 
