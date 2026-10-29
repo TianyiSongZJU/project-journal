@@ -3,13 +3,16 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	webview2 "github.com/jchv/go-webview2"
 	"github.com/jchv/go-webview2/webviewloader"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"sync"
 	"syscall"
+	"time"
 	"unsafe"
 )
 
@@ -36,16 +39,38 @@ func runWindowUI(address string) {
 	}
 	cache, _ := os.UserCacheDir()
 	var launchCover *windowsLaunchCover
-	w := webview2.NewWithOptions(webview2.WebViewOptions{DataPath: filepath.Join(cache, "ProjectJournal", "WebView2"), AutoFocus: true, WindowOptions: webview2.WindowOptions{Title: "项目手记", IconId: windowsAppIconID, Width: 1120, Height: 740, Center: true, OnCreated: func(hwnd uintptr) { launchCover = newWindowsLaunchCover(hwnd) }}})
+	w := webview2.NewWithOptions(webview2.WebViewOptions{DataPath: filepath.Join(cache, "ProjectJournal", "WebView2"), AutoFocus: true, WindowOptions: webview2.WindowOptions{Title: "项目手记", IconId: windowsAppIconID, Width: 1120, Height: 740, Center: true, OnCreated: func(hwnd uintptr) { launchCover = newWindowsLaunchCover(hwnd, windowsWarmOpen) }}})
 	if w == nil {
 		windowsMessage("项目手记", "无法创建窗口，请确认 WebView2 Runtime 已安装。")
 		return
 	}
 	defer w.Destroy()
 	defer launchCover.dismiss()
+	nativeFramesBeforeWebview := 0
+	if launchCover != nil {
+		nativeFramesBeforeWebview = launchCover.paintedFrames
+	}
 	w.Bind("journalLaunchPainted", func() map[string]any {
 		// WebView2 message callbacks already run on this window's UI thread.
-		return map[string]any{"removed": launchCover.dismiss(), "error": windowsCoverError}
+		mode := ""
+		frames := 0
+		if launchCover != nil {
+			mode = launchCover.mode
+			frames = launchCover.paintedFrames
+		}
+		return map[string]any{"removed": launchCover == nil || launchCover.hwnd == 0, "error": windowsCoverError, "mode": mode, "frames": frames, "beforeWebview": nativeFramesBeforeWebview, "native": true}
+	})
+	if launchCover != nil {
+		launchCover.onDone = func() {
+			w.Eval("window.journalLaunchNativeMetrics=" + fmt.Sprintf(`{"frames":%d,"averageMs":%.3f,"maxMs":%.3f}`, launchCover.paintedFrames, float64(launchCover.totalFrame)/float64(time.Millisecond)/float64(max(1, launchCover.paintedFrames)), float64(launchCover.maxFrame)/float64(time.Millisecond)) + ";window.journalLaunchCoverReleased=true;window.dispatchEvent(new Event('journal-native-launch-finished'));")
+		}
+	}
+	w.Bind("journalFinishLaunch", func(reduced bool) bool {
+		if launchCover == nil || launchCover.hwnd == 0 {
+			return false
+		}
+		launchCover.finish(reduced)
+		return true
 	})
 	// Keep display preferences local and stable across the backend's random ports.
 	viewPath := filepath.Join(autoHome(flag.Lookup("data-dir").Value.String(), flag.Lookup("auto-home").Value.String()), "windows-view.json")
@@ -78,7 +103,11 @@ func runWindowUI(address string) {
 	})
 	w.SetSize(720, 550, webview2.HintMin)
 	// Keep native Windows presentation separate from the shared macOS styles.
-	w.Init(`window.journalLaunchWarm = ` + map[bool]string{true: "true", false: "false"}[windowsWarmOpen] + `;window.journalWindowsHost = true;
+	started := int64(0)
+	if launchCover != nil {
+		started = launchCover.started.UnixMilli()
+	}
+	w.Init(`window.journalLaunchNative = true;window.journalLaunchStarted = ` + strconv.FormatInt(started, 10) + `;window.journalLaunchWarm = ` + map[bool]string{true: "true", false: "false"}[windowsWarmOpen] + `;window.journalWindowsHost = true;
 	document.addEventListener("DOMContentLoaded", () => {
 		document.documentElement.classList.add("native-windows");
 		const style = document.createElement("link");

@@ -3,19 +3,29 @@ const {chromium}=require(process.env.JOURNAL_PLAYWRIGHT||'playwright');
 const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),net=require('node:net'),assert=require('node:assert/strict');
 (async()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'journal-native-startup-'));
- for(const mode of ['cold','warm']){
+ for(const mode of ['cold','warm','reduced']){
+ const coverMode=mode==='cold'?'cold':'warm';
  const listener=net.createServer();await new Promise(r=>listener.listen(0,'127.0.0.1',r));const port=listener.address().port;await new Promise(r=>listener.close(r));
- const args=['--ui-only','--data-dir',path.join(dir,'data'),'--auto-home',path.join(dir,'local')];if(mode==='warm')args.push('--warm-open');
+ const args=['--ui-only','--data-dir',path.join(dir,'data'),'--auto-home',path.join(dir,'local')];if(coverMode==='warm')args.push('--warm-open');
+ const started=performance.now();
  const child=spawn(process.env.JOURNAL_NATIVE_CORE||process.env.JOURNAL_CORE,args,{windowsHide:false,stdio:'ignore',env:{...process.env,WEBVIEW2_USER_DATA_FOLDER:path.join(dir,'webview-profile'),WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS:`--remote-debugging-port=${port} --remote-debugging-address=127.0.0.1`}});
  let browser,page;
  try{
   const endpoint='http://127.0.0.1:'+port;
   for(let i=0;i<150;i++){try{const r=await fetch(endpoint+'/json/version');if(r.ok)break;}catch{}await new Promise(r=>setTimeout(r,100));}
   browser=await chromium.connectOverCDP(endpoint);const context=browser.contexts()[0];
-  for(let i=0;i<100&&!context.pages().length;i++)await new Promise(r=>setTimeout(r,100));page=context.pages()[0];assert(page,'native WebView2 page exists');const errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.waitForFunction(()=>window.journalViewReady===true,{},{timeout:15000});
+  for(let i=0;i<100&&!context.pages().length;i++)await new Promise(r=>setTimeout(r,100));page=context.pages()[0];assert(page,'native WebView2 page exists');if(mode==='reduced')await page.emulateMedia({reducedMotion:'reduce'});const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.waitForFunction(()=>window.journalViewReady===true,{},{timeout:15000});const readyMs=Math.round(performance.now()-started);
   await page.waitForFunction(()=>window.journalLaunchCoverReleased===true,{},{timeout:6000});
+  assert.equal(await page.evaluate(()=>window.journalLaunchCoverMode),coverMode,'native cover matches the requested launch mode');
+  assert.equal(await page.evaluate(()=>!!window.journalLaunchWarm),coverMode==='warm');
+  assert.equal(await page.evaluate(()=>window.journalLaunchNative),true);
+  assert.equal(await page.locator('#windows-launch-surface').count(),0,'the web renderer never owns the launch artwork');
+  assert(await page.evaluate(()=>window.journalLaunchFramesBeforeWebview>1),'native animation runs inside WebView2 environment initialization');
+  assert(await page.evaluate(()=>window.journalLaunchNativeFrames>1),'native artwork animates before the page is ready');
+  assert(await page.evaluate(()=>window.journalLaunchStarted>0),'native launch has its own start clock');
   await page.locator('#windows-launch-surface').waitFor({state:'detached'});assert(await page.locator('#page-review').isVisible());
+  console.log(mode+' startup timings:',{nativeFrames:await page.evaluate(()=>window.journalLaunchFramesBeforeWebview),nativeMetrics:await page.evaluate(()=>window.journalLaunchNativeMetrics),readyMs,interactiveMs:Math.round(performance.now()-started),navigation:await page.evaluate(()=>{const n=performance.getEntriesByType('navigation')[0];return {response:Math.round(n.responseEnd),domReady:Math.round(n.domContentLoadedEventEnd)};})});
   await page.locator('#auto-entry').click();await page.locator('#dt-date').waitFor();assert(await page.locator('#page-auto').isVisible());
   await page.locator('.workspace-nav [data-page="review"]').click();assert(await page.locator('#page-review').isVisible());assert.deepEqual(errors,[]);
   if(process.env.JOURNAL_SCREENSHOTS)await page.screenshot({path:path.join(process.env.JOURNAL_SCREENSHOTS,'windows-native-recovered.png')});
