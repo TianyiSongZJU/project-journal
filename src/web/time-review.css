@@ -1,0 +1,247 @@
+/* Time-of-day review shares the paper, sage palette and compact controls of annual review. */
+#page-review.time-view>.toolbar>.period-controls,#page-review.time-view #review-more,#page-review.time-view>#stats,#page-review.time-view>.calendar-surface,#page-review.time-view>#review-bottom{display:none!important}
+#time-workspace[hidden]{display:none}
+#time-workspace{margin-top:14px;min-width:0}
+.tr-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;align-items:start}
+.tr-layout.has-inspector{grid-template-columns:minmax(0,1fr) minmax(320px,390px)}
+.tr-chart,.tr-inspector-host{min-width:0}
+.tr-inspector-host[hidden]{display:none}
+.tr-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px;min-height:32px}
+.tr-presets,.tr-colors{display:flex;align-items:center;gap:2px;background:#e8ecdf;border-radius:7px;padding:3px}
+.tr-controls button{height:27px;min-height:27px;line-height:1;padding:0 9px;border:0;background:transparent;color:#849078;box-shadow:none;font-size:11px;white-space:nowrap}
+.tr-controls button.active{background:var(--panel);color:var(--green);box-shadow:0 1px 3px #273b2510}
+.tr-controls button:hover{color:var(--green);background:#f2f5ec}
+.tr-date-fields{display:flex;align-items:center;gap:7px;font-size:11px;color:#a0a995}
+.tr-date-fields label{display:block;margin:0}.tr-date-fields input{width:124px;height:29px;min-height:29px;padding:3px 5px;border-color:transparent;background:transparent;font-size:11px;color:#67775d;font-variant-numeric:tabular-nums}
+.tr-date-fields input:focus{border-color:#b6c7a7;background:var(--panel)}
+.tr-display-controls{margin-left:auto;display:flex;align-items:center;gap:9px}
+.tr-display-controls #tr-full-day{border:1px solid #dfe6d6;border-radius:6px;padding:0 10px}
+.tr-display-controls #tr-full-day.active{background:#e0e9d6;box-shadow:none}
+.tr-overview{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:6px 18px;margin-bottom:16px;color:#8b977f;font-size:11px}
+.tr-overview>div{display:flex;align-items:baseline;gap:10px}.tr-overview strong{font:500 32px/1.2 Georgia,var(--serif);color:var(--green);font-variant-numeric:tabular-nums}.tr-overview strong small{font:11px system-ui;margin-left:5px;color:#86947a}.tr-days-count{padding-left:12px;border-left:1px solid #dce2d4;font-variant-numeric:tabular-nums}.tr-overview p{margin:0}.tr-overview b{font-weight:500;color:#718365}
+.tr-paper{padding:18px 20px 14px;background:#f7f8f2;border:1px solid #dfe5d7;border-radius:16px;min-width:0}
+.tr-paper-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;font-size:10px;color:#8f9c83}.tr-paper-heading>div{display:flex;align-items:baseline;gap:13px;flex-wrap:wrap}.tr-paper-heading h2{font-size:13px;font-weight:600;margin:0;color:#526a45}.tr-paper-heading span{font-variant-numeric:tabular-nums;white-space:nowrap}
+.tr-scroll{overflow-x:hidden;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:#cbd4c1 transparent;min-width:0;padding-bottom:3px}
+.tr-grid{--tr-label:70px;--tr-total:48px;min-width:0}
+.tr-grid:has(.tr-cells>.tr-cell:nth-child(96)){min-width:0}
+.tr-axis-row,.tr-row,.tr-summary{display:grid;grid-template-columns:var(--tr-label) minmax(0,1fr) var(--tr-total);align-items:center;column-gap:12px}
+.tr-axis-row{height:28px;color:#93a088;font-size:9px}.tr-axis-row>span:last-child{text-align:right;padding-right:3px}.tr-axis{position:relative;height:20px;font-variant-numeric:tabular-nums}.tr-axis span{position:absolute;top:2px;transform:translateX(-50%);white-space:nowrap;font-size:9px}.tr-axis span:first-child{transform:none}.tr-axis span:last-child{transform:translateX(-100%)}
+.tr-days{max-height:min(56vh,610px);overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#cbd4c1 transparent;scrollbar-gutter:stable}
+/* Reserve the same scrollbar lane for axis/summary and every daily row. */
+.tr-axis-row,.tr-summary{padding-right:12px}
+.tr-row{min-height:23px;padding:2px 0;border-radius:4px}
+.tr-row.starts-week:not(:first-child){margin-top:7px;padding-top:6px;border-top:1px solid #e3e8dc;border-radius:0}
+.tr-row.is-weekend,.tr-row.is-selected{background:transparent;box-shadow:none}
+.tr-day-label{display:flex;align-items:baseline;gap:8px;justify-content:flex-start;border:0;background:transparent;min-height:18px;height:20px;margin:0;padding:0 0 0 5px;box-shadow:none;border-radius:3px;line-height:20px;color:#687b5d;font-size:10px;white-space:nowrap}
+.tr-day-label strong{font-weight:500;font-variant-numeric:tabular-nums}.tr-day-label small{font-size:9px;color:#a1aa97}.tr-row.is-weekend .tr-day-label small{color:#a18e73}.tr-day-label:hover{background:#e1e8d8}
+.tr-cells{display:grid;grid-template-columns:repeat(var(--tr-slots),minmax(0,1fr));gap:0;min-width:0;align-items:center;background:repeating-linear-gradient(to right,transparent 0,transparent calc(100% / var(--tr-hours) - 1px),#dbe3d433 calc(100% / var(--tr-hours) - 1px),#dbe3d433 calc(100% / var(--tr-hours)))}
+.tr-cell{display:flex;width:100%;height:16px;min-height:0;margin:0;padding:1px .5px;border:0;background:transparent;box-shadow:none;border-radius:0;position:relative;line-height:1}
+.tr-cell::before{content:'';position:absolute;inset:2px .5px;background:#e6eadf80;border-radius:2px}.tr-cell.has-time::before{display:none}
+.tr-cell>i{display:block;height:100%;position:relative;border-radius:2px;pointer-events:none}.tr-cell.joins-before{padding-left:0}.tr-cell.joins-after{padding-right:0}.tr-cell.joins-before>i:first-child{border-top-left-radius:0;border-bottom-left-radius:0}.tr-cell.joins-after>i:last-child{border-top-right-radius:0;border-bottom-right-radius:0}
+.tr-cell:hover,.tr-cell:focus-visible{background:transparent;z-index:1;outline:1px solid #6b8b59;outline-offset:1px;border-radius:3px;box-shadow:none}
+.tr-day-total{text-align:right;font-size:10px;color:#7f8f71;font-variant-numeric:tabular-nums;padding-right:3px;white-space:nowrap}
+.tr-summary{margin-top:16px;padding-top:13px;border-top:1px solid #dfe5d7;align-items:end}
+.tr-summary-label{display:flex;flex-direction:column;gap:2px;padding-left:5px;color:#69815a;font-size:10px}.tr-summary-label strong{font-weight:500}.tr-summary-label small{color:#a1ab95;font-size:9px}
+.tr-summary-cells{height:48px;align-items:end}
+.tr-summary-cell{position:relative;z-index:0;isolation:isolate;overflow:visible;height:48px;min-height:0;display:flex;align-items:end;padding:0 .5px;margin:0;border:0;border-radius:2px;background:transparent;box-shadow:none;line-height:1}
+.tr-summary-cell>span{width:100%;display:flex;overflow:hidden;border-radius:2px 2px 0 0;background:#e2e8da}.tr-summary-cell i{display:block;height:100%;pointer-events:none}
+.tr-summary-cell:hover,.tr-summary-cell:focus-visible{z-index:5;background:transparent;outline:0;box-shadow:none}
+.tr-summary-cell:hover{z-index:6}
+.tr-summary-cell:is(:hover,:focus-visible)::after{content:'';position:absolute;inset:-1px;border:1px solid #6b8b59;border-radius:4px;box-shadow:0 0 0 1px #fffffff2,0 0 7px 2px #ffffffd9,inset 0 0 0 1px #ffffffa6;pointer-events:none;z-index:2}
+.tr-bottom-axis{margin-top:5px}
+.tr-level-1{background:#dce7d2}.tr-level-2{background:#c6d7b6}.tr-level-3{background:#abc391}.tr-level-4{background:#8fac73}.tr-level-5{background:#70935b}
+.tr-conflict{background:repeating-linear-gradient(135deg,#a6987f 0,#a6987f 2px,#e1d9c9 2px,#e1d9c9 4px)!important}
+.tr-legend{display:flex;align-items:center;flex-wrap:wrap;gap:6px 16px;margin-top:15px;color:#829374;font-size:10px}.tr-legend span{display:flex;align-items:center;gap:5px}.tr-legend i{width:8px;height:8px;border-radius:2px;display:inline-block;flex:none}.tr-blank-key{margin-left:auto}.tr-blank-key i{background:#e6eadf}
+.tr-footnote{margin:8px 0 0;color:#a1aa97;font-size:9px;line-height:1.7}.tr-outside{font-size:10px;color:#aa8a64;margin:-5px 0 12px}.tr-error{margin:0 0 10px;color:var(--clay);font-size:11px}
+.tr-empty{padding:20px 12px 10px;color:#8d9c80;text-align:center}.tr-empty strong{font-size:12px;font-weight:500;color:#6e825f}.tr-empty p{font-size:10px;margin:7px auto;max-width:420px;line-height:1.8}.tr-empty button{font-size:10px;color:var(--green)}
+.tr-tip{position:fixed;z-index:1100;pointer-events:none;min-width:230px;max-width:330px;padding:14px 16px;background:#fafbf7;border:1px solid #d9e2ce;border-radius:12px;box-shadow:0 3px 7px #30432c0b,0 12px 26px #30432c16;color:#536b43}
+.tr-tip>small{font-size:10px;color:#8a9b7e}.tr-tip-heading{display:flex;align-items:baseline;justify-content:space-between;gap:24px;margin-top:5px}.tr-tip-heading strong{font:500 20px/1.4 Georgia,var(--serif);font-variant-numeric:tabular-nums;color:#3d5a30}.tr-tip-heading>span{font-size:11px;white-space:nowrap}.tr-tip-projects{border-top:1px solid #e0e6d8;margin-top:10px;padding-top:7px}.tr-tip-projects>div{display:flex;align-items:center;gap:7px;font-size:11px;padding-top:4px}.tr-tip-projects i{width:7px;height:7px;border-radius:50%;flex:none}.tr-tip-projects b{font-weight:400;margin-left:auto;padding-left:12px;white-space:nowrap}.tr-tip p{font-size:10px;color:#96a48a;margin:9px 0 0;line-height:1.7}
+.tr-inspector-actions{display:flex;align-items:center;justify-content:space-between;margin:3px 3px 10px;font-size:10px;color:#87977a}.tr-inspector-actions button{font-size:11px;min-height:24px;border:0;background:transparent;color:#86977a;padding:0 5px;box-shadow:none}.tr-inspector-host #month-inspector{padding:20px;max-height:calc(100vh - 170px);overflow:auto}.tr-inspector-host .inspector-heading{gap:6px;flex-wrap:wrap}
+@media(max-width:1080px){.tr-layout.has-inspector{grid-template-columns:minmax(0,1fr)}.tr-inspector-host #month-inspector{max-height:none}.tr-controls{gap:8px}.tr-paper{padding:16px}.tr-date-fields input{width:118px}}
+@media(max-width:650px){.tr-display-controls{margin-left:0}.tr-controls{margin-bottom:12px}.tr-paper{padding:13px 10px;border-radius:12px}.tr-paper-heading{gap:6px}.tr-paper-heading>div>span{display:none}.tr-overview{font-size:10px}.tr-overview strong{font-size:26px}.tr-presets button,.tr-controls button{font-size:10px;padding:0 7px}.tr-days{max-height:48vh}.tr-date-fields input{font-size:12px}.tr-blank-key{margin-left:0}}
+
+.tr-days{scrollbar-width:none;scrollbar-gutter:auto;padding-right:12px}.tr-days::-webkit-scrollbar{display:none}
+/* The date window always has a fixed number of rows. */
+.tr-date-fields select{width:auto;min-height:29px;height:29px;padding:0 16px 0 5px;border:0;background:transparent;color:#7d8d70;font-size:11px}
+.tr-overview{justify-content:flex-start}.tr-overview>div{flex-wrap:wrap;gap:8px 12px}.tr-overview p{margin-left:6px;padding-left:12px;border-left:1px solid #dce2d4}
+.tr-chart-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;min-height:30px}
+.tr-chart-tools .tr-display-controls{margin-left:auto}.tr-chart-tools button{min-height:27px;height:27px;padding:0 9px;font-size:11px;border:0;box-shadow:none;color:#7b8f6a;background:transparent}
+.tr-chart-tools .tr-colors .active{background:var(--panel);color:var(--green);border-radius:5px;box-shadow:0 1px 3px #273b2510}
+#tr-project-filter-host>details>summary{padding:5px 10px;font-size:11px;min-height:27px;background:transparent}
+#tr-project-filter-host .filter-popover{left:0;right:auto;z-index:30}
+.tr-paper{border-radius:16px;padding-bottom:17px;overflow:visible}
+.tr-days{display:grid;grid-auto-rows:minmax(0,1fr);height:auto;max-height:none!important;overflow:hidden;padding-right:12px;overscroll-behavior:contain}
+.tr-row{min-height:0;height:auto;padding:0}.tr-row.starts-week:not(:first-child){margin-top:0;padding-top:0;border-top:0;border-radius:4px}
+.tr-row.starts-week:not(:first-child) .tr-day-label{color:#47663f}
+.tr-cell{height:min(16px,100%)}.tr-row .tr-cells{height:100%}
+.tr-days.is-dense .tr-day-label{height:100%;min-height:0;line-height:1;font-size:9px}.tr-days.is-dense .tr-day-label small{display:inline;font-size:8px}
+.tr-days.is-dense .tr-row:not(:nth-child(3n + 1)):not(:last-child) .tr-day-label{color:transparent}
+.tr-days.is-dense .tr-row:not(:nth-child(3n + 1)):not(:last-child) .tr-day-label:hover,.tr-days.is-dense .tr-day-label:focus-visible{color:#687b5d}
+.tr-days.is-dense .tr-day-total{font-size:8px}
+.tr-summary{position:relative;margin-top:13px;padding-top:21px}
+.tr-summary-label{align-self:center}.tr-summary-cells{position:relative;border-top:1px dashed #b5c3a380;height:58px;align-items:end}
+.tr-summary-limit{position:absolute;right:63px;top:7px;font-size:8px;line-height:10px;color:#a1af95}
+.tr-summary-cell{height:57px}.tr-summary-cell>span{height:100%;background:transparent;display:flex;flex-direction:column-reverse;justify-content:flex-start;align-items:stretch;overflow:hidden;border-radius:0}
+.tr-summary-cell i{width:100%;height:auto;flex-shrink:0;min-height:0}.tr-summary-cell i:last-child{border-radius:2px 2px 0 0}
+.tr-legend button{display:flex;align-items:center;gap:5px;padding:3px 5px;margin-left:-5px;background:transparent;box-shadow:none;border:0;min-height:22px;font-size:10px;color:#718663;border-radius:5px}
+.tr-legend button:hover,.tr-legend button:focus-visible{background:#e6eddd;color:#355a30;outline:none}
+.tr-days [data-tr-project],.tr-legend button{transition:opacity .15s ease,filter .15s ease}
+.tr-days .is-muted,.tr-legend button.is-muted{opacity:.16}
+.tr-days .is-highlighted{filter:drop-shadow(0 0 2px #fff);box-shadow:inset 0 0 0 1px #ffffffb3;z-index:2}
+@media(max-width:650px){.tr-overview p{margin-left:0;padding-left:0;border-left:0;flex-basis:100%}.tr-chart-tools{gap:6px}.tr-chart-tools button{font-size:10px;padding:0 7px}}
+
+#tr-project-filter-host{margin-left:0}.tr-summary-total{transition:opacity .15s}
+.tr-summary-limit{right:15px;top:17px;width:48px;text-align:right;line-height:10px;background:#f7f8f2;padding-left:3px}
+#tr-controls-host[hidden]{display:none!important}
+.time-view>.toolbar{justify-content:flex-start;align-items:center;gap:12px}
+.time-view>.toolbar>.segmented{order:0}.time-view>.toolbar>.filters{display:none}
+#tr-controls-host{order:1;margin-left:auto;min-width:0}
+#tr-controls-host .tr-controls{margin:0;min-height:31px;gap:10px;justify-content:flex-end}
+.tr-date-fields{display:flex;align-items:center;gap:3px;border:1px solid #dfe5d6;border-radius:8px;background:#f7f8f2;padding:0 3px;height:32px}
+.tr-date-fields input{width:119px;min-height:28px;height:28px;line-height:22px;margin:0;padding:3px 4px;font-size:11px;text-align:center;color:#617653}
+.tr-date-fields input::-webkit-date-and-time-value{text-align:center}
+.tr-date-fields #tr-prev,.tr-date-fields #tr-next{display:grid;place-items:center;flex:none;width:25px;height:28px;min-height:28px;padding:0;border-radius:5px;line-height:1}
+.tr-date-fields svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;display:block}
+.tr-date-separator{color:#a6b09b;line-height:28px;font-size:10px;flex:none}
+#time-workspace{position:relative;margin-top:6px}
+.tr-overview{padding-right:118px;min-height:36px;align-items:center;margin-bottom:14px}
+.tr-outside-tools{position:absolute;right:0;top:3px;display:flex;justify-content:flex-end}
+.tr-outside-tools .filter-popover{left:auto!important;right:0!important}
+.tr-chart-tools{min-height:28px;margin-bottom:8px}
+.tr-range-caption{display:flex;align-items:baseline;gap:9px;font-size:11px;font-variant-numeric:tabular-nums;letter-spacing:.02em;color:#7e9270}
+.tr-range-caption>span{color:#b1bba7}
+.tr-display-controls #tr-by-project{border:1px solid #dfe6d6;border-radius:6px;padding:0 10px}
+.tr-display-controls #tr-by-project.active{background:#e0e9d6;color:#456b37}
+@media(max-width:850px){.time-view>.toolbar{gap:8px}#tr-controls-host .tr-controls{gap:6px}.tr-date-fields input{width:112px}.tr-range-caption{gap:6px;font-size:10px}}
+@media(max-width:650px){#tr-controls-host{flex-basis:100%}#tr-controls-host .tr-controls{justify-content:flex-start;gap:6px}.tr-date-fields{gap:0;padding:0 2px}.tr-date-fields input{width:111px}.tr-date-fields #tr-prev,.tr-date-fields #tr-next{width:20px}.tr-overview{padding-right:0;padding-bottom:28px}.tr-outside-tools{top:auto;transform:translateY(-31px)}.tr-range-caption{font-size:9px;gap:4px}.tr-chart-tools .tr-display-controls{gap:5px}.tr-display-controls #tr-by-project,.tr-display-controls #tr-full-day{padding:0 6px}}
+
+.tr-chart{position:relative}
+/* Keep the date tools beside the view switch; give the graph range a quiet heading. */
+#tr-controls-host{margin-left:8px}
+#tr-controls-host .tr-controls{justify-content:flex-start}
+.tr-range-caption{font:500 15px/1.4 Georgia,'Times New Roman',var(--serif);color:#466a43;gap:12px;letter-spacing:.015em;font-variant-numeric:tabular-nums}
+.tr-range-caption>span{font:400 12px/1 system-ui;color:#9dae90}
+@media(max-width:850px){#tr-controls-host{margin-left:0}.tr-range-caption{font-size:14px}}
+@media(max-width:650px){.tr-range-caption{font-size:12px;gap:7px}}
+/* A narrower, centered date gutter and the same sage wash as the record toolbar. */
+.tr-grid{--tr-label:56px}
+.tr-axis-row,.tr-row,.tr-summary{column-gap:10px}
+.tr-axis-row>span:first-child{text-align:center}
+.tr-day-label{width:100%;justify-content:center;align-items:center;gap:5px;padding:0;text-align:center}
+.tr-summary-label{padding-left:0;align-items:center;justify-content:center;text-align:center}
+.tr-paper{--tr-padding-x:20px;--tr-padding-top:18px;padding:var(--tr-padding-top) var(--tr-padding-x) 17px}
+.tr-chart-tools{margin:calc(-1 * var(--tr-padding-top)) calc(-1 * var(--tr-padding-x)) 10px;padding:10px var(--tr-padding-x);min-height:44px;border-radius:15px 15px 0 0;border-bottom:1px solid var(--line);background:linear-gradient(115deg,#e9ecdf,var(--panel))}
+@media(max-width:1080px){.tr-paper{--tr-padding-x:16px;--tr-padding-top:16px}}
+@media(max-width:650px){.tr-paper{--tr-padding-x:10px;--tr-padding-top:13px}.tr-chart-tools{padding-top:8px;padding-bottom:8px}}
+.tr-day-label{justify-content:flex-end;padding:0 5px 0 0;text-align:right}
+.tr-axis-row>span:first-child{text-align:right;padding-right:5px}
+
+/* Today stays visible even when date labels are thinned in a dense month view. */
+.tr-row.is-today{background:linear-gradient(90deg,#e0e9d4aa,#e8efdf55 55%,transparent)}
+.tr-row.is-today .tr-day-label{gap:3px;color:#3b6542}
+.tr-row.is-today .tr-day-label strong{font-weight:650}
+.tr-today-tag{display:inline-flex;align-items:center;justify-content:center;flex:none;min-width:18px;height:12px;border-radius:3px;padding:0 2px;background:#dbe7cf;color:#476b3f;font-size:7px;line-height:1;font-weight:600}
+.tr-days.is-dense .tr-row.is-today .tr-day-label{color:#3b6542}
+.tr-day-tip{width:304px;min-width:0;max-width:calc(100vw - 24px);padding:15px 17px;border-radius:12px;background:linear-gradient(135deg,#f5f8ef,#fafbf7 65%);max-height:calc(100vh - 24px);overflow:auto;scrollbar-width:thin;pointer-events:auto}
+.tr-day-tip-date{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#8a9b7c;font-size:10px;font-variant-numeric:tabular-nums}
+.tr-day-tip-date>span{font-size:9px;border-radius:4px;padding:2px 6px;color:#4e7143;background:#e2ebd8}
+.tr-day-tip-total{display:flex;align-items:baseline;justify-content:space-between;gap:14px;margin-top:9px;color:#849476;font-size:10px}
+.tr-day-tip-total strong{font:500 22px/1.35 Georgia,var(--serif);color:#375d3c;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tr-day-tip-bar{height:6px;display:flex;gap:2px;border-radius:3px;overflow:hidden;margin:12px 0 10px}
+.tr-day-tip-bar>i{display:block;min-width:1px}
+.tr-day-tip-projects{display:grid;gap:9px;padding-top:3px}
+.tr-day-tip-projects>div{display:grid;grid-template-columns:6px minmax(0,1fr) auto 38px;gap:7px;align-items:center;font-size:11px;line-height:1.4}
+.tr-day-tip-projects i{height:6px;width:6px;border-radius:50%}
+.tr-day-tip-projects span{overflow-wrap:anywhere;color:#566c49}
+.tr-day-tip-projects b{font-size:10px;font-weight:500;white-space:nowrap;color:#536c44;text-align:right;font-variant-numeric:tabular-nums}
+.tr-day-tip-projects small{font-size:9px;color:#99a58e;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tr-day-tip-other{border-top:1px solid #e0e6d8;margin-top:12px;padding-top:9px;font-size:10px;line-height:1.6;color:#95a187}
+.tr-day-tip-empty{padding:11px 0 2px}
+.tr-today-tag{order:-1}
+
+/* Equal date fields and small, symmetric gaps around the separator/arrows. */
+.tr-date-fields{display:grid;grid-template-columns:20px 104px 10px 104px 20px;gap:3px;padding:0 2px;align-items:center}
+.tr-date-fields input,.tr-date-fields #tr-prev,.tr-date-fields #tr-next{width:100%;margin:0}
+.tr-date-fields input{padding:0 2px;text-align:center;min-width:0}
+.tr-date-fields input::-webkit-calendar-picker-indicator{display:none}
+.tr-date-fields input::-webkit-datetime-edit{padding:0;text-align:center}
+.tr-date-fields input::-webkit-datetime-edit-fields-wrapper{padding:0}
+.tr-date-separator{text-align:center;display:block}
+.tr-axis span[hidden]{display:none}
+.tr-inspector-host{position:sticky;top:0;align-self:start;min-width:0}
+.tr-inspector-actions{margin:0 3px 8px;min-height:24px}
+.tr-inspector-host #month-inspector{position:relative;inset:auto;width:100%;min-height:0;margin:0;max-height:var(--tr-detail-height,calc(100vh - 120px))}
+@media(min-width:1081px){.time-view:has(.tr-layout.has-inspector)>.toolbar{width:calc(100% - 410px)}}
+@media(max-width:1080px){.tr-inspector-host{position:static;margin-top:0!important}.tr-inspector-host #month-inspector{max-height:none}}
+@media(max-width:650px){.tr-date-fields{grid-template-columns:18px 100px 10px 100px 18px;gap:2px}.tr-date-fields input{width:100%}}
+html.native-mac:has(#page-review.time-view:not([hidden])){border-radius:0 0 16px 16px;overflow:hidden}
+
+/* The visible dates have their own centered text boxes; the native picker is an overlay. */
+.tr-date-fields{height:32px;align-items:center}
+.tr-date-input{position:relative;display:grid;place-items:center;width:100%;height:28px;min-width:0;margin:0;padding:0;border:0}
+.tr-date-text{display:flex;align-items:center;justify-content:center;width:100%;height:28px;padding:0;margin:0;font:500 11px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:0;color:#617653;white-space:nowrap}
+.tr-date-fields .tr-date-input input{position:absolute;inset:0;width:100%;height:100%;min-height:0;margin:0;padding:0;border:0;opacity:0;cursor:pointer}
+.tr-date-fields .tr-date-input input:focus-visible{opacity:1;background:#f7f8f2}
+.tr-date-input:has(input:focus-visible) .tr-date-text{visibility:hidden}
+.tr-date-input:has(input:focus-visible){outline:1px solid #aabd97;border-radius:4px}
+.tr-date-fields .tr-date-separator{display:flex;align-items:center;justify-content:center;height:28px;line-height:1}
+/* Fit all quarters into the chart, including when the day inspector is open. */
+.tr-grid{width:100%;min-width:0;--tr-label:72px}
+.tr-scroll{overflow-x:hidden;min-width:0}
+.tr-row{position:relative;isolation:isolate;padding-left:6px;padding-right:6px;border-radius:7px}
+.tr-axis-row,.tr-summary{padding-left:6px;padding-right:18px}
+.tr-day-label{display:grid;grid-template-columns:18px minmax(0,1fr) 9px;align-items:center;gap:3px;padding:0 4px;position:relative}
+.tr-day-label strong{grid-column:2;grid-row:1;justify-self:end}
+.tr-day-label small{grid-column:3;grid-row:1;justify-self:center}
+.tr-day-label:hover{background:transparent}
+.tr-row.is-today{background:transparent}
+.tr-row::before{content:'';position:absolute;inset:2px;border-radius:5px;background:transparent;pointer-events:none;z-index:-1}
+.tr-row.is-today::before{background:linear-gradient(90deg,#e5eddd99,#f3f7ed44)}
+.tr-row.is-selected::before{background:#e8efdfaa}
+.tr-row.is-selected::after{content:'';position:absolute;inset:0 1px;border:1px solid #a9bc97;border-radius:5px;pointer-events:none;z-index:3}
+.tr-row.is-today .tr-day-label{gap:3px}
+.tr-today-tag{grid-column:1;grid-row:1;order:0;justify-self:center;width:auto;min-width:0;padding:0;height:auto;background:transparent;border-radius:0;font-size:8px;font-weight:500;color:#6e865f;line-height:1}
+.tr-row:is(.is-hovered,:has(:focus-visible)){background:transparent;box-shadow:none;z-index:2}
+.tr-row:is(.is-hovered,:has(:focus-visible))::before{inset:1px 2px;background:linear-gradient(90deg,#dce8d0ee,#edf3e4dd)}
+.tr-row:is(.is-hovered,:has(:focus-visible))::after{content:'';position:absolute;inset:0 1px;border:1px solid #819e71;border-radius:5px;box-shadow:0 0 0 1px #fffffff0,0 0 5px 1px #ffffffbf,inset 0 0 0 1px #ffffffb3;pointer-events:none;z-index:3}
+.tr-row.is-hovered .tr-day-label{color:#426342}
+.tr-row.is-hovered .tr-day-label strong{font-weight:600}
+.tr-cell:hover,.tr-cell:focus-visible{outline:0;box-shadow:none;border-radius:0;background:transparent}
+.tr-row .tr-day-total{line-height:1;font-variant-numeric:tabular-nums;transition:color .14s ease}
+.tr-row:is(.is-hovered,:has(:focus-visible)) .tr-day-total{font:600 14px/1 Georgia,'Times New Roman',var(--serif);color:#365e3d}
+.tr-days.is-dense .tr-row:is(.is-hovered,:has(:focus-visible)) .tr-day-total{font-size:11px}
+
+/* Explicit row-relative heights also work in WebKit's percentage grid sizing. */
+.tr-row .tr-cells{height:var(--tr-row-height,24px);min-height:0;align-items:center}
+.tr-row .tr-cell{height:var(--tr-cell-height,16px);min-height:0;max-height:var(--tr-cell-height,16px);padding-top:0;padding-bottom:0;box-sizing:border-box;align-self:center}
+.tr-cell::before{inset:0 .5px}
+.tr-day-label{max-height:var(--tr-row-height,24px)}
+.tr-summary-cells{height:88px}
+.tr-summary-cell{height:87px}
+
+.tr-days.is-dense .tr-row.is-hovered .tr-day-label{color:#426342!important}
+.tr-date-fields .tr-date-input.is-editing input{opacity:1;background:#f7f8f2}
+.tr-date-input.is-editing .tr-date-text{visibility:hidden}
+/* Sparse date labels and weekdays disappear together; hover reveals the whole label. */
+.tr-days.is-dense .tr-row:not(:nth-child(3n + 1)):not(:last-child):not(.is-today):not(.is-hovered) .tr-day-label:not(:hover):not(:focus-visible) small{visibility:hidden}
+.tr-days.is-dense .tr-row.is-today .tr-day-label{color:#3b6542!important}
+
+.tr-display-controls #tr-weekends{border:1px solid #dfe6d6;border-radius:6px;padding:0 10px}
+.tr-display-controls #tr-weekends.active{background:#eee6d6;border-color:#e0d5bf;color:#8c7856}
+.tr-chart.highlight-weekends .tr-row.is-weekend::before{background:linear-gradient(90deg,#f1e7d5b3,#f6efe373)}
+.tr-chart.highlight-weekends .tr-row.is-weekend .tr-day-label{color:#8b7857}
+.tr-chart.highlight-weekends .tr-row.is-weekend:is(.is-hovered,:has(:focus-visible))::before{inset:1px 2px;background:linear-gradient(90deg,#dce8d0ee,#edf3e4dd)}
+@media(max-width:650px){.tr-display-controls #tr-weekends{padding:0 5px}.tr-range-caption{font-size:11px;gap:5px}.tr-chart-tools{gap:6px}.tr-chart-tools .tr-display-controls{gap:4px}}
+
+/* Let the row halo breathe into the chart padding without clipping its edges. */
+.tr-scroll,.tr-days{overflow:visible}
+
+.tr-controls #tr-today{height:32px;min-height:32px;padding:0 10px;border:1px solid #dfe5d6;border-radius:8px;background:#f7f8f2;color:#617653}
+.tr-controls #tr-today:hover{background:#e8ecdf;color:var(--green)}
+
+/* Give the active day's date and totals the same clear visual emphasis. */
+.tr-row:is(.is-hovered,:has(:focus-visible)) .tr-day-label strong{font-size:12px;font-weight:750;color:#315c46}
+.tr-row:is(.is-hovered,:has(:focus-visible)) .tr-day-label small{font-weight:600;color:#57704d}
+.tr-days.is-dense .tr-row:is(.is-hovered,:has(:focus-visible)) .tr-day-label strong{font-size:10px}
+.tr-row:is(.is-hovered,:has(:focus-visible)) .tr-day-total,.tr-days.is-dense .tr-row:is(.is-hovered,:has(:focus-visible)) .tr-day-total{font-size:min(16px,calc(var(--tr-row-height,24px) - 2px));font-weight:700;color:#294f39;text-shadow:0 1px 2px #fff}
+.tr-day-tip-date>time{font-size:12px;font-weight:650;letter-spacing:.025em;color:#456940}

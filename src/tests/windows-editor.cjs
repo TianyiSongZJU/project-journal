@@ -19,7 +19,7 @@ const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('no
    const date=new Date(),day=[date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-');
    const shift=n=>{const d=new Date(date);d.setDate(d.getDate()+n);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');};
    const old=await(await fetch('/api/state')).json(),state=old.state;
-   state.projects=[{id:'a',name:'深圳AI联合基金',group:'申报',color:'#87AB97',note:'',deadlines:[{id:'due',name:'提交完整申请书与附件',date:day,priority:'高',note:'核对预算、附件和签章，再提交最终版本。',done:false},{id:'next',name:'阶段汇报',date:shift(4),priority:'中',note:'整理研究方案和关键图示',done:false},{id:'done',name:'确定申报方案',date:shift(-3),priority:'低',note:'已与团队讨论',done:true}]},{id:'b',name:'项目手记',group:'探索',color:'#A47F85',note:'',deadlines:[]}];
+   state.projects=[{id:'a',name:'示例研究基金',group:'申报',color:'#87AB97',note:'',deadlines:[{id:'due',name:'提交完整申请书与附件',date:day,priority:'高',note:'核对预算、附件和签章，再提交最终版本。',done:false},{id:'next',name:'阶段汇报',date:shift(4),priority:'中',note:'整理研究方案和关键图示',done:false},{id:'done',name:'确定申报方案',date:shift(-3),priority:'低',note:'已与团队讨论',done:true}]},{id:'b',name:'项目手记',group:'探索',color:'#A47F85',note:'',deadlines:[]}];
    state.entries=[{projectId:'a',date:day,kind:'hours',hours:3.5,note:''},{projectId:'b',date:day,kind:'hours',hours:4,note:''}];
    const block={id:'morning',projectId:'a',start:540,end:630};state.timelineDays={[day]:{blocks:[block],applied:[block]}};
    const response=await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:old.revision,state})});if(!response.ok)throw Error(await response.text());return day;

@@ -1,0 +1,1871 @@
+{
+  "version": 1,
+  "projects": [
+    {
+      "id": "demo-research",
+      "name": "城市微气候研究",
+      "group": "研究",
+      "color": "#83a48e",
+      "note": "# 城市微气候研究\n\n研究街区绿化与夏季热环境的关系。\n\n## 当前阶段\n- [x] 整理公开数据与测点清单\n- [x] 完成第一轮实验\n- [ ] 复核不同街区的对照结果\n- [ ] 整理阶段报告\n\n## 研究问题\n树冠覆盖率如何影响午后地表温度？\n\n## 下一步\n1. 检查缺测值与异常点。\n2. 比较工作日和周末。\n3. 补充图示与方法说明。\n\n> 此项目与所有记录均为虚构演示。",
+      "completed": false,
+      "deadlines": [
+        {
+          "id": "demo-draft",
+          "name": "阶段报告初稿",
+          "date": "2026-10-28",
+          "priority": "高",
+          "note": "完成结果图和方法说明。",
+          "done": false
+        },
+        {
+          "id": "demo-review",
+          "name": "结果复核",
+          "date": "2026-11-06",
+          "priority": "中",
+          "note": "对照公开数据，复查异常点。",
+          "done": false
+        },
+        {
+          "id": "demo-data",
+          "name": "数据整理",
+          "date": "2026-10-12",
+          "priority": "中",
+          "note": "统一字段与单位。",
+          "done": true
+        }
+      ]
+    },
+    {
+      "id": "demo-reading",
+      "name": "文献与方法笔记",
+      "group": "研究",
+      "color": "#b29bb2",
+      "note": "# 文献与方法笔记\n\n## 本周关注\n- 城市热岛的测量方法\n- 时间序列中的缺测处理\n- 图表的可读性与复现\n\n## 阅读流程\n摘录问题 → 记录方法 → 写下可以验证的想法。\n\n所有条目为演示内容。",
+      "completed": false,
+      "deadlines": [
+        {
+          "id": "demo-summary",
+          "name": "整理阅读小结",
+          "date": "2026-10-30",
+          "priority": "低",
+          "done": false
+        }
+      ]
+    },
+    {
+      "id": "demo-tools",
+      "name": "开放数据工具箱",
+      "group": "工具",
+      "color": "#ab8b81",
+      "note": "# 开放数据工具箱\n\n把重复的数据清洗步骤整理成可复用的小工具。\n\n## 计划\n- [x] 统一输入格式\n- [ ] 补充运行示例\n- [ ] 编写使用文档\n\n## 约定\n原始数据只读；输出放到单独目录；示例全部使用虚构记录。",
+      "completed": false,
+      "deadlines": [
+        {
+          "id": "demo-release",
+          "name": "发布演示版本",
+          "date": "2026-11-12",
+          "priority": "中",
+          "done": false
+        }
+      ]
+    },
+    {
+      "id": "demo-course",
+      "name": "可视化课程设计",
+      "group": "教学",
+      "color": "#aeb78b",
+      "note": "# 可视化课程设计\n\n完成讲义、练习与反馈整理。",
+      "completed": true,
+      "deadlines": [
+        {
+          "id": "demo-class",
+          "name": "课程材料归档",
+          "date": "2026-09-18",
+          "priority": "低",
+          "done": true
+        }
+      ]
+    }
+  ],
+  "entries": [
+    {
+      "projectId": "demo-tools",
+      "date": "2026-01-05",
+      "kind": "hours",
+      "hours": 3,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-01-06",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-01-07",
+      "kind": "hours",
+      "hours": 4,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-01-07",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-01-08",
+      "kind": "hours",
+      "hours": 1,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-01-09",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-01-13",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-01-14",
+      "kind": "hours",
+      "hours": 4,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-01-14",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-01-15",
+      "kind": "hours",
+      "hours": 1,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-01-16",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-01-19",
+      "kind": "中",
+      "hours": 0,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-01-20",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-01-21",
+      "kind": "hours",
+      "hours": 4,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-01-21",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-01-22",
+      "kind": "hours",
+      "hours": 1,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-01-26",
+      "kind": "hours",
+      "hours": 3,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-01-27",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-01-28",
+      "kind": "中",
+      "hours": 0,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-01-28",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-01-29",
+      "kind": "hours",
+      "hours": 1,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-01-30",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-02-02",
+      "kind": "hours",
+      "hours": 3,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-02-04",
+      "kind": "hours",
+      "hours": 4,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-02-04",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-02-05",
+      "kind": "hours",
+      "hours": 1,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-02-06",
+      "kind": "中",
+      "hours": 0,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-02-09",
+      "kind": "hours",
+      "hours": 3,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-02-10",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-02-11",
+      "kind": "hours",
+      "hours": 4,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-02-11",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-02-12",
+      "kind": "hours",
+      "hours": 1,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-02-13",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-02-16",
+      "kind": "hours",
+      "hours": 3,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-02-17",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-02-18",
+      "kind": "hours",
+      "hours": 4,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-02-18",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-02-19",
+      "kind": "hours",
+      "hours": 1,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-02-20",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-02-23",
+      "kind": "hours",
+      "hours": 3,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-02-24",
+      "kind": "中",
+      "hours": 0,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-02-25",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-02-26",
+      "kind": "hours",
+      "hours": 1,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-02-27",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-03-02",
+      "kind": "hours",
+      "hours": 3,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-03-03",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-03-04",
+      "kind": "hours",
+      "hours": 4,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-03-04",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-03-05",
+      "kind": "中",
+      "hours": 0,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-03-06",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-03-09",
+      "kind": "hours",
+      "hours": 3,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-03-10",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-03-11",
+      "kind": "hours",
+      "hours": 4,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-03-11",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-03-12",
+      "kind": "hours",
+      "hours": 1,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-03-13",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-03-16",
+      "kind": "hours",
+      "hours": 3,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-03-17",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-03-18",
+      "kind": "hours",
+      "hours": 4,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-03-18",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-03-20",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-03-23",
+      "kind": "中",
+      "hours": 0,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-03-24",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-03-25",
+      "kind": "hours",
+      "hours": 4,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-03-25",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-03-26",
+      "kind": "hours",
+      "hours": 1,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-03-27",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-03-31",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-04-01",
+      "kind": "中",
+      "hours": 0,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-04-01",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-04-02",
+      "kind": "hours",
+      "hours": 1,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-04-03",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-04-06",
+      "kind": "hours",
+      "hours": 3,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-04-07",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-04-08",
+      "kind": "hours",
+      "hours": 4,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-04-08",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-04-09",
+      "kind": "hours",
+      "hours": 1,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-04-13",
+      "kind": "hours",
+      "hours": 3,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-04-14",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-04-15",
+      "kind": "hours",
+      "hours": 4,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-04-15",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-04-16",
+      "kind": "hours",
+      "hours": 1,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-04-17",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-04-20",
+      "kind": "hours",
+      "hours": 3,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-04-22",
+      "kind": "hours",
+      "hours": 4,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-04-22",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-04-23",
+      "kind": "hours",
+      "hours": 1,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-04-24",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-04-27",
+      "kind": "hours",
+      "hours": 3,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-04-28",
+      "kind": "中",
+      "hours": 0,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-04-29",
+      "kind": "hours",
+      "hours": 4,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-04-29",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-04-30",
+      "kind": "hours",
+      "hours": 1,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-05-01",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-05-04",
+      "kind": "hours",
+      "hours": 3,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-05-05",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-05-06",
+      "kind": "hours",
+      "hours": 4,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-05-06",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-05-07",
+      "kind": "中",
+      "hours": 0,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-05-08",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-05-11",
+      "kind": "hours",
+      "hours": 3,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-05-12",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-05-13",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-05-14",
+      "kind": "hours",
+      "hours": 1,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-05-15",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-05-18",
+      "kind": "hours",
+      "hours": 3,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-05-19",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-05-20",
+      "kind": "hours",
+      "hours": 4,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-05-20",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-05-21",
+      "kind": "hours",
+      "hours": 1,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-05-22",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-05-25",
+      "kind": "中",
+      "hours": 0,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-05-26",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-05-27",
+      "kind": "hours",
+      "hours": 4,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-05-27",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-05-28",
+      "kind": "hours",
+      "hours": 1,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-05-29",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-06-01",
+      "kind": "hours",
+      "hours": 3,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-06-02",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-06-03",
+      "kind": "中",
+      "hours": 0,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-06-03",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-06-05",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-06-08",
+      "kind": "hours",
+      "hours": 3,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-06-09",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-06-10",
+      "kind": "hours",
+      "hours": 4,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-06-10",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-06-11",
+      "kind": "hours",
+      "hours": 1,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-06-12",
+      "kind": "中",
+      "hours": 0,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-06-16",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-06-17",
+      "kind": "hours",
+      "hours": 4,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-06-17",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-06-18",
+      "kind": "hours",
+      "hours": 1,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-06-19",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-06-22",
+      "kind": "hours",
+      "hours": 3,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-06-23",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-06-24",
+      "kind": "hours",
+      "hours": 4,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-06-24",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-06-25",
+      "kind": "hours",
+      "hours": 1,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-06-29",
+      "kind": "hours",
+      "hours": 3,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-06-30",
+      "kind": "中",
+      "hours": 0,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-07-01",
+      "kind": "hours",
+      "hours": 4,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-07-01",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-07-02",
+      "kind": "hours",
+      "hours": 1,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-07-03",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-07-06",
+      "kind": "hours",
+      "hours": 3,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-07-08",
+      "kind": "hours",
+      "hours": 4,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-07-08",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-07-09",
+      "kind": "中",
+      "hours": 0,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-07-10",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-07-13",
+      "kind": "hours",
+      "hours": 3,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-07-14",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-07-15",
+      "kind": "hours",
+      "hours": 4,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-07-15",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-07-16",
+      "kind": "hours",
+      "hours": 1,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-07-17",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-07-20",
+      "kind": "hours",
+      "hours": 3,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-07-21",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-07-22",
+      "kind": "hours",
+      "hours": 4,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-07-22",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-07-23",
+      "kind": "hours",
+      "hours": 1,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-07-24",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-07-27",
+      "kind": "中",
+      "hours": 0,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-07-28",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-07-29",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-07-30",
+      "kind": "hours",
+      "hours": 1,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-07-31",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-08-03",
+      "kind": "hours",
+      "hours": 3,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-08-04",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-08-05",
+      "kind": "中",
+      "hours": 0,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-08-05",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-08-06",
+      "kind": "hours",
+      "hours": 1,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-08-07",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-08-10",
+      "kind": "hours",
+      "hours": 3,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-08-11",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-08-12",
+      "kind": "hours",
+      "hours": 4,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-08-12",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-08-13",
+      "kind": "hours",
+      "hours": 1,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-08-14",
+      "kind": "中",
+      "hours": 0,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-08-17",
+      "kind": "hours",
+      "hours": 3,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-08-18",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-08-19",
+      "kind": "hours",
+      "hours": 4,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-08-19",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-08-21",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-08-24",
+      "kind": "hours",
+      "hours": 3,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-08-25",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-08-26",
+      "kind": "hours",
+      "hours": 4,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-course",
+      "date": "2026-08-26",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "准备练习与讲义。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-08-27",
+      "kind": "hours",
+      "hours": 1,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-08-28",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-09-01",
+      "kind": "中",
+      "hours": 0,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-09-02",
+      "kind": "hours",
+      "hours": 4,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-09-03",
+      "kind": "hours",
+      "hours": 1,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-09-04",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-09-07",
+      "kind": "hours",
+      "hours": 3,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-09-08",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-09-09",
+      "kind": "hours",
+      "hours": 4,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-09-10",
+      "kind": "中",
+      "hours": 0,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-09-14",
+      "kind": "hours",
+      "hours": 3,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-09-15",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-09-16",
+      "kind": "hours",
+      "hours": 4,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-09-17",
+      "kind": "hours",
+      "hours": 1,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-09-18",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-09-21",
+      "kind": "hours",
+      "hours": 3,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-09-23",
+      "kind": "hours",
+      "hours": 4,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-09-24",
+      "kind": "hours",
+      "hours": 1,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-09-25",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-09-28",
+      "kind": "中",
+      "hours": 0,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-09-29",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-09-30",
+      "kind": "hours",
+      "hours": 4,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-10-01",
+      "kind": "hours",
+      "hours": 1,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-10-02",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-10-05",
+      "kind": "hours",
+      "hours": 3,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-10-06",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-10-07",
+      "kind": "中",
+      "hours": 0,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-10-08",
+      "kind": "hours",
+      "hours": 1,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-10-09",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-10-12",
+      "kind": "hours",
+      "hours": 3,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-10-13",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-10-15",
+      "kind": "hours",
+      "hours": 1,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-10-16",
+      "kind": "中",
+      "hours": 0,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-10-19",
+      "kind": "hours",
+      "hours": 3,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-10-20",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-10-21",
+      "kind": "hours",
+      "hours": 4,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-10-22",
+      "kind": "hours",
+      "hours": 1,
+      "note": "整理公开数据，记录需要复查的问题。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-10-23",
+      "kind": "hours",
+      "hours": 1.5,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-10-26",
+      "kind": "hours",
+      "hours": 3,
+      "note": "推进实验与对照分析。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-10-27",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "梳理方法，补充结果图和文字说明。"
+    },
+    {
+      "projectId": "demo-research",
+      "date": "2026-10-28",
+      "kind": "hours",
+      "hours": 3.5,
+      "note": "## 今日进展\n- [x] 复核两组对照实验\n- [x] 整理阶段报告的结果图\n- [ ] 明天补充方法说明\n\n午后温度差异比较明显，需要进一步排除测点位置的影响。"
+    },
+    {
+      "projectId": "demo-reading",
+      "date": "2026-10-28",
+      "kind": "hours",
+      "hours": 1,
+      "note": "阅读测点布设方法，记录三条可以用于对照实验的建议。"
+    },
+    {
+      "projectId": "demo-tools",
+      "date": "2026-10-28",
+      "kind": "hours",
+      "hours": 1,
+      "note": "补充输入格式校验与示例。"
+    }
+  ],
+  "settings": {
+    "estimates": {
+      "很短": 0.25,
+      "短": 0.5,
+      "中": 1,
+      "长": 2,
+      "很长": 4
+    },
+    "projectGroups": [
+      "研究",
+      "工具",
+      "教学"
+    ],
+    "showMonthProjects": true,
+    "distributionGroupYear": true,
+    "distributionGroupMonth": true
+  },
+  "timelineDays": {
+    "2026-10-28": {
+      "blocks": [
+        {
+          "id": "demo-block-1",
+          "start": 540,
+          "end": 660,
+          "projectId": "demo-research"
+        },
+        {
+          "id": "demo-block-2",
+          "start": 660,
+          "end": 705,
+          "projectId": "demo-reading"
+        },
+        {
+          "id": "demo-block-3",
+          "start": 780,
+          "end": 840,
+          "projectId": "demo-research"
+        },
+        {
+          "id": "demo-block-4",
+          "start": 840,
+          "end": 900,
+          "projectId": "demo-tools"
+        }
+      ],
+      "applied": [
+        {
+          "id": "demo-block-1",
+          "start": 540,
+          "end": 660,
+          "projectId": "demo-research"
+        },
+        {
+          "id": "demo-block-2",
+          "start": 660,
+          "end": 705,
+          "projectId": "demo-reading"
+        },
+        {
+          "id": "demo-block-3",
+          "start": 780,
+          "end": 840,
+          "projectId": "demo-research"
+        },
+        {
+          "id": "demo-block-4",
+          "start": 840,
+          "end": 900,
+          "projectId": "demo-tools"
+        }
+      ]
+    },
+    "2026-10-22": {
+      "blocks": [
+        {
+          "id": "demo-2026-10-22-1",
+          "projectId": "demo-research",
+          "start": 540,
+          "end": 600
+        }
+      ],
+      "applied": [
+        {
+          "id": "demo-2026-10-22-1",
+          "projectId": "demo-research",
+          "start": 540,
+          "end": 600
+        }
+      ]
+    },
+    "2026-10-23": {
+      "blocks": [
+        {
+          "id": "demo-2026-10-23-1",
+          "projectId": "demo-tools",
+          "start": 840,
+          "end": 930
+        }
+      ],
+      "applied": [
+        {
+          "id": "demo-2026-10-23-1",
+          "projectId": "demo-tools",
+          "start": 840,
+          "end": 930
+        }
+      ]
+    },
+    "2026-10-26": {
+      "blocks": [
+        {
+          "id": "demo-2026-10-26-1",
+          "projectId": "demo-tools",
+          "start": 555,
+          "end": 645
+        },
+        {
+          "id": "demo-2026-10-26-2",
+          "projectId": "demo-tools",
+          "start": 810,
+          "end": 900
+        }
+      ],
+      "applied": [
+        {
+          "id": "demo-2026-10-26-1",
+          "projectId": "demo-tools",
+          "start": 555,
+          "end": 645
+        },
+        {
+          "id": "demo-2026-10-26-2",
+          "projectId": "demo-tools",
+          "start": 810,
+          "end": 900
+        }
+      ]
+    },
+    "2026-10-27": {
+      "blocks": [
+        {
+          "id": "demo-2026-10-27-1",
+          "projectId": "demo-reading",
+          "start": 600,
+          "end": 720
+        },
+        {
+          "id": "demo-2026-10-27-2",
+          "projectId": "demo-reading",
+          "start": 900,
+          "end": 990
+        }
+      ],
+      "applied": [
+        {
+          "id": "demo-2026-10-27-1",
+          "projectId": "demo-reading",
+          "start": 600,
+          "end": 720
+        },
+        {
+          "id": "demo-2026-10-27-2",
+          "projectId": "demo-reading",
+          "start": 900,
+          "end": 990
+        }
+      ]
+    }
+  }
+}

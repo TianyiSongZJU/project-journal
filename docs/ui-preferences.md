@@ -11,3 +11,5 @@ Existing synchronized preferences such as project ordering and year/month distri
 For a new presentation control, register its typed key in `ui-preferences.js`, read it before rendering, and write through the registry rather than storing only a DOM class. Extend the snapshot sanitizer for new timeline fields. Do not persist editor text, open menus, drag selections or destructive-action modes as presentation preferences.
 
 Validation: `node --test tests/*.test.js`. The browser regression uses a separate temporary data directory and actual backend process; it recreates fresh browser contexts, restarts the backend on a new port, checks both desktop host styles, and verifies business state is unchanged. Run `JOURNAL_CORE=/path/to/test-core JOURNAL_PLAYWRIGHT_MODULE=/path/to/playwright node tests/ui-persistence.browser.cjs` from `src/` (Edge channel by default). No personal data directory is used.
+
+时段回顾另保存 `timeReview`：起止日期、固定显示天数（7／14／30）、日期锚点方向（起于／截至）、`startHour`（0 或 8）、`colorMode`（投入或项目）、所选日期，以及图内横纵滚动位置。恢复时验证日期并根据锚点重建固定长度窗口；旧的最近四周／本月偏好迁移到 30 天，其他旧自定义范围迁移到 14 天。`mode` 增加 `time`，只用于显示偏好，不改变业务数据结构。

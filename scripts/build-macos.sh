@@ -20,5 +20,6 @@ cp "$JOURNAL_TMP/journal-core" "$JOURNAL_APP/Contents/Resources/journal-core.nex
 mv -f "$JOURNAL_APP/Contents/Resources/journal-core.next" "$JOURNAL_APP/Contents/Resources/journal-core"
 cp "$JOURNAL_TMP/ProjectJournal" "$JOURNAL_APP/Contents/MacOS/ProjectJournal.next"
 mv -f "$JOURNAL_APP/Contents/MacOS/ProjectJournal.next" "$JOURNAL_APP/Contents/MacOS/ProjectJournal"
+JOURNAL_GO="$JOURNAL_GO" sh "$JOURNAL_ROOT/scripts/copy-release-licenses.sh" "$JOURNAL_APP/Contents/Resources/licenses"
 codesign --force --deep --sign - "$JOURNAL_APP"
 codesign --verify --deep --strict "$JOURNAL_APP"

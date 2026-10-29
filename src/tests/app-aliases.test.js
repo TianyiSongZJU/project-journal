@@ -6,7 +6,7 @@ test('default aliases join platform names exactly, preserving distinct applicati
  const name=appNameResolver({});
  for(const app of ['Weixin','wechat.EXE','微信'])assert.equal(name(app),'微信');
  assert.equal(name('msedge.exe'),'Microsoft Edge');assert.equal(name('Microsoft Word.exe'),'Word');
- assert.equal(name('ChatGPT.exe'),'ChatGPT');assert.equal(name('WeChat Helper'),'WeChat Helper');
+ assert.equal(name('clash-verge.exe'),'Clash Verge');assert.equal(name('WeChatAppEx.exe'),'微信扩展');assert.equal(name('AppleMusic.exe'),'AppleMusic');assert.equal(name('项目手记-Windows.exe'),'项目手记');assert.equal(name('ChatGPT.exe'),'ChatGPT');assert.equal(name('WeChat Helper'),'WeChat Helper');
  assert.notEqual(name('Google Chrome'),name('Microsoft Edge'));
  const raw=[{app:'Weixin.exe',deviceId:'a',start:0,end:15,seconds:300},{app:'微信',deviceId:'b',start:0,end:15,seconds:400}],before=JSON.stringify(raw),shown=displayActivities(raw,{});
  assert.equal(activitySlots(shown,0,15)[0].apps[0].seconds,400);assert.equal(JSON.stringify(raw),before);
