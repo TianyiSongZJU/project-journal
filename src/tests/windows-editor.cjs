@@ -13,7 +13,7 @@ const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('no
   const platform=process.env.JOURNAL_PLATFORM||'windows';
   await context.addInitScript(platform=>{window.journalMacHost=platform==='mac';window.journalWindowsHost=platform!=='mac';document.addEventListener('DOMContentLoaded',()=>{document.documentElement.classList.add(platform==='mac'?'native-mac':'native-windows');const link=document.createElement('link');link.rel='stylesheet';link.href=platform==='mac'?'macos.css':'windows.css';document.head.append(link);});},platform);
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>{errors.push(e.message);console.error(e.stack)});
-  const ready=()=>page.waitForFunction(()=>document.querySelector('#save-status')?.textContent==='已保存到本地');
+  const ready=()=>page.waitForFunction(()=>window.journalViewReady===true&&document.querySelector('#save-status')?.textContent==='已保存到本地');
   await page.goto(session.url+'/?token='+session.token);await ready();
   const day=await page.evaluate(async()=>{
    const date=new Date(),day=[date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-');
@@ -25,6 +25,8 @@ const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('no
    const response=await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:old.revision,state})});if(!response.ok)throw Error(await response.text());return day;
   });
   await page.reload();await ready();
+  await page.locator('#mode-month').click();
+  await page.locator(`.month-day[data-date="${day}"]`).click();
   const choose=async id=>{await page.locator('#inspector-project').evaluate((el,id)=>{el.value=id;el.dispatchEvent(new Event('change',{bubbles:true}));},id);await page.waitForFunction(id=>document.querySelector('#windows-project-nodes')?.dataset.projectId===id,id);};
   await choose('a');
   assert.match(await page.locator('#inspector-day-total').innerText(),/7.5/);
