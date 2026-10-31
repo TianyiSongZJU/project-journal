@@ -27,6 +27,25 @@ func (a *AutoCollector) handle(w http.ResponseWriter, r *http.Request) bool {
 		a.handleTimelineReview(w, r)
 	case "/api/auto/timeline":
 		a.handleTimeline(w, r)
+	case "/api/auto/day-summary":
+		if r.Method != "GET" {
+			w.WriteHeader(405)
+			return true
+		}
+		date := r.URL.Query().Get("date")
+		if !validDate(date) {
+			autoFail(w, errors.New("日期无效"), 400)
+			return true
+		}
+		a.store.mu.Lock()
+		st, _, err := a.store.read()
+		a.store.mu.Unlock()
+		if err != nil {
+			autoFail(w, err, 500)
+			return true
+		}
+		hours, estimated, missing := dailyMenuHours(st, date)
+		autoJSON(w, map[string]any{"date": date, "hours": hours, "estimatedHours": estimated, "missing": missing})
 	case "/api/auto/status":
 		if r.Method != "GET" {
 			w.WriteHeader(405)
@@ -413,4 +432,23 @@ func effectiveAutoStats(c AutoConfig, s AutoStats) AutoStats {
 		s.Status = "监听中"
 	}
 	return s
+}
+
+// Match the all-project daily total in the UI; entries already include applied timelines.
+func dailyMenuHours(st State, date string) (total, estimated float64, missing int) {
+	for _, entry := range st.Entries {
+		if entry.Date != date {
+			continue
+		}
+		hours, ok := autoEntryHours(st, entry)
+		if !ok {
+			missing++
+			continue
+		}
+		total += hours
+		if entry.Kind != "hours" && entry.Kind != "none" {
+			estimated += hours
+		}
+	}
+	return
 }

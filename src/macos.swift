@@ -353,6 +353,10 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
  var launchURL:URL?
  var observer:JournalObserver?
  var statusItem:NSStatusItem?
+ var dailySummaryTimer:Timer?
+ var dailySummaryLoading=false
+ var dailyTimeLabel:NSTextField?
+ var dailyDetailLabel:NSTextField?
  var trackingStatusItem:NSMenuItem?
  var trackingToggleItem:NSMenuItem?
  var loaded = false
@@ -409,14 +413,56 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   let titleLabel=JournalTitleText(frame:NSRect(x:24,y:9,width:80,height:24));titleLabel.setAccessibilityElement(true);titleLabel.setAccessibilityRole(.staticText);titleLabel.setAccessibilityLabel("项目手记");titleView.addSubview(titleLabel)
   titleAccessory.view=titleView;window.addTitlebarAccessoryViewController(titleAccessory)
   let surface=JournalLaunchSurface(frame:webView.bounds,cold:openingTiming == nil);launchSurface=surface;webView.addSubview(surface)
+  window.collectionBehavior=[.moveToActiveSpace,.fullScreenAuxiliary,.canJoinAllApplications]
   window.center();window.makeKeyAndOrderFront(nil);NSApp.activate(ignoringOtherApps:true);DispatchQueue.main.async { [weak self] in self?.alignTitlebar() }
   (openingTiming ?? startupTiming)?.mark("windowShown")
 
   if let url=launchURL{webView.load(URLRequest(url:url))}
  }
- func installStatusItem(){statusItem=NSStatusBar.system.statusItem(withLength:NSStatusItem.squareLength);statusItem?.button?.image=NSImage(systemSymbolName:"square.grid.3x3.fill",accessibilityDescription:"项目手记");let menu=NSMenu();menu.delegate=self;let state=NSMenuItem(title:"正在读取记录状态…",action:nil,keyEquivalent:"");state.isEnabled=false;menu.addItem(state);trackingStatusItem=state;menu.addItem(.separator());menu.addItem(withTitle:"打开项目手记",action:#selector(openJournal),keyEquivalent:"");let toggle=menu.addItem(withTitle:"继续自动记录",action:#selector(toggleTracking),keyEquivalent:"");toggle.isEnabled=false;trackingToggleItem=toggle;menu.addItem(.separator());menu.addItem(withTitle:"退出项目手记",action:#selector(NSApplication.terminate(_:)),keyEquivalent:"");statusItem?.menu=menu}
- func updateTrackingMenu(_ state:[String:Any]){let enabled=state["enabled"]as?Bool ?? false;let activity=state["activityEnabled"]as?Bool ?? false;let status=state["status"]as?String ?? "正在读取";let label=status=="监听中" ? "监听中 · \(activity ? "文件＋时长辅助":"仅文件活动")":status;trackingStatusItem?.title="● "+label;statusItem?.button?.toolTip="项目手记 · "+label;trackingToggleItem?.title=enabled ? "暂停自动记录":"继续自动记录";trackingToggleItem?.isEnabled = status != "待绑定资料夹";trackingToggleItem?.state = .off}
- func menuWillOpen(_ menu:NSMenu){observer?.reload()}
+ func installStatusItem(){
+  statusItem=NSStatusBar.system.statusItem(withLength:NSStatusItem.variableLength)
+  if let button=statusItem?.button {
+   button.image=NSImage(systemSymbolName:"square.grid.3x3.fill",accessibilityDescription:"项目手记")
+   button.imagePosition = .imageLeading
+   button.font=NSFont.monospacedDigitSystemFont(ofSize:11,weight:.medium)
+   button.title=" —"
+  }
+  let menu=NSMenu();menu.delegate=self
+  let heading=NSMenuItem();let view=NSView(frame:NSRect(x:0,y:0,width:250,height:84))
+  let caption=NSTextField(labelWithString:"今日总投入");caption.font = .systemFont(ofSize:11,weight:.medium);caption.textColor = .secondaryLabelColor;caption.frame=NSRect(x:16,y:58,width:218,height:16);view.addSubview(caption)
+  let time=NSTextField(labelWithString:"正在读取…");time.font = .monospacedDigitSystemFont(ofSize:25,weight:.medium);time.textColor = .labelColor;time.frame=NSRect(x:16,y:22,width:218,height:32);view.addSubview(time);dailyTimeLabel=time
+  let note=NSTextField(labelWithString:"已确认时间与其他已记时间");note.font = .systemFont(ofSize:10);note.textColor = .secondaryLabelColor;note.frame=NSRect(x:16,y:5,width:218,height:15);view.addSubview(note);dailyDetailLabel=note
+  heading.view=view;menu.addItem(heading);menu.addItem(.separator())
+  let state=NSMenuItem(title:"正在读取记录状态…",action:nil,keyEquivalent:"");state.isEnabled=false;state.image=NSImage(systemSymbolName:"circle.dotted",accessibilityDescription:nil);menu.addItem(state);trackingStatusItem=state
+  let toggle=menu.addItem(withTitle:"继续自动记录",action:#selector(toggleTracking),keyEquivalent:"");toggle.isEnabled=false;toggle.image=NSImage(systemSymbolName:"play",accessibilityDescription:nil);trackingToggleItem=toggle
+  menu.addItem(.separator())
+  let open=menu.addItem(withTitle:"打开项目手记",action:#selector(openJournal),keyEquivalent:"");open.image=NSImage(systemSymbolName:"rectangle.on.rectangle",accessibilityDescription:nil)
+  let quit=menu.addItem(withTitle:"退出项目手记",action:#selector(NSApplication.terminate(_:)),keyEquivalent:"");quit.image=NSImage(systemSymbolName:"power",accessibilityDescription:nil)
+  statusItem?.menu=menu
+  let timer=Timer(timeInterval:30,repeats:true){[weak self] _ in self?.refreshDaySummary()};RunLoop.main.add(timer,forMode:.common);dailySummaryTimer=timer
+ }
+ func refreshDaySummary(){
+  guard let observer=observer,!dailySummaryLoading else{return}
+  let formatter=DateFormatter();formatter.locale=Locale(identifier:"en_US_POSIX");formatter.dateFormat="yyyy-MM-dd";let day=formatter.string(from:Date())
+  var parts=URLComponents(url:observer.server.appendingPathComponent("api/auto/day-summary"),resolvingAgainstBaseURL:false)!;parts.queryItems=[URLQueryItem(name:"date",value:day)]
+  var request=URLRequest(url:parts.url!,cachePolicy:.reloadIgnoringLocalCacheData);request.setValue(observer.token,forHTTPHeaderField:"X-Journal-Token");request.timeoutInterval=10;dailySummaryLoading=true
+  URLSession.shared.dataTask(with:request){[weak self] data,response,error in
+   DispatchQueue.main.async{
+    guard let self=self else{return};self.dailySummaryLoading=false
+    guard error==nil,(response as? HTTPURLResponse)?.statusCode==200,let data=data,let value=(try? JSONSerialization.jsonObject(with:data)) as? [String:Any],let hours=value["hours"] as? Double,formatter.string(from:Date())==day else{
+     self.statusItem?.button?.title=" —";self.dailyTimeLabel?.stringValue="暂时无法读取";self.dailyDetailLabel?.stringValue="请稍后重试";self.statusItem?.button?.toolTip="项目手记 · 今日总投入读取失败";return
+    }
+    let minutes=Int((hours*60).rounded()),h=minutes/60,m=minutes%60,missing=value["missing"] as? Int ?? 0,estimated=value["estimatedHours"] as? Double ?? 0
+    self.statusItem?.button?.title=h>0 ? String(format:" %d:%02d",h,m):" \(m)分"
+    self.dailyTimeLabel?.stringValue=h>0 ? "\(h)小时 \(m)分":"\(m)分钟"
+    let details=(estimated>0 ? "含已配置估算":"已确认时间与其他已记时间")+(missing>0 ? " · \(missing)条待配置":"")
+    self.dailyDetailLabel?.stringValue=details
+    self.statusItem?.button?.toolTip="项目手记 · 今日总投入 \(h)小时\(m)分\n\(details)"
+   }
+  }.resume()
+ }
+ func updateTrackingMenu(_ state:[String:Any]){let enabled=state["enabled"]as?Bool ?? false;let activity=state["activityEnabled"]as?Bool ?? false;let status=state["status"]as?String ?? "正在读取";let label=status=="监听中" ? "监听中 · \(activity ? "文件＋时长辅助":"仅文件活动")":status;trackingStatusItem?.title=label;trackingStatusItem?.image=NSImage(systemSymbolName:enabled ? "waveform.path":"pause.circle",accessibilityDescription:nil);trackingToggleItem?.image=NSImage(systemSymbolName:enabled ? "pause":"play",accessibilityDescription:nil);trackingToggleItem?.title=enabled ? "暂停自动记录":"继续自动记录";trackingToggleItem?.isEnabled = enabled || activity || status != "待绑定资料夹";trackingToggleItem?.state = .off}
+ func menuWillOpen(_ menu:NSMenu){observer?.reload();refreshDaySummary()}
 
  @objc func openJournal(){showJournal(source:"statusBar")}
  func showJournal(source:String){
@@ -424,7 +470,12 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   let timing=JournalStartupTiming(source:source,windowMode:existing ? "existingWindow":"newWindow");openingTiming=timing
   NSApp.setActivationPolicy(.regular);if !existing{createWindow()}
   if window.isMiniaturized{window.deminiaturize(nil)}
-  window.makeKeyAndOrderFront(nil);NSApp.activate(ignoringOtherApps:true)
+  window.collectionBehavior.remove(.canJoinAllSpaces)
+  window.collectionBehavior.remove(.primary)
+  window.collectionBehavior.remove(.auxiliary)
+  window.collectionBehavior.remove(.fullScreenPrimary)
+  window.collectionBehavior.insert([.moveToActiveSpace,.fullScreenAuxiliary,.canJoinAllApplications])
+  NSApp.activate(ignoringOtherApps:true);window.makeKeyAndOrderFront(nil);window.orderFrontRegardless()
   timing.mark("windowShown")
   if existing{
    webView.evaluateJavaScript("""
@@ -452,6 +503,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
    if let rects=body["rects"] as? [[String:Double]] {headerControlRects=rects.compactMap{r in guard let x=r["x"],let y=r["y"],let w=r["width"],let h=r["height"],w>0,h>0 else{return nil};return NSRect(x:x,y:y,width:w,height:h)};alignTitlebar()}
   }
   else if action=="folders"{let panel=NSOpenPanel();panel.canChooseFiles=false;panel.canChooseDirectories=true;panel.allowsMultipleSelection = !(body["single"]as?Bool ?? false);panel.prompt=body["prompt"]as?String ?? "绑定资料夹";if let path=body["initial"]as?String,!path.isEmpty{panel.directoryURL=URL(fileURLWithPath:path)};panel.beginSheetModal(for:window){response in reply(["paths":response == .OK ? panel.urls.map{$0.path}:[]])}}
+  else if action=="refreshDaySummary"{refreshDaySummary()}
   else if action=="refreshAuto"{if let observer=observer{observer.reload{reply(["ok":observer.networkError.isEmpty,"error":observer.networkError])}}else{reply(["ok":false,"error":"原生监听尚未就绪，请重新打开软件"])}}
   else if action=="loadClientView"{reply(["ok":true,"hiddenClients":UserDefaults.standard.stringArray(forKey:"JournalHiddenClients") ?? []])}
   else if action=="saveClientView"{
@@ -502,7 +554,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
  func applicationShouldTerminateAfterLastWindowClosed(_ sender:NSApplication)->Bool{return false}
  func applicationShouldTerminate(_ sender:NSApplication)->NSApplication.TerminateReply{if terminating || !loaded{return .terminateNow};flushWindow{[weak self] ok in guard let self=self else{return};if !ok{let alert=NSAlert();alert.messageText="自动保存尚未完成";alert.informativeText="内容仍保留在窗口中。请检查填写内容或同步提示，再退出。";alert.runModal();NSApp.reply(toApplicationShouldTerminate:false);return};self.terminating=true;if let observer=self.observer{observer.flush{NSApp.reply(toApplicationShouldTerminate:true)}}else{NSApp.reply(toApplicationShouldTerminate:true)}};return .terminateLater}
 
- func applicationWillTerminate(_ notification:Notification){terminating=true;startupTimer?.invalidate();if task?.isRunning==true{task?.terminate()}}
+ func applicationWillTerminate(_ notification:Notification){dailySummaryTimer?.invalidate();terminating=true;startupTimer?.invalidate();if task?.isRunning==true{task?.terminate()}}
  func webViewDidClose(_ webView:WKWebView){NSApp.terminate(nil)}
  func webView(_ webView:WKWebView,decidePolicyFor navigationAction:WKNavigationAction,decisionHandler:@escaping(WKNavigationActionPolicy)->Void){guard let url=navigationAction.request.url else{decisionHandler(.cancel);return};if navigationAction.shouldPerformDownload{decisionHandler(.download);return};if url.host=="127.0.0.1"||url.scheme=="about"||url.scheme=="blob"{decisionHandler(.allow)}else{decisionHandler(.cancel)}}
  func webView(_ webView:WKWebView,navigationAction:WKNavigationAction,didBecome download:WKDownload){download.delegate=self}

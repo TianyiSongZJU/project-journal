@@ -31,8 +31,11 @@ const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),cryp
   await page.reload();await page.waitForFunction(()=>window.journalViewReady);
   const state=()=>page.evaluate(async()=>(await(await fetch('/api/state')).json()).state);
   const before=await state();
+  const daySummary=await page.evaluate(async()=>{const response=await fetch('/api/auto/day-summary?date=2026-10-28');return response.json()});assert.equal(daySummary.hours,before.entries.filter(e=>e.date==='2026-10-28').reduce((n,e)=>n+e.hours,0));
+  assert.equal(await page.evaluate(async()=>(await fetch('/api/auto/day-summary?date=invalid')).status),400);
+
   await page.locator('#mode-time').click();await page.locator('.tr-row').first().waitFor();
-  assert.equal(await page.locator('.tr-row').count(),14);assert.equal(await page.locator('.tr-row').first().locator('.tr-cell').count(),64);
+  assert.equal(await page.locator('.tr-daily-trend svg').count(),14);assert.equal(await page.locator('.tr-row').count(),14);assert.equal(await page.locator('.tr-row').first().locator('.tr-cell').count(),64);
   assert.equal(await page.locator('#time-workspace').isVisible(),true);assert.equal(await page.locator('#year-calendar').isVisible(),false);
   assert.equal(await page.locator('.tr-inspector-host').isVisible(),false);
   assert.match(await page.locator('.tr-overview p').innerText(),/7/);
