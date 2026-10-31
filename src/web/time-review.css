@@ -254,3 +254,19 @@ html.native-mac:has(#page-review.time-view:not([hidden])){border-radius:0 0 16px
 .tr-daily-bars>span:last-child{min-width:39px;text-align:right}
 .tr-row:is(.is-hovered,.is-selected,:has(:focus-visible)) .tr-daily-bar-track>i{background:#819c6f88}
 @media(max-width:650px){.tr-grid{--tr-total:70px}.tr-daily-bars{gap:5px}.tr-daily-bars>span:last-child{min-width:33px}}
+
+/* Daily totals share a narrow aligned baseline; the summary gets an editorial number pair. */
+.tr-daily-bars{gap:6px}
+.tr-daily-bar-track{position:relative;height:4px;background:#899e7610;border-radius:3px;overflow:hidden}
+.tr-daily-bar-track>i{border-radius:3px;background:linear-gradient(90deg,#c4d1b5aa,#92aa7bb3)}
+.tr-row:is(.is-hovered,.is-selected,:has(:focus-visible)) .tr-daily-bar-track>i{background:linear-gradient(90deg,#adbf98,#7f9b6c)}
+.tr-summary-total{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;align-self:stretch;gap:10px;padding:0 0 0 5px;color:#3d6347;min-width:0}
+.tr-summary-total>div{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.tr-summary-total small{font:500 8px/1.2 system-ui;color:#8a987e;white-space:nowrap;letter-spacing:.02em}
+.tr-summary-total strong{font:500 22px/1 Georgia,'Times New Roman',var(--serif);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tr-summary-total em{font:400 9px/1 system-ui;color:#8a987e;margin-left:3px;font-style:normal}
+.tr-summary-total>div:last-child strong{font-size:18px;color:#708466}
+.tr-summary-limit{right:auto;left:calc(100% - var(--tr-total) - 12px);width:auto;max-width:var(--tr-total);text-align:left;white-space:nowrap;background:var(--panel);padding-left:4px;transform:translateY(-50%);top:21px}
+@media(max-width:650px){.tr-summary-total strong{font-size:18px}.tr-summary-total>div:last-child strong{font-size:16px}.tr-summary-total{gap:8px;padding-left:2px}}
+
+.tr-daily-bar-track.is-empty{background:transparent}

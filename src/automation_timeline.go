@@ -9,6 +9,7 @@ import (
 	"math"
 	"net/http"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -210,6 +211,54 @@ func (a *AutoCollector) handleTimeline(w http.ResponseWriter, r *http.Request) {
 			raw, _ := json.Marshal(items)
 			sum := sha256.Sum256(raw)
 			stamps[date] = hex.EncodeToString(sum[:])
+		}
+		if today := r.URL.Query().Get("reminders"); today != "" {
+			if !validDate(today) {
+				autoFail(w, errors.New("日期无效"), 400)
+				return
+			}
+			end, _ := time.Parse("2006-01-02", today)
+			start := end.AddDate(0, 0, -7).Format("2006-01-02")
+			a.store.mu.Lock()
+			st, _, err := a.store.read()
+			a.store.mu.Unlock()
+			if err != nil {
+				autoFail(w, err, 500)
+				return
+			}
+			recent := []timelineEvidence{}
+			days := map[string]TimelineDay{}
+			read := map[string]string{}
+			recentStamps := map[string]string{}
+			for _, item := range list {
+				if item.Date >= start && item.Date < today {
+					recent = append(recent, item)
+					days[item.Date] = st.TimelineDays[item.Date]
+					read[item.Date] = st.TimelineRead[item.Date]
+					recentStamps[item.Date] = stamps[item.Date]
+				}
+			}
+			ids := []string{}
+			for _, project := range st.Projects {
+				ids = append(ids, project.ID)
+			}
+			var engine strings.Builder
+			for _, file := range []string{"auto-timeline.js", "time-suggestions.js", "suggestion-history.js"} {
+				source, err := assets.ReadFile("web/" + file)
+				if err != nil {
+					autoFail(w, err, 500)
+					return
+				}
+				for _, line := range strings.Split(string(source), "\n") {
+					if strings.HasPrefix(line, "import ") {
+						continue
+					}
+					engine.WriteString(strings.ReplaceAll(line, "export ", ""))
+					engine.WriteByte('\n')
+				}
+			}
+			autoJSON(w, map[string]any{"evidence": recent, "timelineDays": days, "timelineRead": read, "dateStamps": recentStamps, "projectIds": ids, "rules": c.SuggestionRules, "gapMinutes": c.FileGapMinutes, "start": start, "end": today, "engine": engine.String(), "warnings": warnings})
+			return
 		}
 		autoJSON(w, map[string]any{"evidence": list, "dateStamps": stamps, "warnings": warnings})
 		return

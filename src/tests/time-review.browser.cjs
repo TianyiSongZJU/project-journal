@@ -31,6 +31,8 @@ const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),cryp
   await page.reload();await page.waitForFunction(()=>window.journalViewReady);
   const state=()=>page.evaluate(async()=>(await(await fetch('/api/state')).json()).state);
   const before=await state();
+  const snapshot=await page.evaluate(async()=>(await(await fetch('/api/auto/timeline?reminders=2026-10-28')).json()));assert.equal(snapshot.start,'2026-10-21');assert.equal(snapshot.end,'2026-10-28');assert(!('state' in snapshot));const engineCheck=require('node:vm').runInNewContext(snapshot.engine+';pendingSuggestionDays(payload)',{payload:snapshot});assert.equal(engineCheck.length,0);if(process.env.JOURNAL_REMINDER_SNAPSHOT)fs.writeFileSync(process.env.JOURNAL_REMINDER_SNAPSHOT,JSON.stringify(snapshot));
+
   const daySummary=await page.evaluate(async()=>{const response=await fetch('/api/auto/day-summary?date=2026-10-28');return response.json()});assert.equal(daySummary.hours,before.entries.filter(e=>e.date==='2026-10-28').reduce((n,e)=>n+e.hours,0));
   assert.equal(await page.evaluate(async()=>(await fetch('/api/auto/day-summary?date=invalid')).status),400);
 

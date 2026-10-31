@@ -323,7 +323,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&calendarGesture){e.
 window.addEventListener('blur',()=>finishCalendarGesture(true));
 try{restoredView=await viewMemory.load();uiPreferences.restore(restoredView.ui);restoreUIPreferences();await load();restoreViewContext(restoredView);renderReview(true)}catch(e){document.documentElement.classList.remove('app-starting');$('#save-status').textContent='读取失败';$('#save-status').classList.add('error');const error=document.createElement('div');error.className='error-banner';error.innerHTML=`<h2>暂时无法读取数据</h2><p>${esc(e.message)}</p><p>原数据已保留。请检查数据文件或从“备份”文件夹恢复后重新启动。</p>`;for(const child of $('main').children)child.hidden=true;$('main').append(error)}
 window.journalHasUnsaved=()=>noteDirty||recordDirty||inspectorDirty||saving||conflict;
-automationUI=state?setupAutomation({initialView:restoredView.timeline||{},onViewChange:rememberView,getState:()=>state,flushMain:flushDrafts,applyEnvelope:data=>{state=data.state;revision=data.revision;renderAll()},toast,esc,...(isDesktopHost()?{getSelectedDate:()=>inspectorDate,onSelectedDateChange:date=>{focusInspectorDate(date);viewYear=Number(date.slice(0,4));viewMonth=date.slice(0,7)}}:{})}):null;
+automationUI=state?setupAutomation({initialView:restoredView.timeline||{},onViewChange:rememberView,getState:()=>state,flushMain:flushDrafts,applyEnvelope:data=>{state=data.state;revision=data.revision;renderAll();window.webkit?.messageHandlers?.journalNative?.postMessage({action:'refreshDaySummary'})},toast,esc,...(isDesktopHost()?{getSelectedDate:()=>inspectorDate,onSelectedDateChange:date=>{focusInspectorDate(date);viewYear=Number(date.slice(0,4));viewMonth=date.slice(0,7)}}:{})}):null;
 // Native styles arrive separately from the shared page; settle them before layout restoration.
 const startupStyleName=window.journalMacHost?'macos.css':window.journalWindowsHost?'windows.css':null;
 const startupStyle=startupStyleName&&[...document.querySelectorAll('link[rel="stylesheet"]')].find(link=>link.getAttribute('href')===startupStyleName);
@@ -336,6 +336,7 @@ if(state){
  viewMemory.enable();rememberView();
 }
 window.journalFlush=async()=>{if(!state)return true;const ok=window.journalQuitting||await flushDrafts()&&await automationUI.flush()&&await fetch('/api/auto/flush',{method:'POST'}).then(r=>r.ok);const viewSaved=await viewMemory.flush();if(!viewSaved){toast('界面偏好尚未保存，请重试关闭',true);return false}return ok};
+window.journalOpenTimelineDate=async date=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return false;await setPage('auto');if(page!=='auto')return false;await automationUI.openDate(date);return true};
 window.journalViewReady=true;document.documentElement.classList.remove('app-starting');await notifyWindowsLaunchPainted();await finishWindowsLaunch();
 
 

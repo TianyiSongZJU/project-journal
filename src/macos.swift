@@ -1,5 +1,6 @@
 import Cocoa
 import WebKit
+import JavaScriptCore
 import UniformTypeIdentifiers
 import CoreText
 import QuartzCore
@@ -353,6 +354,13 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
  var launchURL:URL?
  var observer:JournalObserver?
  var statusItem:NSStatusItem?
+ var pendingCheckTimer:Timer?
+ var pendingCheckInFlight=false
+ var pendingHasResult=false
+ var pendingRefreshTask:DispatchWorkItem?
+ var reminderItem:NSMenuItem?
+ var reminderGeneration=0
+ var pendingReminderDate:String?
  var dailySummaryTimer:Timer?
  var dailySummaryLoading=false
  var dailyTimeLabel:NSTextField?
@@ -433,6 +441,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   let time=NSTextField(labelWithString:"正在读取…");time.font = .monospacedDigitSystemFont(ofSize:25,weight:.medium);time.textColor = .labelColor;time.frame=NSRect(x:16,y:22,width:218,height:32);view.addSubview(time);dailyTimeLabel=time
   let note=NSTextField(labelWithString:"已确认时间与其他已记时间");note.font = .systemFont(ofSize:10);note.textColor = .secondaryLabelColor;note.frame=NSRect(x:16,y:5,width:218,height:15);view.addSubview(note);dailyDetailLabel=note
   heading.view=view;menu.addItem(heading);menu.addItem(.separator())
+  let reminder=NSMenuItem(title:"正在准备近7天建议…",action:nil,keyEquivalent:"");reminder.isEnabled=false;reminder.image=NSImage(systemSymbolName:"clock.badge.exclamationmark",accessibilityDescription:nil);menu.addItem(reminder);reminderItem=reminder;menu.addItem(.separator())
   let state=NSMenuItem(title:"正在读取记录状态…",action:nil,keyEquivalent:"");state.isEnabled=false;state.image=NSImage(systemSymbolName:"circle.dotted",accessibilityDescription:nil);menu.addItem(state);trackingStatusItem=state
   let toggle=menu.addItem(withTitle:"继续自动记录",action:#selector(toggleTracking),keyEquivalent:"");toggle.isEnabled=false;toggle.image=NSImage(systemSymbolName:"play",accessibilityDescription:nil);trackingToggleItem=toggle
   menu.addItem(.separator())
@@ -440,6 +449,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   let quit=menu.addItem(withTitle:"退出项目手记",action:#selector(NSApplication.terminate(_:)),keyEquivalent:"");quit.image=NSImage(systemSymbolName:"power",accessibilityDescription:nil)
   statusItem?.menu=menu
   let timer=Timer(timeInterval:30,repeats:true){[weak self] _ in self?.refreshDaySummary()};RunLoop.main.add(timer,forMode:.common);dailySummaryTimer=timer
+  let pendingTimer=Timer(timeInterval:120,repeats:true){[weak self] _ in self?.refreshPendingSuggestions()};RunLoop.main.add(pendingTimer,forMode:.common);pendingCheckTimer=pendingTimer
  }
  func refreshDaySummary(){
   guard let observer=observer,!dailySummaryLoading else{return}
@@ -460,6 +470,45 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
     self.statusItem?.button?.toolTip="项目手记"
    }
   }.resume()
+ }
+ func schedulePendingSuggestions(){
+  pendingRefreshTask?.cancel();let task=DispatchWorkItem{[weak self] in self?.refreshPendingSuggestions()};pendingRefreshTask=task;DispatchQueue.main.asyncAfter(deadline:.now()+3,execute:task)
+ }
+ func refreshPendingSuggestions(){
+  guard let observer=observer,!pendingCheckInFlight else{return}
+  pendingCheckInFlight=true;reminderGeneration += 1;let generation=reminderGeneration
+  if !pendingHasResult{reminderItem?.title="正在准备近7天建议…";reminderItem?.isEnabled=false}
+
+  let formatter=DateFormatter();formatter.locale=Locale(identifier:"en_US_POSIX");formatter.dateFormat="yyyy-MM-dd"
+  var parts=URLComponents(url:observer.server.appendingPathComponent("api/auto/timeline"),resolvingAgainstBaseURL:false)!;parts.queryItems=[URLQueryItem(name:"reminders",value:formatter.string(from:Date()))]
+  var request=URLRequest(url:parts.url!,cachePolicy:.reloadIgnoringLocalCacheData);request.setValue(observer.token,forHTTPHeaderField:"X-Journal-Token");request.timeoutInterval=15
+  URLSession.shared.dataTask(with:request){[weak self] data,response,error in
+   var result:[[String:Any]]?;var incomplete=false
+   if error==nil,(response as?HTTPURLResponse)?.statusCode==200,let data=data,let payload=(try? JSONSerialization.jsonObject(with:data)) as? [String:Any],let engine=payload["engine"] as? String,let context=JSContext(){
+    context.evaluateScript(engine)
+    if context.exception == nil,let value=context.objectForKeyedSubscript("pendingSuggestionDays")?.call(withArguments:[payload]),context.exception == nil {result=value.toArray() as? [[String:Any]]}
+    incomplete = !(payload["warnings"] as? [String] ?? []).isEmpty
+   }
+   DispatchQueue.main.async{
+    guard let self=self,generation==self.reminderGeneration,let item=self.reminderItem else{return}
+    self.pendingCheckInFlight=false
+    guard let days=result else{if !self.pendingHasResult{item.title="建议检查暂不可用";item.isEnabled=false};return}
+    self.pendingHasResult=true;item.submenu=nil
+    if days.isEmpty{item.title=incomplete ? "部分线索未同步完整，暂未发现待划定建议":"近7天没有待划定建议";item.isEnabled=false;return}
+    item.title="近7天有 \(days.count) 天建议待划定"+(incomplete ? "（部分线索待同步）":"");item.isEnabled=true
+    let dates=NSMenu();dates.autoenablesItems=false
+    for day in days {
+     guard let date=day["date"] as? String else{continue};let count=day["count"] as? Int ?? 0,minutes=day["minutes"] as? Int ?? 0
+     let entry=dates.addItem(withTitle:"\(date.suffix(5).replacingOccurrences(of:"-",with:"/")) · \(count)段 · \(minutes)分钟",action:#selector(self.openReminderDate(_:)),keyEquivalent:"");entry.target=self;entry.representedObject=date
+    }
+    item.submenu=dates;self.statusItem?.menu?.update()
+   }
+  }.resume()
+ }
+ @objc func openReminderDate(_ item:NSMenuItem){guard let date=item.representedObject as? String else{return};pendingReminderDate=date;showJournal(source:"statusBar")}
+ func navigatePendingReminder(){
+  guard let date=pendingReminderDate else{return};pendingReminderDate=nil
+  webView?.callAsyncJavaScript("return window.journalOpenTimelineDate ? await window.journalOpenTimelineDate(date) : false;",arguments:["date":date],in:nil,in:.page,completionHandler:nil)
  }
  func updateTrackingMenu(_ state:[String:Any]){let enabled=state["enabled"]as?Bool ?? false;let activity=state["activityEnabled"]as?Bool ?? false;let status=state["status"]as?String ?? "正在读取";let label=status=="监听中" ? "监听中 · \(activity ? "文件＋时长辅助":"仅文件活动")":status;trackingStatusItem?.title=label;trackingStatusItem?.image=NSImage(systemSymbolName:enabled ? "waveform.path":"pause.circle",accessibilityDescription:nil);trackingToggleItem?.image=NSImage(systemSymbolName:enabled ? "pause":"play",accessibilityDescription:nil);trackingToggleItem?.title=enabled ? "暂停自动记录":"继续自动记录";trackingToggleItem?.isEnabled = enabled || activity || status != "待绑定资料夹";trackingToggleItem?.state = .off}
  func menuWillOpen(_ menu:NSMenu){observer?.reload();refreshDaySummary()}
@@ -495,16 +544,17 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
    let complete:()->Void={timing?.mark("pageReady",page:body["page"] as? String,pageMS:body["pageMs"] as? Double)}
    if let surface=launchSurface{launchSurface=nil;surface.finish(complete)}else{complete()}
    if openingTiming?.windowMode == "newWindow"{openingTiming=nil}
+   navigatePendingReminder()
   }
   else if action=="openReady",message.webView === webView,let timing=openingTiming,body["measurementID"] as? String == timing.launchID{
-   timing.mark("pageReady",page:body["page"] as? String);openingTiming=nil
+   timing.mark("pageReady",page:body["page"] as? String);openingTiming=nil;navigatePendingReminder()
   }
   else if action=="headerRegions" {
    if let rects=body["rects"] as? [[String:Double]] {headerControlRects=rects.compactMap{r in guard let x=r["x"],let y=r["y"],let w=r["width"],let h=r["height"],w>0,h>0 else{return nil};return NSRect(x:x,y:y,width:w,height:h)};alignTitlebar()}
   }
   else if action=="folders"{let panel=NSOpenPanel();panel.canChooseFiles=false;panel.canChooseDirectories=true;panel.allowsMultipleSelection = !(body["single"]as?Bool ?? false);panel.prompt=body["prompt"]as?String ?? "绑定资料夹";if let path=body["initial"]as?String,!path.isEmpty{panel.directoryURL=URL(fileURLWithPath:path)};panel.beginSheetModal(for:window){response in reply(["paths":response == .OK ? panel.urls.map{$0.path}:[]])}}
-  else if action=="refreshDaySummary"{refreshDaySummary()}
-  else if action=="refreshAuto"{if let observer=observer{observer.reload{reply(["ok":observer.networkError.isEmpty,"error":observer.networkError])}}else{reply(["ok":false,"error":"原生监听尚未就绪，请重新打开软件"])}}
+  else if action=="refreshDaySummary"{refreshDaySummary();schedulePendingSuggestions()}
+  else if action=="refreshAuto"{schedulePendingSuggestions();if let observer=observer{observer.reload{reply(["ok":observer.networkError.isEmpty,"error":observer.networkError])}}else{reply(["ok":false,"error":"原生监听尚未就绪，请重新打开软件"])}}
   else if action=="loadClientView"{reply(["ok":true,"hiddenClients":UserDefaults.standard.stringArray(forKey:"JournalHiddenClients") ?? []])}
   else if action=="saveClientView"{
    guard let hidden=body["hiddenClients"] as? [String],hidden.count<=128,hidden.allSatisfy({$0.count<=256}) else{reply(["ok":false,"error":"客户端选择无效，请重新选择"]);return}
@@ -548,13 +598,13 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
 
  func windowDidResize(_ notification:Notification){alignTitlebar()}
  func webView(_ webView:WKWebView,didFinish navigation:WKNavigation!){alignTitlebar();webView.evaluateJavaScript("window.journalSyncHeaderDragRegions && window.journalSyncHeaderDragRegions()",completionHandler:nil)}
- func handleOutput(_ text:String){outputBuffer+=text;guard !loaded else{return};for line in outputBuffer.components(separatedBy:.newlines){if line.hasPrefix("http://127.0.0.1:"),line.contains("?token="),let url=URL(string:line){loaded=true;startupTiming?.mark("backendReady");launchURL=url;startupTimer?.invalidate();webView?.load(URLRequest(url:url));if var components=URLComponents(url:url,resolvingAgainstBaseURL:false),let token=components.queryItems?.first(where:{$0.name=="token"})?.value{components.query=nil;components.path="/";if let base=components.url{observer=JournalObserver(server:base,token:token);observer?.onStatus={ [weak self] state in self?.updateTrackingMenu(state) };observer?.reload{ [weak self] in guard let self=self,self.backgroundLaunch,self.observer?.networkError.isEmpty==true else{return};self.startupTiming?.mark("monitorReady") }}};return}}}
+ func handleOutput(_ text:String){outputBuffer+=text;guard !loaded else{return};for line in outputBuffer.components(separatedBy:.newlines){if line.hasPrefix("http://127.0.0.1:"),line.contains("?token="),let url=URL(string:line){loaded=true;startupTiming?.mark("backendReady");launchURL=url;startupTimer?.invalidate();webView?.load(URLRequest(url:url));if var components=URLComponents(url:url,resolvingAgainstBaseURL:false),let token=components.queryItems?.first(where:{$0.name=="token"})?.value{components.query=nil;components.path="/";if let base=components.url{observer=JournalObserver(server:base,token:token);observer?.onStatus={ [weak self] state in self?.updateTrackingMenu(state) };refreshDaySummary();schedulePendingSuggestions();observer?.reload{ [weak self] in guard let self=self,self.backgroundLaunch,self.observer?.networkError.isEmpty==true else{return};self.startupTiming?.mark("monitorReady") }}};return}}}
  func showError(_ text:String){startupTimer?.invalidate();let alert=NSAlert();alert.messageText="项目手记暂时无法启动";alert.informativeText=String(text.prefix(1600));alert.runModal();terminating=true;if task?.isRunning==true{task?.terminate()};NSApp.terminate(nil)}
  func windowShouldClose(_ sender:NSWindow)->Bool{flushWindow{[weak self] ok in guard let self=self,ok else{return};self.webView?.configuration.userContentController.removeScriptMessageHandler(forName:"journalNative");self.webView?.navigationDelegate=nil;self.webView?.uiDelegate=nil;self.window?.delegate=nil;self.window?.contentView=nil;self.window?.close();self.window=nil;self.webView=nil;self.launchSurface=nil;self.titleDragArea=nil;self.headerControlRects=[];NSApp.setActivationPolicy(.accessory)};return false}
  func applicationShouldTerminateAfterLastWindowClosed(_ sender:NSApplication)->Bool{return false}
  func applicationShouldTerminate(_ sender:NSApplication)->NSApplication.TerminateReply{if terminating || !loaded{return .terminateNow};flushWindow{[weak self] ok in guard let self=self else{return};if !ok{let alert=NSAlert();alert.messageText="自动保存尚未完成";alert.informativeText="内容仍保留在窗口中。请检查填写内容或同步提示，再退出。";alert.runModal();NSApp.reply(toApplicationShouldTerminate:false);return};self.terminating=true;if let observer=self.observer{observer.flush{NSApp.reply(toApplicationShouldTerminate:true)}}else{NSApp.reply(toApplicationShouldTerminate:true)}};return .terminateLater}
 
- func applicationWillTerminate(_ notification:Notification){dailySummaryTimer?.invalidate();terminating=true;startupTimer?.invalidate();if task?.isRunning==true{task?.terminate()}}
+ func applicationWillTerminate(_ notification:Notification){dailySummaryTimer?.invalidate();pendingCheckTimer?.invalidate();pendingRefreshTask?.cancel();terminating=true;startupTimer?.invalidate();if task?.isRunning==true{task?.terminate()}}
  func webViewDidClose(_ webView:WKWebView){NSApp.terminate(nil)}
  func webView(_ webView:WKWebView,decidePolicyFor navigationAction:WKNavigationAction,decisionHandler:@escaping(WKNavigationActionPolicy)->Void){guard let url=navigationAction.request.url else{decisionHandler(.cancel);return};if navigationAction.shouldPerformDownload{decisionHandler(.download);return};if url.host=="127.0.0.1"||url.scheme=="about"||url.scheme=="blob"{decisionHandler(.allow)}else{decisionHandler(.cancel)}}
  func webView(_ webView:WKWebView,navigationAction:WKNavigationAction,didBecome download:WKDownload){download.delegate=self}
