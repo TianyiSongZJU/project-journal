@@ -420,12 +420,12 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   if let url=launchURL{webView.load(URLRequest(url:url))}
  }
  func installStatusItem(){
-  statusItem=NSStatusBar.system.statusItem(withLength:NSStatusItem.variableLength)
+  statusItem=NSStatusBar.system.statusItem(withLength:NSStatusItem.squareLength)
   if let button=statusItem?.button {
    button.image=NSImage(systemSymbolName:"square.grid.3x3.fill",accessibilityDescription:"项目手记")
-   button.imagePosition = .imageLeading
-   button.font=NSFont.monospacedDigitSystemFont(ofSize:11,weight:.medium)
-   button.title=" —"
+   button.imagePosition = .imageOnly
+   button.toolTip="项目手记"
+   button.title=""
   }
   let menu=NSMenu();menu.delegate=self
   let heading=NSMenuItem();let view=NSView(frame:NSRect(x:0,y:0,width:250,height:84))
@@ -450,14 +450,14 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
    DispatchQueue.main.async{
     guard let self=self else{return};self.dailySummaryLoading=false
     guard error==nil,(response as? HTTPURLResponse)?.statusCode==200,let data=data,let value=(try? JSONSerialization.jsonObject(with:data)) as? [String:Any],let hours=value["hours"] as? Double,formatter.string(from:Date())==day else{
-     self.statusItem?.button?.title=" —";self.dailyTimeLabel?.stringValue="暂时无法读取";self.dailyDetailLabel?.stringValue="请稍后重试";self.statusItem?.button?.toolTip="项目手记 · 今日总投入读取失败";return
+     self.statusItem?.button?.title="";self.dailyTimeLabel?.stringValue="暂时无法读取";self.dailyDetailLabel?.stringValue="请稍后重试";self.statusItem?.button?.toolTip="项目手记 · 今日总投入读取失败";return
     }
     let minutes=Int((hours*60).rounded()),h=minutes/60,m=minutes%60,missing=value["missing"] as? Int ?? 0,estimated=value["estimatedHours"] as? Double ?? 0
-    self.statusItem?.button?.title=h>0 ? String(format:" %d:%02d",h,m):" \(m)分"
+    self.statusItem?.button?.title=""
     self.dailyTimeLabel?.stringValue=h>0 ? "\(h)小时 \(m)分":"\(m)分钟"
     let details=(estimated>0 ? "含已配置估算":"已确认时间与其他已记时间")+(missing>0 ? " · \(missing)条待配置":"")
     self.dailyDetailLabel?.stringValue=details
-    self.statusItem?.button?.toolTip="项目手记 · 今日总投入 \(h)小时\(m)分\n\(details)"
+    self.statusItem?.button?.toolTip="项目手记"
    }
   }.resume()
  }

@@ -35,7 +35,7 @@ const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),cryp
   assert.equal(await page.evaluate(async()=>(await fetch('/api/auto/day-summary?date=invalid')).status),400);
 
   await page.locator('#mode-time').click();await page.locator('.tr-row').first().waitFor();
-  assert.equal(await page.locator('.tr-daily-trend svg').count(),14);assert.equal(await page.locator('.tr-row').count(),14);assert.equal(await page.locator('.tr-row').first().locator('.tr-cell').count(),64);
+  assert.equal(await page.locator('.tr-daily-bar-track').count(),14);assert.equal(await page.locator('.tr-row').count(),14);assert.equal(await page.locator('.tr-row').first().locator('.tr-cell').count(),64);
   assert.equal(await page.locator('#time-workspace').isVisible(),true);assert.equal(await page.locator('#year-calendar').isVisible(),false);
   assert.equal(await page.locator('.tr-inspector-host').isVisible(),false);
   assert.match(await page.locator('.tr-overview p').innerText(),/7/);

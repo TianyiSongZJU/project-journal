@@ -246,12 +246,11 @@ html.native-mac:has(#page-review.time-view:not([hidden])){border-radius:0 0 16px
 .tr-row:is(.is-hovered,:has(:focus-visible)) .tr-day-total,.tr-days.is-dense .tr-row:is(.is-hovered,:has(:focus-visible)) .tr-day-total{font-size:min(16px,calc(var(--tr-row-height,24px) - 2px));font-weight:700;color:#294f39;text-shadow:0 1px 2px #fff}
 .tr-day-tip-date>time{font-size:12px;font-weight:650;letter-spacing:.025em;color:#456940}
 
-/* A quiet vertical daily trend; exact values retain their own right-aligned lane. */
-.tr-grid{--tr-total:112px}
-.tr-daily-trend{position:relative;height:100%;min-height:0;display:flex;align-items:center;justify-content:flex-end}
-.tr-daily-trend>svg{position:absolute;left:0;top:0;width:calc(100% - 44px);height:100%;overflow:hidden;pointer-events:none}
-.tr-trend-fill{fill:#93ad8614}
-.tr-trend-line{fill:none;stroke:#8fa58499;stroke-width:1.1;vector-effect:non-scaling-stroke;stroke-linejoin:round}
-.tr-trend-dot{fill:none;stroke:#779469;stroke-width:4;stroke-linecap:round;opacity:0;vector-effect:non-scaling-stroke}
-.tr-row:is(.is-hovered,.is-selected,:has(:focus-visible)) .tr-daily-trend .tr-trend-dot{opacity:1}
-@media(max-width:650px){.tr-grid{--tr-total:76px}.tr-daily-trend>svg{width:calc(100% - 36px)}}
+/* Quiet daily bars sit beside, rather than behind, the exact durations. */
+.tr-grid{--tr-total:92px}
+.tr-daily-bars{height:100%;min-height:0;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tr-daily-bar-track{display:block;flex:1;min-width:0;height:min(5px,calc(var(--tr-row-height,24px) - 6px))}
+.tr-daily-bar-track>i{display:block;height:100%;border-radius:2px;background:#91a58155}
+.tr-daily-bars>span:last-child{min-width:39px;text-align:right}
+.tr-row:is(.is-hovered,.is-selected,:has(:focus-visible)) .tr-daily-bar-track>i{background:#819c6f88}
+@media(max-width:650px){.tr-grid{--tr-total:70px}.tr-daily-bars{gap:5px}.tr-daily-bars>span:last-child{min-width:33px}}
