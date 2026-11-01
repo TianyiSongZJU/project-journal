@@ -351,6 +351,32 @@ private let journalMenuMuted = NSColor(name:nil){appearance in
 private func journalMenuSymbol(_ name:String,_ size:CGFloat=14)->NSImage? {
  NSImage(systemSymbolName:name,accessibilityDescription:nil)?.withSymbolConfiguration(.init(pointSize:size,weight:.semibold))
 }
+// All menu glyphs share geometric centering and a 1.4 pt stroke.
+private func journalMenuGlyphPath(_ name:String)->NSBezierPath {
+ let p=NSBezierPath()
+ switch name {
+ case "tray":
+  p.move(to:NSPoint(x:1,y:5));p.line(to:NSPoint(x:2.2,y:7.5));p.line(to:NSPoint(x:7.8,y:7.5));p.line(to:NSPoint(x:9,y:5));p.line(to:NSPoint(x:9,y:2.5));p.line(to:NSPoint(x:1,y:2.5));p.close()
+  p.move(to:NSPoint(x:1,y:5));p.line(to:NSPoint(x:3,y:5));p.line(to:NSPoint(x:3.8,y:3.8));p.line(to:NSPoint(x:6.2,y:3.8));p.line(to:NSPoint(x:7,y:5));p.line(to:NSPoint(x:9,y:5))
+ case "pause":
+  for x:CGFloat in [3.2,6.8]{p.move(to:NSPoint(x:x,y:2.1));p.line(to:NSPoint(x:x,y:7.9))}
+ case "play":
+  p.move(to:NSPoint(x:3,y:2));p.line(to:NSPoint(x:7,y:5));p.line(to:NSPoint(x:3,y:8));p.close()
+ case "exclamationmark":
+  p.move(to:NSPoint(x:5,y:4.2));p.line(to:NSPoint(x:5,y:8));p.move(to:NSPoint(x:5,y:2));p.line(to:NSPoint(x:5,y:2.01))
+ default:
+  p.appendOval(in:NSRect(x:1,y:1,width:8,height:8));p.move(to:NSPoint(x:5,y:7.5));p.line(to:NSPoint(x:5,y:5));p.line(to:NSPoint(x:3,y:5))
+ }
+ return p
+}
+private func journalMenuGlyph(_ name:String,_ size:CGFloat=10,_ color:NSColor = .labelColor)->NSImage {
+ NSImage(size:NSSize(width:size,height:size),flipped:false){rect in
+  let path=journalMenuGlyphPath(name)
+  path.transform(using:AffineTransform(scale:size/10))
+  path.transform(using:AffineTransform(translationByX:rect.midX-path.bounds.midX,byY:rect.midY-path.bounds.midY))
+  path.lineWidth=1.4;path.lineCapStyle = .round;path.lineJoinStyle = .round;color.setStroke();path.stroke();return true
+ }
+}
 final class JournalMenuDividerView:NSView {
  override var allowsVibrancy:Bool{false}
  override func draw(_ dirtyRect:NSRect){
@@ -366,7 +392,7 @@ private func journalMenuDivider()->NSMenuItem {
 private func journalPendingMenuTitle(_ count:Int)->NSAttributedString {
  let image=NSImage(size:NSSize(width:20,height:20),flipped:false){rect in
   let circle=NSBezierPath(ovalIn:rect.insetBy(dx:0.7,dy:0.7));journalMenuGreen.withAlphaComponent(0.14).setFill();circle.fill();journalMenuGreen.withAlphaComponent(0.18).setStroke();circle.lineWidth=1.4;circle.stroke()
-  if let symbol=journalMenuSymbol("exclamationmark",10)?.withSymbolConfiguration(.init(paletteColors:[journalMenuGreen])){symbol.draw(in:NSRect(x:5,y:5,width:10,height:10))};return true
+  journalMenuGlyph("exclamationmark",10,journalMenuGreen).draw(in:NSRect(x:5,y:5,width:10,height:10));return true
  }
  let attachment=NSTextAttachment();attachment.image=image;attachment.bounds=NSRect(x:0,y:-5,width:20,height:20)
  let text=NSMutableAttributedString(attachment:attachment)
@@ -384,7 +410,7 @@ final class JournalMenuSummaryView:NSView {
  override init(frame:NSRect){
   super.init(frame:frame)
   caption.font = .systemFont(ofSize:11,weight:.medium);caption.textColor = .secondaryLabelColor
-  icon.image=journalMenuSymbol("clock");icon.contentTintColor = .secondaryLabelColor
+  icon.image=journalMenuGlyph("clock",14,.secondaryLabelColor);icon.contentTintColor = .secondaryLabelColor
   dateLabel.font = .systemFont(ofSize:10,weight:.regular);dateLabel.textColor=journalMenuMuted;dateLabel.alignment = .right
   timeLabel.font = .monospacedDigitSystemFont(ofSize:30,weight:.semibold);timeLabel.textColor=journalMenuGreen
   detailLabel.font = .systemFont(ofSize:10);detailLabel.textColor = .secondaryLabelColor;detailLabel.isHidden=true
@@ -424,12 +450,13 @@ final class JournalMenuInfoView:NSView {
  let icon=NSImageView()
  let control=NSButton()
  var isEmphasized=false
+ var toggleSymbol="pause"
  override init(frame:NSRect){
   super.init(frame:frame)
   titleLabel.font = .systemFont(ofSize:12,weight:.medium);titleLabel.textColor = .labelColor
   detailLabel.font = .systemFont(ofSize:10);detailLabel.alignment = .right;detailLabel.textColor=journalMenuMuted;detailLabel.lineBreakMode = .byTruncatingTail
   addSubview(titleLabel);addSubview(detailLabel);addSubview(icon)
-  control.isHidden=true;control.isBordered=false;control.imagePosition = .imageOnly;control.contentTintColor=journalMenuGreen;addSubview(control)
+  control.isHidden=true;control.title="";control.isTransparent=true;control.isBordered=false;control.imagePosition = .imageOnly;control.contentTintColor=journalMenuGreen;addSubview(control)
   setAccessibilityElement(true);setAccessibilityRole(.staticText)
  }
  required init?(coder:NSCoder){fatalError("init(coder:) has not been implemented")}
@@ -447,9 +474,10 @@ final class JournalMenuInfoView:NSView {
   let color=isEmphasized ? journalMenuGreen:NSColor.labelColor
   let circle=NSBezierPath(ovalIn:NSRect(x:15,y:(bounds.height-20)/2,width:20,height:20).insetBy(dx:0.7,dy:0.7))
   color.withAlphaComponent(isEmphasized ? 0.14:0.07).setFill();circle.fill();color.withAlphaComponent(isEmphasized ? 0.18:0.06).setStroke();circle.lineWidth=1.4;circle.stroke()
+  if !control.isHidden{journalMenuGlyph(toggleSymbol,10,isEmphasized ? journalMenuGreen:journalMenuMuted).draw(in:NSRect(x:20,y:(bounds.height-10)/2,width:10,height:10))}
  }
- func update(title:String,detail:String,symbol:String,color:NSColor){titleLabel.stringValue=title;detailLabel.stringValue=detail;let inner=symbol=="minus.circle" ? "minus":symbol=="checkmark.circle" ? "checkmark":symbol=="exclamationmark.circle" ? "exclamationmark":symbol=="pause.circle" ? "pause.fill":"arrow.clockwise"
-  icon.image=journalMenuSymbol(inner,10);icon.contentTintColor=color;control.contentTintColor=color;needsDisplay=true;setAccessibilityLabel(title+"，"+detail);needsLayout=true}
+ func update(title:String,detail:String,symbol:String,color:NSColor){titleLabel.stringValue=title;detailLabel.stringValue=detail;let inner=symbol=="tray" ? "tray":symbol=="exclamationmark.circle" ? "exclamationmark":"clock"
+  icon.image=journalMenuGlyph(inner,10,color);icon.contentTintColor=color;control.contentTintColor=color;needsDisplay=true;setAccessibilityLabel(title+"，"+detail);needsLayout=true}
 }
 
 final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate, WKScriptMessageHandler, NSMenuDelegate {
@@ -557,8 +585,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
 
   menu.addItem(journalMenuDivider())
   let open=menu.addItem(withTitle:"打开项目手记",action:#selector(openJournal),keyEquivalent:"");open.target=self;open.image=journalMenuSymbol("macwindow")
-  open.attributedTitle=NSAttributedString(string:"打开项目手记",attributes:[.font:NSFont.systemFont(ofSize:13,weight:.medium)])
-  let quit=menu.addItem(withTitle:"退出项目手记",action:#selector(NSApplication.terminate(_:)),keyEquivalent:"");quit.target=NSApp;quit.image=journalMenuSymbol("power");quit.attributedTitle=NSAttributedString(string:"退出项目手记",attributes:[.font:NSFont.systemFont(ofSize:12),.foregroundColor:NSColor.secondaryLabelColor])
+  let quit=menu.addItem(withTitle:"退出项目手记",action:#selector(NSApplication.terminate(_:)),keyEquivalent:"");quit.target=NSApp;quit.image=journalMenuSymbol("power")
   statusItem?.menu=menu
   let timer=Timer(timeInterval:30,repeats:true){[weak self] _ in self?.refreshDaySummary()};RunLoop.main.add(timer,forMode:.common);dailySummaryTimer=timer
   let pendingTimer=Timer(timeInterval:120,repeats:true){[weak self] _ in self?.refreshPendingSuggestions()};RunLoop.main.add(pendingTimer,forMode:.common);pendingCheckTimer=pendingTimer
@@ -610,7 +637,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
     self.pendingCheckInFlight=false
     guard let days=result else{if !self.pendingHasResult{self.menuReminderInfo?.update(title:"待处理建议",detail:"稍后重试",symbol:"exclamationmark.circle",color:.systemOrange);item.isEnabled=false};return}
     self.pendingHasResult=true;self.updatePendingDayCount(days.count);item.submenu=nil
-    if days.isEmpty{item.attributedTitle=nil;item.setAccessibilityLabel(nil);item.view=self.menuReminderInfo;item.title="待处理建议";self.menuReminderInfo?.update(title:"待处理建议",detail:incomplete ? "部分线索待同步":"暂无",symbol:incomplete ? "arrow.triangle.2.circlepath":"minus.circle",color:journalMenuMuted);item.isEnabled=false;return}
+    if days.isEmpty{item.attributedTitle=nil;item.setAccessibilityLabel(nil);item.view=self.menuReminderInfo;item.title="待处理建议";self.menuReminderInfo?.update(title:"待处理建议",detail:incomplete ? "部分线索待同步":"暂无",symbol:incomplete ? "arrow.triangle.2.circlepath":"tray",color:journalMenuMuted);item.isEnabled=false;return}
     item.view=nil;item.title="待处理建议";item.image=nil;item.attributedTitle=journalPendingMenuTitle(days.count);item.setAccessibilityLabel("待处理建议，\(days.count)天");item.toolTip="过去7天（不含今天）有\(days.count)天建议待划取"+(incomplete ? "，部分线索待同步":"");item.isEnabled=true
     let dates=NSMenu();dates.autoenablesItems=false
     for day in days {
@@ -638,11 +665,11 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
  func updateTrackingMenu(_ state:[String:Any]){
   let enabled=state["enabled"]as?Bool ?? false,activity=state["activityEnabled"]as?Bool ?? false,status=state["status"]as?String ?? "正在读取"
   let listening=status=="监听中",paused=status=="已暂停",title="自动记录"
-  let detail=listening ? "记录中":paused ? "已暂停":status
+  let detail=listening ? (activity ? "文件与时长":"仅文件"):paused ? "已暂停":status
   menuTrackingInfo?.toolTip=listening ? (activity ? "记录文件活动，并辅助回忆投入时长":"仅记录文件活动"):status
   menuTrackingInfo?.update(title:title,detail:detail,symbol:listening ? "record.circle":paused ? "pause.circle":"exclamationmark.circle",color:listening ? journalMenuGreen:paused ? .secondaryLabelColor:.systemOrange)
   trackingToggleItem?.image=journalMenuSymbol(enabled ? "pause.circle":"play.circle");trackingToggleItem?.title=enabled ? "暂停自动记录":"继续自动记录";trackingToggleItem?.isEnabled = enabled || activity || status != "待绑定资料夹";trackingToggleItem?.state = .off
-  menuTrackingInfo?.control.image=journalMenuSymbol(enabled ? "pause.fill":"play.fill",10);menuTrackingInfo?.control.toolTip=(enabled ? "暂停自动记录":"继续自动记录")+(listening ? (activity ? " · 文件与时长":" · 仅文件"):"");menuTrackingInfo?.control.setAccessibilityLabel(enabled ? "暂停自动记录":"继续自动记录");menuTrackingInfo?.control.isEnabled=trackingToggleItem?.isEnabled ?? false;menuTrackingInfo?.isEmphasized=listening;menuTrackingInfo?.control.contentTintColor=listening ? journalMenuGreen:journalMenuMuted;menuTrackingInfo?.needsDisplay=true
+  menuTrackingInfo?.toggleSymbol=enabled ? "pause":"play";menuTrackingInfo?.control.toolTip=(enabled ? "暂停自动记录":"继续自动记录")+(listening ? (activity ? " · 文件与时长":" · 仅文件"):"");menuTrackingInfo?.control.setAccessibilityLabel(enabled ? "暂停自动记录":"继续自动记录");menuTrackingInfo?.control.isEnabled=trackingToggleItem?.isEnabled ?? false;menuTrackingInfo?.isEmphasized=listening;menuTrackingInfo?.control.contentTintColor=listening ? journalMenuGreen:journalMenuMuted;menuTrackingInfo?.needsDisplay=true
  }
 
  func menuWillOpen(_ menu:NSMenu){observer?.reload();refreshDaySummary()}
