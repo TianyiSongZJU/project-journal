@@ -341,6 +341,55 @@ final class JournalTitleText: NSView {
  }
 }
 
+// Menu views use semantic colors so the system material remains readable in either appearance.
+private let journalMenuGreen = NSColor(name:nil){appearance in
+ appearance.bestMatch(from:[.darkAqua,.aqua]) == .darkAqua ? NSColor(srgbRed:0.64,green:0.79,blue:0.65,alpha:1) : NSColor(srgbRed:0.23,green:0.39,blue:0.29,alpha:1)
+}
+final class JournalMenuSummaryView:NSView {
+ let timeLabel=NSTextField(labelWithString:"正在读取…")
+ let detailLabel=NSTextField(labelWithString:"")
+ let dateLabel=NSTextField(labelWithString:"")
+ override init(frame:NSRect){
+  super.init(frame:frame)
+  let caption=NSTextField(labelWithString:"今日投入");caption.font = .systemFont(ofSize:12,weight:.semibold);caption.textColor = journalMenuGreen;caption.frame=NSRect(x:50,y:75,width:125,height:18);addSubview(caption)
+  let icon=NSImageView(frame:NSRect(x:24,y:75,width:16,height:16));icon.image=NSImage(systemSymbolName:"clock",accessibilityDescription:nil);icon.contentTintColor=journalMenuGreen;addSubview(icon)
+  dateLabel.font = .systemFont(ofSize:11,weight:.medium);dateLabel.textColor = .secondaryLabelColor;dateLabel.alignment = .right;dateLabel.frame=NSRect(x:182,y:76,width:86,height:16);addSubview(dateLabel)
+  timeLabel.font = .monospacedDigitSystemFont(ofSize:30,weight:.semibold);timeLabel.textColor=journalMenuGreen;timeLabel.frame=NSRect(x:22,y:28,width:248,height:41);addSubview(timeLabel)
+  detailLabel.font = .systemFont(ofSize:10);detailLabel.textColor = .secondaryLabelColor;detailLabel.frame=NSRect(x:24,y:12,width:244,height:15);addSubview(detailLabel)
+  setAccessibilityElement(true);setAccessibilityRole(.staticText)
+ }
+ required init?(coder:NSCoder){fatalError("init(coder:) has not been implemented")}
+ override func draw(_ dirtyRect:NSRect){
+  let rect=bounds.insetBy(dx:10,dy:5),path=NSBezierPath(roundedRect:rect,xRadius:12,yRadius:12)
+  journalMenuGreen.withAlphaComponent(0.07).setFill();path.fill()
+  NSColor.labelColor.withAlphaComponent(0.035).setStroke();path.lineWidth=1;path.stroke()
+ }
+ func setTime(hours:Int,minutes:Int){
+  let text=NSMutableAttributedString(string:"")
+  func append(_ value:String,_ size:CGFloat,_ weight:NSFont.Weight,_ color:NSColor){text.append(NSAttributedString(string:value,attributes:[.font:NSFont.monospacedDigitSystemFont(ofSize:size,weight:weight),.foregroundColor:color]))}
+  if hours>0{append("\(hours)",32,.semibold,journalMenuGreen);append(" 小时  ",12,.medium,.secondaryLabelColor)}
+  append("\(minutes)",32,.semibold,journalMenuGreen);append(" 分钟",12,.medium,.secondaryLabelColor)
+  timeLabel.attributedStringValue=text
+  let formatter=DateFormatter();formatter.locale=Locale(identifier:"zh_CN");formatter.dateFormat="M月d日";dateLabel.stringValue=formatter.string(from:Date())
+  setAccessibilityLabel("今日投入，\(hours)小时\(minutes)分钟。\(detailLabel.stringValue)")
+ }
+}
+final class JournalMenuInfoView:NSView {
+ let titleLabel=NSTextField(labelWithString:"")
+ let detailLabel=NSTextField(labelWithString:"")
+ let icon=NSImageView(frame:NSRect(x:24,y:21,width:16,height:16))
+ var tint:NSColor = .secondaryLabelColor
+ override init(frame:NSRect){
+  super.init(frame:frame)
+  titleLabel.font = .systemFont(ofSize:12,weight:.semibold);titleLabel.textColor = .labelColor;titleLabel.frame=NSRect(x:52,y:30,width:216,height:18);addSubview(titleLabel)
+  detailLabel.font = .systemFont(ofSize:11);detailLabel.textColor = .secondaryLabelColor;detailLabel.frame=NSRect(x:52,y:12,width:216,height:16);detailLabel.lineBreakMode = .byTruncatingTail;addSubview(detailLabel);addSubview(icon)
+  setAccessibilityElement(true);setAccessibilityRole(.staticText)
+ }
+ required init?(coder:NSCoder){fatalError("init(coder:) has not been implemented")}
+ func update(title:String,detail:String,symbol:String,color:NSColor){titleLabel.stringValue=title;detailLabel.stringValue=detail;icon.image=NSImage(systemSymbolName:symbol,accessibilityDescription:nil);icon.contentTintColor=color;tint=color;setAccessibilityLabel(title+"，"+detail);needsDisplay=true}
+ override func draw(_ dirtyRect:NSRect){tint.withAlphaComponent(0.09).setFill();NSBezierPath(ovalIn:NSRect(x:17,y:14,width:30,height:30)).fill()}
+}
+
 final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate, WKScriptMessageHandler, NSMenuDelegate {
  var startupTiming:JournalStartupTiming?
  var openingTiming:JournalStartupTiming?
@@ -363,8 +412,9 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
  var pendingReminderDate:String?
  var dailySummaryTimer:Timer?
  var dailySummaryLoading=false
- var dailyTimeLabel:NSTextField?
- var dailyDetailLabel:NSTextField?
+ var menuSummary:JournalMenuSummaryView?
+ var menuReminderInfo:JournalMenuInfoView?
+ var menuTrackingInfo:JournalMenuInfoView?
  var trackingStatusItem:NSMenuItem?
  var trackingToggleItem:NSMenuItem?
  var loaded = false
@@ -435,18 +485,16 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
    button.toolTip="项目手记"
    button.title=""
   }
-  let menu=NSMenu();menu.delegate=self
-  let heading=NSMenuItem();let view=NSView(frame:NSRect(x:0,y:0,width:250,height:84))
-  let caption=NSTextField(labelWithString:"今日总投入");caption.font = .systemFont(ofSize:11,weight:.medium);caption.textColor = .secondaryLabelColor;caption.frame=NSRect(x:16,y:58,width:218,height:16);view.addSubview(caption)
-  let time=NSTextField(labelWithString:"正在读取…");time.font = .monospacedDigitSystemFont(ofSize:25,weight:.medium);time.textColor = .labelColor;time.frame=NSRect(x:16,y:22,width:218,height:32);view.addSubview(time);dailyTimeLabel=time
-  let note=NSTextField(labelWithString:"已确认时间与其他已记时间");note.font = .systemFont(ofSize:10);note.textColor = .secondaryLabelColor;note.frame=NSRect(x:16,y:5,width:218,height:15);view.addSubview(note);dailyDetailLabel=note
-  heading.view=view;menu.addItem(heading);menu.addItem(.separator())
-  let reminder=NSMenuItem(title:"正在准备近7天建议…",action:nil,keyEquivalent:"");reminder.isEnabled=false;reminder.image=NSImage(systemSymbolName:"clock.badge.exclamationmark",accessibilityDescription:nil);menu.addItem(reminder);reminderItem=reminder;menu.addItem(.separator())
-  let state=NSMenuItem(title:"正在读取记录状态…",action:nil,keyEquivalent:"");state.isEnabled=false;state.image=NSImage(systemSymbolName:"circle.dotted",accessibilityDescription:nil);menu.addItem(state);trackingStatusItem=state
-  let toggle=menu.addItem(withTitle:"继续自动记录",action:#selector(toggleTracking),keyEquivalent:"");toggle.isEnabled=false;toggle.image=NSImage(systemSymbolName:"play",accessibilityDescription:nil);trackingToggleItem=toggle
+  let menu=NSMenu();menu.delegate=self;menu.minimumWidth=292
+  menu.autoenablesItems=false
+  let heading=NSMenuItem();let summary=JournalMenuSummaryView(frame:NSRect(x:0,y:0,width:292,height:108));heading.view=summary;menuSummary=summary;menu.addItem(heading)
+  let reminder=NSMenuItem(title:"近期建议",action:nil,keyEquivalent:"");let reminderInfo=JournalMenuInfoView(frame:NSRect(x:0,y:0,width:292,height:60));reminderInfo.update(title:"近期建议",detail:"正在准备近7天建议…",symbol:"clock.arrow.circlepath",color:.secondaryLabelColor);reminder.view=reminderInfo;reminder.isEnabled=false;menuReminderInfo=reminderInfo;menu.addItem(reminder);reminderItem=reminder
   menu.addItem(.separator())
-  let open=menu.addItem(withTitle:"打开项目手记",action:#selector(openJournal),keyEquivalent:"");open.image=NSImage(systemSymbolName:"rectangle.on.rectangle",accessibilityDescription:nil)
-  let quit=menu.addItem(withTitle:"退出项目手记",action:#selector(NSApplication.terminate(_:)),keyEquivalent:"");quit.image=NSImage(systemSymbolName:"power",accessibilityDescription:nil)
+  let state=NSMenuItem();let trackingInfo=JournalMenuInfoView(frame:NSRect(x:0,y:0,width:292,height:60));trackingInfo.update(title:"自动记录",detail:"正在读取记录状态…",symbol:"waveform.path",color:.secondaryLabelColor);state.view=trackingInfo;state.isEnabled=false;menuTrackingInfo=trackingInfo;menu.addItem(state);trackingStatusItem=state
+  let toggle=menu.addItem(withTitle:"继续自动记录",action:#selector(toggleTracking),keyEquivalent:"");toggle.isEnabled=false;toggle.image=NSImage(systemSymbolName:"play.circle",accessibilityDescription:nil);toggle.target=self;trackingToggleItem=toggle
+  menu.addItem(.separator())
+  let open=menu.addItem(withTitle:"打开项目手记",action:#selector(openJournal),keyEquivalent:"");open.target=self;open.image=NSImage(systemSymbolName:"macwindow",accessibilityDescription:nil)
+  let quit=menu.addItem(withTitle:"退出项目手记",action:#selector(NSApplication.terminate(_:)),keyEquivalent:"");quit.target=NSApp;quit.image=NSImage(systemSymbolName:"power",accessibilityDescription:nil)
   statusItem?.menu=menu
   let timer=Timer(timeInterval:30,repeats:true){[weak self] _ in self?.refreshDaySummary()};RunLoop.main.add(timer,forMode:.common);dailySummaryTimer=timer
   let pendingTimer=Timer(timeInterval:120,repeats:true){[weak self] _ in self?.refreshPendingSuggestions()};RunLoop.main.add(pendingTimer,forMode:.common);pendingCheckTimer=pendingTimer
@@ -460,13 +508,12 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
    DispatchQueue.main.async{
     guard let self=self else{return};self.dailySummaryLoading=false
     guard error==nil,(response as? HTTPURLResponse)?.statusCode==200,let data=data,let value=(try? JSONSerialization.jsonObject(with:data)) as? [String:Any],let hours=value["hours"] as? Double,formatter.string(from:Date())==day else{
-     self.statusItem?.button?.title="";self.dailyTimeLabel?.stringValue="暂时无法读取";self.dailyDetailLabel?.stringValue="请稍后重试";self.statusItem?.button?.toolTip="项目手记 · 今日总投入读取失败";return
+     self.statusItem?.button?.title="";self.menuSummary?.timeLabel.font = .systemFont(ofSize:18,weight:.medium);self.menuSummary?.timeLabel.stringValue="暂时无法读取";self.menuSummary?.detailLabel.stringValue="请稍后重试";self.menuSummary?.setAccessibilityLabel("今日投入暂时无法读取，请稍后重试");self.statusItem?.button?.toolTip="项目手记 · 今日总投入读取失败";return
     }
     let minutes=Int((hours*60).rounded()),h=minutes/60,m=minutes%60,missing=value["missing"] as? Int ?? 0,estimated=value["estimatedHours"] as? Double ?? 0
     self.statusItem?.button?.title=""
-    self.dailyTimeLabel?.stringValue=h>0 ? "\(h)小时 \(m)分":"\(m)分钟"
-    let details=(estimated>0 ? "含已配置估算":"已确认时间与其他已记时间")+(missing>0 ? " · \(missing)条待配置":"")
-    self.dailyDetailLabel?.stringValue=details
+    self.menuSummary?.detailLabel.stringValue=(estimated>0 ? "含估算投入":"")+(missing>0 ? (estimated>0 ? " · ":"")+"\(missing)条记录待配置":"")
+    self.menuSummary?.setTime(hours:h,minutes:m)
     self.statusItem?.button?.toolTip="项目手记"
    }
   }.resume()
@@ -477,7 +524,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
  func refreshPendingSuggestions(){
   guard let observer=observer,!pendingCheckInFlight else{return}
   pendingCheckInFlight=true;reminderGeneration += 1;let generation=reminderGeneration
-  if !pendingHasResult{reminderItem?.title="正在准备近7天建议…";reminderItem?.isEnabled=false}
+  if !pendingHasResult{menuReminderInfo?.update(title:"近期建议",detail:"正在准备近7天建议…",symbol:"clock.arrow.circlepath",color:.secondaryLabelColor);reminderItem?.isEnabled=false}
 
   let formatter=DateFormatter();formatter.locale=Locale(identifier:"en_US_POSIX");formatter.dateFormat="yyyy-MM-dd"
   var parts=URLComponents(url:observer.server.appendingPathComponent("api/auto/timeline"),resolvingAgainstBaseURL:false)!;parts.queryItems=[URLQueryItem(name:"reminders",value:formatter.string(from:Date()))]
@@ -492,10 +539,10 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
    DispatchQueue.main.async{
     guard let self=self,generation==self.reminderGeneration,let item=self.reminderItem else{return}
     self.pendingCheckInFlight=false
-    guard let days=result else{if !self.pendingHasResult{item.title="建议检查暂不可用";item.isEnabled=false};return}
+    guard let days=result else{if !self.pendingHasResult{self.menuReminderInfo?.update(title:"近期建议",detail:"暂时无法检查，稍后自动重试",symbol:"exclamationmark.circle",color:.systemOrange);item.isEnabled=false};return}
     self.pendingHasResult=true;item.submenu=nil
-    if days.isEmpty{item.title=incomplete ? "部分线索未同步完整，暂未发现待划定建议":"近7天没有待划定建议";item.isEnabled=false;return}
-    item.title="近7天有 \(days.count) 天建议待划定"+(incomplete ? "（部分线索待同步）":"");item.isEnabled=true
+    if days.isEmpty{item.view=self.menuReminderInfo;item.title="近期建议";self.menuReminderInfo?.update(title:"近期建议",detail:incomplete ? "部分线索待同步，暂未发现建议":"近7天暂无待处理建议",symbol:incomplete ? "arrow.triangle.2.circlepath":"checkmark",color:incomplete ? .secondaryLabelColor:journalMenuGreen);item.isEnabled=false;return}
+    item.view=nil;item.title="待处理建议 · \(days.count) 天"+(incomplete ? " · 待同步":"");item.image=NSImage(systemSymbolName:"clock.badge.exclamationmark",accessibilityDescription:nil)?.withSymbolConfiguration(.init(paletteColors:[.systemOrange]));item.image?.isTemplate=false;item.isEnabled=true
     let dates=NSMenu();dates.autoenablesItems=false
     for day in days {
      guard let date=day["date"] as? String else{continue};let count=day["count"] as? Int ?? 0,minutes=day["minutes"] as? Int ?? 0
@@ -510,7 +557,14 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   guard let date=pendingReminderDate else{return};pendingReminderDate=nil
   webView?.callAsyncJavaScript("return window.journalOpenTimelineDate ? await window.journalOpenTimelineDate(date) : false;",arguments:["date":date],in:nil,in:.page,completionHandler:nil)
  }
- func updateTrackingMenu(_ state:[String:Any]){let enabled=state["enabled"]as?Bool ?? false;let activity=state["activityEnabled"]as?Bool ?? false;let status=state["status"]as?String ?? "正在读取";let label=status=="监听中" ? "监听中 · \(activity ? "文件＋时长辅助":"仅文件活动")":status;trackingStatusItem?.title=label;trackingStatusItem?.image=NSImage(systemSymbolName:enabled ? "waveform.path":"pause.circle",accessibilityDescription:nil);trackingToggleItem?.image=NSImage(systemSymbolName:enabled ? "pause":"play",accessibilityDescription:nil);trackingToggleItem?.title=enabled ? "暂停自动记录":"继续自动记录";trackingToggleItem?.isEnabled = enabled || activity || status != "待绑定资料夹";trackingToggleItem?.state = .off}
+ func updateTrackingMenu(_ state:[String:Any]){
+  let enabled=state["enabled"]as?Bool ?? false,activity=state["activityEnabled"]as?Bool ?? false,status=state["status"]as?String ?? "正在读取"
+  let listening=status=="监听中",paused=status=="已暂停",title=listening ? "自动记录中":paused ? "自动记录已暂停":"自动记录"
+  let detail=listening ? (activity ? "文件活动与时长辅助":"仅记录文件活动"):status
+  menuTrackingInfo?.update(title:title,detail:detail,symbol:listening ? "waveform.path":paused ? "pause.fill":"exclamationmark.circle",color:listening ? journalMenuGreen:paused ? .secondaryLabelColor:.systemOrange)
+  trackingToggleItem?.image=NSImage(systemSymbolName:enabled ? "pause.circle":"play.circle",accessibilityDescription:nil);trackingToggleItem?.title=enabled ? "暂停自动记录":"继续自动记录";trackingToggleItem?.isEnabled = enabled || activity || status != "待绑定资料夹";trackingToggleItem?.state = .off
+ }
+
  func menuWillOpen(_ menu:NSMenu){observer?.reload();refreshDaySummary()}
 
  @objc func openJournal(){showJournal(source:"statusBar")}
