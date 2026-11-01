@@ -345,6 +345,9 @@ final class JournalTitleText: NSView {
 private let journalMenuGreen = NSColor(name:nil){appearance in
  appearance.bestMatch(from:[.darkAqua,.aqua]) == .darkAqua ? NSColor(srgbRed:0.64,green:0.79,blue:0.65,alpha:1) : NSColor(srgbRed:0.23,green:0.39,blue:0.29,alpha:1)
 }
+private let journalMenuMuted = NSColor(name:nil){appearance in
+ appearance.bestMatch(from:[.darkAqua,.aqua]) == .darkAqua ? NSColor.white.withAlphaComponent(0.48):NSColor.black.withAlphaComponent(0.42)
+}
 private func journalMenuSymbol(_ name:String,_ size:CGFloat=14)->NSImage? {
  NSImage(systemSymbolName:name,accessibilityDescription:nil)?.withSymbolConfiguration(.init(pointSize:size,weight:.semibold))
 }
@@ -367,16 +370,19 @@ final class JournalMenuSummaryView:NSView {
  required init?(coder:NSCoder){fatalError("init(coder:) has not been implemented")}
  override func layout(){
   super.layout()
-  let center=bounds.height-18
-  icon.frame=NSRect(x:18,y:center-7,width:14,height:14)
-  caption.frame=NSRect(x:40,y:center-9,width:112,height:18)
-  dateLabel.frame=NSRect(x:164,y:center-9,width:78,height:18)
-  timeLabel.frame=NSRect(x:16,y:detailLabel.isHidden ? 2:20,width:228,height:39)
+  let textY=bounds.height-24
+  caption.frame=NSRect(x:40,y:textY,width:112,height:caption.fittingSize.height)
+  dateLabel.frame=NSRect(x:164,y:textY,width:78,height:dateLabel.fittingSize.height)
+  let baseline=caption.frame.minY+caption.lastBaselineOffsetFromBottom
+  dateLabel.frame.origin.y=baseline-dateLabel.lastBaselineOffsetFromBottom
+  let opticalCenter=baseline+(caption.font?.capHeight ?? 8)/2
+  icon.frame=NSRect(x:18,y:opticalCenter-7,width:14,height:14)
+  timeLabel.frame=NSRect(x:16,y:detailLabel.isHidden ? 0:18,width:228,height:39)
   detailLabel.frame=NSRect(x:18,y:3,width:224,height:14)
  }
  func setDetail(_ text:String){
   detailLabel.stringValue=text;detailLabel.isHidden=text.isEmpty
-  setFrameSize(NSSize(width:260,height:text.isEmpty ? 70:88));needsLayout=true
+  setFrameSize(NSSize(width:260,height:text.isEmpty ? 72:90));needsLayout=true
  }
  func setTime(hours:Int,minutes:Int){
   let text=NSMutableAttributedString(string:"")
@@ -393,28 +399,33 @@ final class JournalMenuInfoView:NSView {
  let detailLabel=NSTextField(labelWithString:"")
  let icon=NSImageView()
  let control=NSButton()
- var actionTint:NSColor?
+ var isEmphasized=false
  override init(frame:NSRect){
   super.init(frame:frame)
   titleLabel.font = .systemFont(ofSize:12,weight:.semibold);titleLabel.textColor = .labelColor
-  detailLabel.font = .systemFont(ofSize:11);detailLabel.textColor = .secondaryLabelColor;detailLabel.lineBreakMode = .byTruncatingTail
+  detailLabel.font = .systemFont(ofSize:10);detailLabel.alignment = .right;detailLabel.textColor=journalMenuMuted;detailLabel.lineBreakMode = .byTruncatingTail
   addSubview(titleLabel);addSubview(detailLabel);addSubview(icon)
-  control.isHidden=true;control.isBordered=false;control.imagePosition = .imageOnly;control.contentTintColor = .white;addSubview(control)
+  control.isHidden=true;control.isBordered=false;control.imagePosition = .imageOnly;control.contentTintColor=journalMenuGreen;addSubview(control)
   setAccessibilityElement(true);setAccessibilityRole(.staticText)
  }
  required init?(coder:NSCoder){fatalError("init(coder:) has not been implemented")}
  override func layout(){
   super.layout()
-  // The symbol aligns with the title; no oversized badge competes with the text.
   let titleWidth=min(96,ceil(titleLabel.attributedStringValue.size().width)+2)
-  titleLabel.frame=NSRect(x:40,y:7,width:titleWidth,height:18)
-  detailLabel.frame=NSRect(x:40+titleWidth+8,y:7,width:194-titleWidth,height:18)
-  icon.frame=NSRect(x:18,y:9,width:14,height:14)
-  control.frame=NSRect(x:14,y:5,width:22,height:22)
+  titleLabel.frame=NSRect(x:40,y:(bounds.height-titleLabel.fittingSize.height)/2,width:titleWidth,height:titleLabel.fittingSize.height)
+  let baseline=titleLabel.frame.minY+titleLabel.lastBaselineOffsetFromBottom
+  detailLabel.frame=NSRect(x:40+titleWidth+8,y:baseline-detailLabel.lastBaselineOffsetFromBottom,width:194-titleWidth,height:detailLabel.fittingSize.height)
+  icon.frame=NSRect(x:20,y:(bounds.height-10)/2,width:10,height:10)
+  control.frame=NSRect(x:15,y:(bounds.height-20)/2,width:20,height:20)
  }
  func makeToggle(target:AnyObject,action:Selector){control.target=target;control.action=action;control.isHidden=false;icon.isHidden=true;setAccessibilityElement(false)}
- override func draw(_ dirtyRect:NSRect){if let color=actionTint{color.setFill();NSBezierPath(ovalIn:NSRect(x:14,y:5,width:22,height:22)).fill()}}
- func update(title:String,detail:String,symbol:String,color:NSColor){titleLabel.stringValue=title;detailLabel.stringValue=detail;icon.image=journalMenuSymbol(symbol);icon.contentTintColor=color;setAccessibilityLabel(title+"，"+detail);needsLayout=true}
+ override func draw(_ dirtyRect:NSRect){
+  let color=isEmphasized ? journalMenuGreen:NSColor.labelColor
+  let circle=NSBezierPath(ovalIn:NSRect(x:15,y:(bounds.height-20)/2,width:20,height:20).insetBy(dx:0.7,dy:0.7))
+  color.withAlphaComponent(isEmphasized ? 0.14:0.07).setFill();circle.fill();color.withAlphaComponent(isEmphasized ? 0.18:0.06).setStroke();circle.lineWidth=1.4;circle.stroke()
+ }
+ func update(title:String,detail:String,symbol:String,color:NSColor){titleLabel.stringValue=title;detailLabel.stringValue=detail;let inner=symbol=="checkmark.circle" ? "checkmark":symbol=="exclamationmark.circle" ? "exclamationmark":symbol=="pause.circle" ? "pause.fill":"arrow.clockwise"
+  icon.image=journalMenuSymbol(inner,10);icon.contentTintColor=color;control.contentTintColor=color;needsDisplay=true;setAccessibilityLabel(title+"，"+detail);needsLayout=true}
 }
 
 final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate, WKScriptMessageHandler, NSMenuDelegate {
@@ -515,11 +526,11 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   }
   let menu=NSMenu();menu.delegate=self;menu.minimumWidth=260
   menu.autoenablesItems=false
-  let heading=NSMenuItem();let summary=JournalMenuSummaryView(frame:NSRect(x:0,y:0,width:260,height:70));heading.view=summary;menuSummary=summary;menu.addItem(heading);menu.addItem(.separator())
-  let reminder=NSMenuItem(title:"近期建议",action:nil,keyEquivalent:"");let reminderInfo=JournalMenuInfoView(frame:NSRect(x:0,y:0,width:260,height:32));reminderInfo.update(title:"近期建议",detail:"准备中…",symbol:"clock.arrow.circlepath",color:.secondaryLabelColor);reminder.view=reminderInfo;reminder.isEnabled=false;menuReminderInfo=reminderInfo;menu.addItem(reminder);reminderItem=reminder
+  let heading=NSMenuItem();let summary=JournalMenuSummaryView(frame:NSRect(x:0,y:0,width:260,height:72));heading.view=summary;menuSummary=summary;menu.addItem(heading);menu.addItem(.separator())
+  let reminder=NSMenuItem(title:"近期建议",action:nil,keyEquivalent:"");let reminderInfo=JournalMenuInfoView(frame:NSRect(x:0,y:0,width:260,height:24));reminderInfo.update(title:"近期建议",detail:"准备中…",symbol:"clock.arrow.circlepath",color:.secondaryLabelColor);reminder.view=reminderInfo;reminder.isEnabled=false;menuReminderInfo=reminderInfo;menu.addItem(reminder);reminderItem=reminder
   menu.addItem(.separator())
-  let state=NSMenuItem();let trackingInfo=JournalMenuInfoView(frame:NSRect(x:0,y:0,width:260,height:32));trackingInfo.update(title:"自动记录",detail:"读取中…",symbol:"record.circle",color:.secondaryLabelColor);state.view=trackingInfo;state.isEnabled=false;menuTrackingInfo=trackingInfo;menu.addItem(state);trackingStatusItem=state
-  trackingInfo.makeToggle(target:self,action:#selector(toggleTracking));trackingInfo.control.isEnabled=false;trackingToggleItem=state;state.target=self;state.action=#selector(toggleTracking)
+  let state=NSMenuItem();let trackingInfo=JournalMenuInfoView(frame:NSRect(x:0,y:0,width:260,height:24));trackingInfo.update(title:"自动记录",detail:"读取中…",symbol:"record.circle",color:.secondaryLabelColor);state.view=trackingInfo;state.isEnabled=false;menuTrackingInfo=trackingInfo;menu.addItem(state);trackingStatusItem=state
+  trackingInfo.makeToggle(target:self,action:#selector(toggleTracking));trackingInfo.control.isEnabled=false;trackingToggleItem=state
 
   menu.addItem(.separator())
   let open=menu.addItem(withTitle:"打开项目手记",action:#selector(openJournal),keyEquivalent:"");open.target=self;open.image=journalMenuSymbol("macwindow")
@@ -575,8 +586,8 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
     self.pendingCheckInFlight=false
     guard let days=result else{if !self.pendingHasResult{self.menuReminderInfo?.update(title:"近期建议",detail:"稍后重试",symbol:"exclamationmark.circle",color:.systemOrange);item.isEnabled=false};return}
     self.pendingHasResult=true;self.updatePendingDayCount(days.count);item.submenu=nil
-    if days.isEmpty{item.view=self.menuReminderInfo;item.title="近期建议";self.menuReminderInfo?.update(title:"近期建议",detail:incomplete ? "部分线索待同步":"近7天无待处理",symbol:incomplete ? "arrow.triangle.2.circlepath":"checkmark.circle",color:incomplete ? .secondaryLabelColor:journalMenuGreen);item.isEnabled=false;return}
-    item.view=nil;item.title="待处理建议 · \(days.count) 天"+(incomplete ? " · 待同步":"");item.image=journalMenuSymbol("clock.badge.exclamationmark")?.withSymbolConfiguration(.init(paletteColors:[.systemOrange]));item.image?.isTemplate=false;item.isEnabled=true
+    if days.isEmpty{item.view=self.menuReminderInfo;item.title="近期建议";self.menuReminderInfo?.update(title:"近期建议",detail:incomplete ? "部分线索待同步":"近7天无待处理",symbol:incomplete ? "arrow.triangle.2.circlepath":"checkmark.circle",color:journalMenuMuted);item.isEnabled=false;return}
+    item.view=nil;item.title="待处理建议 · \(days.count) 天"+(incomplete ? " · 待同步":"");item.image=journalMenuSymbol("clock.badge.exclamationmark")?.withSymbolConfiguration(.init(paletteColors:[journalMenuGreen]));item.image?.isTemplate=false;item.isEnabled=true
     let dates=NSMenu();dates.autoenablesItems=false
     for day in days {
      guard let date=day["date"] as? String else{continue};let count=day["count"] as? Int ?? 0,minutes=day["minutes"] as? Int ?? 0
@@ -606,7 +617,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   let detail=listening ? (activity ? "文件与时长":"仅文件"):status
   menuTrackingInfo?.update(title:title,detail:detail,symbol:listening ? "record.circle":paused ? "pause.circle":"exclamationmark.circle",color:listening ? journalMenuGreen:paused ? .secondaryLabelColor:.systemOrange)
   trackingToggleItem?.image=journalMenuSymbol(enabled ? "pause.circle":"play.circle");trackingToggleItem?.title=enabled ? "暂停自动记录":"继续自动记录";trackingToggleItem?.isEnabled = enabled || activity || status != "待绑定资料夹";trackingToggleItem?.state = .off
-  menuTrackingInfo?.control.image=journalMenuSymbol(enabled ? "pause.fill":"play.fill",10);menuTrackingInfo?.control.toolTip=enabled ? "暂停自动记录":"继续自动记录";menuTrackingInfo?.control.setAccessibilityLabel(enabled ? "暂停自动记录":"继续自动记录");menuTrackingInfo?.control.isEnabled=trackingToggleItem?.isEnabled ?? false;menuTrackingInfo?.actionTint=listening ? journalMenuGreen:.secondaryLabelColor;menuTrackingInfo?.needsDisplay=true
+  menuTrackingInfo?.control.image=journalMenuSymbol(enabled ? "pause.fill":"play.fill",10);menuTrackingInfo?.control.toolTip=enabled ? "暂停自动记录":"继续自动记录";menuTrackingInfo?.control.setAccessibilityLabel(enabled ? "暂停自动记录":"继续自动记录");menuTrackingInfo?.control.isEnabled=trackingToggleItem?.isEnabled ?? false;menuTrackingInfo?.isEmphasized=listening;menuTrackingInfo?.control.contentTintColor=listening ? journalMenuGreen:journalMenuMuted;menuTrackingInfo?.needsDisplay=true
  }
 
  func menuWillOpen(_ menu:NSMenu){observer?.reload();refreshDaySummary()}
@@ -634,7 +645,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   }
  }
  func applicationShouldHandleReopen(_ sender:NSApplication,hasVisibleWindows flag:Bool)->Bool{showJournal(source:"dock");return true}
- @objc func toggleTracking(){guard let observer=observer else{return};statusItem?.menu?.cancelTracking();var request=URLRequest(url:observer.server.appendingPathComponent("api/auto/status"));request.setValue(observer.token,forHTTPHeaderField:"X-Journal-Token");URLSession.shared.dataTask(with:request){data,_,_ in guard let data=data,let root=(try? JSONSerialization.jsonObject(with:data))as?[String:Any],var config=root["config"]as?[String:Any]else{return};config["enabled"] = !(config["enabled"]as?Bool ?? false);var update=URLRequest(url:observer.server.appendingPathComponent("api/auto/config"));update.httpMethod="PUT";update.setValue(observer.token,forHTTPHeaderField:"X-Journal-Token");update.setValue("application/json",forHTTPHeaderField:"Content-Type");update.httpBody=try? JSONSerialization.data(withJSONObject:["config":config,"revision":root["configRevision"] ?? ""]);URLSession.shared.dataTask(with:update){_,_,_ in DispatchQueue.main.async{observer.reload()}}.resume()}.resume()}
+ @objc func toggleTracking(){guard let observer=observer else{return};var request=URLRequest(url:observer.server.appendingPathComponent("api/auto/status"));request.setValue(observer.token,forHTTPHeaderField:"X-Journal-Token");URLSession.shared.dataTask(with:request){data,_,_ in guard let data=data,let root=(try? JSONSerialization.jsonObject(with:data))as?[String:Any],var config=root["config"]as?[String:Any]else{return};config["enabled"] = !(config["enabled"]as?Bool ?? false);var update=URLRequest(url:observer.server.appendingPathComponent("api/auto/config"));update.httpMethod="PUT";update.setValue(observer.token,forHTTPHeaderField:"X-Journal-Token");update.setValue("application/json",forHTTPHeaderField:"Content-Type");update.httpBody=try? JSONSerialization.data(withJSONObject:["config":config,"revision":root["configRevision"] ?? ""]);URLSession.shared.dataTask(with:update){_,_,_ in DispatchQueue.main.async{observer.reload()}}.resume()}.resume()}
  func flushWindow(_ completion:@escaping(Bool)->Void){guard let view=webView else{completion(true);return};view.callAsyncJavaScript("return window.journalFlush ? await window.journalFlush() : true;",arguments:[:],in:nil,in:.page){result in if case .success(let value)=result{completion(value as?Bool == true)}else{completion(false)}}}
  func userContentController(_ userContentController:WKUserContentController,didReceive message:WKScriptMessage){guard let body=message.body as?[String:Any],let action=body["action"]as?String else{return};let id=body["id"]as?String ?? "";func reply(_ result:[String:Any]){self.webView?.callAsyncJavaScript("window.journalNativeReply && window.journalNativeReply(id,result)",arguments:["id":id,"result":result],in:nil,in:.page,completionHandler:nil)}
   if action=="startupReady",message.webView === webView{
