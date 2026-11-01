@@ -367,20 +367,20 @@ final class JournalMenuSummaryView:NSView {
  required init?(coder:NSCoder){fatalError("init(coder:) has not been implemented")}
  override func layout(){
   super.layout()
-  let center=bounds.height-20
+  let center=bounds.height-18
   icon.frame=NSRect(x:18,y:center-7,width:14,height:14)
   caption.frame=NSRect(x:40,y:center-9,width:112,height:18)
   dateLabel.frame=NSRect(x:164,y:center-9,width:78,height:18)
-  timeLabel.frame=NSRect(x:16,y:detailLabel.isHidden ? 10:28,width:228,height:39)
-  detailLabel.frame=NSRect(x:18,y:10,width:224,height:14)
+  timeLabel.frame=NSRect(x:16,y:detailLabel.isHidden ? 2:20,width:228,height:39)
+  detailLabel.frame=NSRect(x:18,y:3,width:224,height:14)
  }
  func setDetail(_ text:String){
   detailLabel.stringValue=text;detailLabel.isHidden=text.isEmpty
-  setFrameSize(NSSize(width:260,height:text.isEmpty ? 80:98));needsLayout=true
+  setFrameSize(NSSize(width:260,height:text.isEmpty ? 70:88));needsLayout=true
  }
  func setTime(hours:Int,minutes:Int){
   let text=NSMutableAttributedString(string:"")
-  func append(_ value:String,_ size:CGFloat,_ weight:NSFont.Weight,_ color:NSColor){text.append(NSAttributedString(string:value,attributes:[.font:NSFont.monospacedDigitSystemFont(ofSize:size,weight:weight),.foregroundColor:color]))}
+  func append(_ value:String,_ size:CGFloat,_ weight:NSFont.Weight,_ color:NSColor){let base=NSFont.systemFont(ofSize:size,weight:weight);let font=size>=30 ? NSFont(descriptor:base.fontDescriptor.withDesign(.rounded) ?? base.fontDescriptor,size:size) ?? base:base;text.append(NSAttributedString(string:value,attributes:[.font:font,.foregroundColor:color]))}
   if hours>0{append("\(hours)",30,.semibold,journalMenuGreen);append(" 小时  ",12,.medium,.secondaryLabelColor)}
   append("\(minutes)",30,.semibold,journalMenuGreen);append(" 分钟",12,.medium,.secondaryLabelColor)
   timeLabel.attributedStringValue=text
@@ -392,21 +392,28 @@ final class JournalMenuInfoView:NSView {
  let titleLabel=NSTextField(labelWithString:"")
  let detailLabel=NSTextField(labelWithString:"")
  let icon=NSImageView()
+ let control=NSButton()
+ var actionTint:NSColor?
  override init(frame:NSRect){
   super.init(frame:frame)
   titleLabel.font = .systemFont(ofSize:12,weight:.semibold);titleLabel.textColor = .labelColor
   detailLabel.font = .systemFont(ofSize:11);detailLabel.textColor = .secondaryLabelColor;detailLabel.lineBreakMode = .byTruncatingTail
   addSubview(titleLabel);addSubview(detailLabel);addSubview(icon)
+  control.isHidden=true;control.isBordered=false;control.imagePosition = .imageOnly;control.contentTintColor = .white;addSubview(control)
   setAccessibilityElement(true);setAccessibilityRole(.staticText)
  }
  required init?(coder:NSCoder){fatalError("init(coder:) has not been implemented")}
  override func layout(){
   super.layout()
   // The symbol aligns with the title; no oversized badge competes with the text.
-  titleLabel.frame=NSRect(x:40,y:26,width:202,height:17)
-  detailLabel.frame=NSRect(x:40,y:9,width:202,height:16)
-  icon.frame=NSRect(x:18,y:27.5,width:14,height:14)
+  let titleWidth=min(96,ceil(titleLabel.attributedStringValue.size().width)+2)
+  titleLabel.frame=NSRect(x:40,y:7,width:titleWidth,height:18)
+  detailLabel.frame=NSRect(x:40+titleWidth+8,y:7,width:194-titleWidth,height:18)
+  icon.frame=NSRect(x:18,y:9,width:14,height:14)
+  control.frame=NSRect(x:14,y:5,width:22,height:22)
  }
+ func makeToggle(target:AnyObject,action:Selector){control.target=target;control.action=action;control.isHidden=false;icon.isHidden=true;setAccessibilityElement(false)}
+ override func draw(_ dirtyRect:NSRect){if let color=actionTint{color.setFill();NSBezierPath(ovalIn:NSRect(x:14,y:5,width:22,height:22)).fill()}}
  func update(title:String,detail:String,symbol:String,color:NSColor){titleLabel.stringValue=title;detailLabel.stringValue=detail;icon.image=journalMenuSymbol(symbol);icon.contentTintColor=color;setAccessibilityLabel(title+"，"+detail);needsLayout=true}
 }
 
@@ -430,6 +437,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
  var reminderItem:NSMenuItem?
  var reminderGeneration=0
  var pendingReminderDate:String?
+ var pendingReminderRange:[String:Any]?
  var dailySummaryTimer:Timer?
  var dailySummaryLoading=false
  var menuSummary:JournalMenuSummaryView?
@@ -507,17 +515,25 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   }
   let menu=NSMenu();menu.delegate=self;menu.minimumWidth=260
   menu.autoenablesItems=false
-  let heading=NSMenuItem();let summary=JournalMenuSummaryView(frame:NSRect(x:0,y:0,width:260,height:80));heading.view=summary;menuSummary=summary;menu.addItem(heading);menu.addItem(.separator())
-  let reminder=NSMenuItem(title:"近期建议",action:nil,keyEquivalent:"");let reminderInfo=JournalMenuInfoView(frame:NSRect(x:0,y:0,width:260,height:50));reminderInfo.update(title:"近期建议",detail:"正在准备近7天建议…",symbol:"clock.arrow.circlepath",color:.secondaryLabelColor);reminder.view=reminderInfo;reminder.isEnabled=false;menuReminderInfo=reminderInfo;menu.addItem(reminder);reminderItem=reminder
+  let heading=NSMenuItem();let summary=JournalMenuSummaryView(frame:NSRect(x:0,y:0,width:260,height:70));heading.view=summary;menuSummary=summary;menu.addItem(heading);menu.addItem(.separator())
+  let reminder=NSMenuItem(title:"近期建议",action:nil,keyEquivalent:"");let reminderInfo=JournalMenuInfoView(frame:NSRect(x:0,y:0,width:260,height:32));reminderInfo.update(title:"近期建议",detail:"准备中…",symbol:"clock.arrow.circlepath",color:.secondaryLabelColor);reminder.view=reminderInfo;reminder.isEnabled=false;menuReminderInfo=reminderInfo;menu.addItem(reminder);reminderItem=reminder
   menu.addItem(.separator())
-  let state=NSMenuItem();let trackingInfo=JournalMenuInfoView(frame:NSRect(x:0,y:0,width:260,height:50));trackingInfo.update(title:"自动记录",detail:"正在读取记录状态…",symbol:"record.circle",color:.secondaryLabelColor);state.view=trackingInfo;state.isEnabled=false;menuTrackingInfo=trackingInfo;menu.addItem(state);trackingStatusItem=state
-  let toggle=menu.addItem(withTitle:"继续自动记录",action:#selector(toggleTracking),keyEquivalent:"");toggle.isEnabled=false;toggle.image=journalMenuSymbol("play.circle");toggle.target=self;trackingToggleItem=toggle
+  let state=NSMenuItem();let trackingInfo=JournalMenuInfoView(frame:NSRect(x:0,y:0,width:260,height:32));trackingInfo.update(title:"自动记录",detail:"读取中…",symbol:"record.circle",color:.secondaryLabelColor);state.view=trackingInfo;state.isEnabled=false;menuTrackingInfo=trackingInfo;menu.addItem(state);trackingStatusItem=state
+  trackingInfo.makeToggle(target:self,action:#selector(toggleTracking));trackingInfo.control.isEnabled=false;trackingToggleItem=state;state.target=self;state.action=#selector(toggleTracking)
+
   menu.addItem(.separator())
   let open=menu.addItem(withTitle:"打开项目手记",action:#selector(openJournal),keyEquivalent:"");open.target=self;open.image=journalMenuSymbol("macwindow")
   let quit=menu.addItem(withTitle:"退出项目手记",action:#selector(NSApplication.terminate(_:)),keyEquivalent:"");quit.target=NSApp;quit.image=journalMenuSymbol("power")
   statusItem?.menu=menu
   let timer=Timer(timeInterval:30,repeats:true){[weak self] _ in self?.refreshDaySummary()};RunLoop.main.add(timer,forMode:.common);dailySummaryTimer=timer
   let pendingTimer=Timer(timeInterval:120,repeats:true){[weak self] _ in self?.refreshPendingSuggestions()};RunLoop.main.add(pendingTimer,forMode:.common);pendingCheckTimer=pendingTimer
+ }
+ func updatePendingDayCount(_ count:Int){
+  guard let item=statusItem,let button=item.button else{return}
+  let days=max(0,min(7,count));item.length=days>0 ? NSStatusItem.variableLength:NSStatusItem.squareLength
+  button.imagePosition=days>0 ? .imageLeft:.imageOnly;button.font = .monospacedDigitSystemFont(ofSize:12,weight:.medium);button.title=days>0 ? " \(days)":""
+  let label=days>0 ? "项目手记 · 近7天有\(days)天建议待划取":"项目手记"
+  button.toolTip=label;button.setAccessibilityLabel(label)
  }
  func refreshDaySummary(){
   guard let observer=observer,!dailySummaryLoading else{return}
@@ -528,13 +544,11 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
    DispatchQueue.main.async{
     guard let self=self else{return};self.dailySummaryLoading=false
     guard error==nil,(response as? HTTPURLResponse)?.statusCode==200,let data=data,let value=(try? JSONSerialization.jsonObject(with:data)) as? [String:Any],let hours=value["hours"] as? Double,formatter.string(from:Date())==day else{
-     self.statusItem?.button?.title="";self.menuSummary?.timeLabel.font = .systemFont(ofSize:18,weight:.medium);self.menuSummary?.timeLabel.stringValue="暂时无法读取";self.menuSummary?.setDetail("请稍后重试");self.menuSummary?.setAccessibilityLabel("今日投入暂时无法读取，请稍后重试");self.statusItem?.button?.toolTip="项目手记 · 今日总投入读取失败";return
+     self.menuSummary?.timeLabel.font = .systemFont(ofSize:18,weight:.medium);self.menuSummary?.timeLabel.stringValue="暂时无法读取";self.menuSummary?.setDetail("请稍后重试");self.menuSummary?.setAccessibilityLabel("今日投入暂时无法读取，请稍后重试");self.statusItem?.button?.toolTip="项目手记 · 今日总投入读取失败";return
     }
     let minutes=Int((hours*60).rounded()),h=minutes/60,m=minutes%60,missing=value["missing"] as? Int ?? 0,estimated=value["estimatedHours"] as? Double ?? 0
-    self.statusItem?.button?.title=""
     self.menuSummary?.setDetail((estimated>0 ? "含估算投入":"")+(missing>0 ? (estimated>0 ? " · ":"")+"\(missing)条记录待配置":""))
     self.menuSummary?.setTime(hours:h,minutes:m)
-    self.statusItem?.button?.toolTip="项目手记"
    }
   }.resume()
  }
@@ -544,7 +558,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
  func refreshPendingSuggestions(){
   guard let observer=observer,!pendingCheckInFlight else{return}
   pendingCheckInFlight=true;reminderGeneration += 1;let generation=reminderGeneration
-  if !pendingHasResult{menuReminderInfo?.update(title:"近期建议",detail:"正在准备近7天建议…",symbol:"clock.arrow.circlepath",color:.secondaryLabelColor);reminderItem?.isEnabled=false}
+  if !pendingHasResult{menuReminderInfo?.update(title:"近期建议",detail:"准备中…",symbol:"clock.arrow.circlepath",color:.secondaryLabelColor);reminderItem?.isEnabled=false}
 
   let formatter=DateFormatter();formatter.locale=Locale(identifier:"en_US_POSIX");formatter.dateFormat="yyyy-MM-dd"
   var parts=URLComponents(url:observer.server.appendingPathComponent("api/auto/timeline"),resolvingAgainstBaseURL:false)!;parts.queryItems=[URLQueryItem(name:"reminders",value:formatter.string(from:Date()))]
@@ -559,30 +573,40 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
    DispatchQueue.main.async{
     guard let self=self,generation==self.reminderGeneration,let item=self.reminderItem else{return}
     self.pendingCheckInFlight=false
-    guard let days=result else{if !self.pendingHasResult{self.menuReminderInfo?.update(title:"近期建议",detail:"暂时无法检查，稍后自动重试",symbol:"exclamationmark.circle",color:.systemOrange);item.isEnabled=false};return}
-    self.pendingHasResult=true;item.submenu=nil
-    if days.isEmpty{item.view=self.menuReminderInfo;item.title="近期建议";self.menuReminderInfo?.update(title:"近期建议",detail:incomplete ? "部分线索待同步，暂未发现建议":"近7天暂无待处理建议",symbol:incomplete ? "arrow.triangle.2.circlepath":"checkmark.circle",color:incomplete ? .secondaryLabelColor:journalMenuGreen);item.isEnabled=false;return}
+    guard let days=result else{if !self.pendingHasResult{self.menuReminderInfo?.update(title:"近期建议",detail:"稍后重试",symbol:"exclamationmark.circle",color:.systemOrange);item.isEnabled=false};return}
+    self.pendingHasResult=true;self.updatePendingDayCount(days.count);item.submenu=nil
+    if days.isEmpty{item.view=self.menuReminderInfo;item.title="近期建议";self.menuReminderInfo?.update(title:"近期建议",detail:incomplete ? "部分线索待同步":"近7天无待处理",symbol:incomplete ? "arrow.triangle.2.circlepath":"checkmark.circle",color:incomplete ? .secondaryLabelColor:journalMenuGreen);item.isEnabled=false;return}
     item.view=nil;item.title="待处理建议 · \(days.count) 天"+(incomplete ? " · 待同步":"");item.image=journalMenuSymbol("clock.badge.exclamationmark")?.withSymbolConfiguration(.init(paletteColors:[.systemOrange]));item.image?.isTemplate=false;item.isEnabled=true
     let dates=NSMenu();dates.autoenablesItems=false
     for day in days {
      guard let date=day["date"] as? String else{continue};let count=day["count"] as? Int ?? 0,minutes=day["minutes"] as? Int ?? 0
-     let entry=dates.addItem(withTitle:"\(date.suffix(5).replacingOccurrences(of:"-",with:"/")) · \(count)段 · \(minutes)分钟",action:#selector(self.openReminderDate(_:)),keyEquivalent:"");entry.target=self;entry.representedObject=date
+     let entry=dates.addItem(withTitle:"\(date.suffix(5).replacingOccurrences(of:"-",with:"/")) · \(count)段 · \(minutes)分钟",action:nil,keyEquivalent:"")
+     let ranges=NSMenu();ranges.autoenablesItems=false
+     for slot in day["slots"] as? [[String:Any]] ?? [] {
+      guard let start=slot["start"] as? Int,let end=slot["end"] as? Int,start>=0,end<=1440,start<end else{continue}
+      let stamp:(Int)->String={String(format:"%02d:%02d",$0/60,$0%60)}
+      let range=ranges.addItem(withTitle:"\(stamp(start))–\(stamp(end)) · \(end-start)分钟",action:#selector(self.openReminderDate(_:)),keyEquivalent:"")
+      range.target=self;range.representedObject=["date":date,"start":start,"end":end,"projectId":slot["projectId"] as? String ?? ""]
+     }
+     entry.submenu=ranges
+
     }
     item.submenu=dates;self.statusItem?.menu?.update()
    }
   }.resume()
  }
- @objc func openReminderDate(_ item:NSMenuItem){guard let date=item.representedObject as? String else{return};pendingReminderDate=date;showJournal(source:"statusBar")}
+ @objc func openReminderDate(_ item:NSMenuItem){guard let range=item.representedObject as? [String:Any],let date=range["date"] as? String else{return};pendingReminderDate=date;pendingReminderRange=range;showJournal(source:"statusBar")}
  func navigatePendingReminder(){
-  guard let date=pendingReminderDate else{return};pendingReminderDate=nil
-  webView?.callAsyncJavaScript("return window.journalOpenTimelineDate ? await window.journalOpenTimelineDate(date) : false;",arguments:["date":date],in:nil,in:.page,completionHandler:nil)
+  guard let date=pendingReminderDate else{return};let range=pendingReminderRange ?? [:];pendingReminderDate=nil;pendingReminderRange=nil
+  webView?.callAsyncJavaScript("return window.journalOpenTimelineDate ? await window.journalOpenTimelineDate(date,range) : false;",arguments:["date":date,"range":range],in:nil,in:.page,completionHandler:nil)
  }
  func updateTrackingMenu(_ state:[String:Any]){
   let enabled=state["enabled"]as?Bool ?? false,activity=state["activityEnabled"]as?Bool ?? false,status=state["status"]as?String ?? "正在读取"
   let listening=status=="监听中",paused=status=="已暂停",title=listening ? "自动记录中":paused ? "自动记录已暂停":"自动记录"
-  let detail=listening ? (activity ? "文件活动与时长辅助":"仅记录文件活动"):status
+  let detail=listening ? (activity ? "文件与时长":"仅文件"):status
   menuTrackingInfo?.update(title:title,detail:detail,symbol:listening ? "record.circle":paused ? "pause.circle":"exclamationmark.circle",color:listening ? journalMenuGreen:paused ? .secondaryLabelColor:.systemOrange)
   trackingToggleItem?.image=journalMenuSymbol(enabled ? "pause.circle":"play.circle");trackingToggleItem?.title=enabled ? "暂停自动记录":"继续自动记录";trackingToggleItem?.isEnabled = enabled || activity || status != "待绑定资料夹";trackingToggleItem?.state = .off
+  menuTrackingInfo?.control.image=journalMenuSymbol(enabled ? "pause.fill":"play.fill",10);menuTrackingInfo?.control.toolTip=enabled ? "暂停自动记录":"继续自动记录";menuTrackingInfo?.control.setAccessibilityLabel(enabled ? "暂停自动记录":"继续自动记录");menuTrackingInfo?.control.isEnabled=trackingToggleItem?.isEnabled ?? false;menuTrackingInfo?.actionTint=listening ? journalMenuGreen:.secondaryLabelColor;menuTrackingInfo?.needsDisplay=true
  }
 
  func menuWillOpen(_ menu:NSMenu){observer?.reload();refreshDaySummary()}
@@ -610,7 +634,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   }
  }
  func applicationShouldHandleReopen(_ sender:NSApplication,hasVisibleWindows flag:Bool)->Bool{showJournal(source:"dock");return true}
- @objc func toggleTracking(){guard let observer=observer else{return};var request=URLRequest(url:observer.server.appendingPathComponent("api/auto/status"));request.setValue(observer.token,forHTTPHeaderField:"X-Journal-Token");URLSession.shared.dataTask(with:request){data,_,_ in guard let data=data,let root=(try? JSONSerialization.jsonObject(with:data))as?[String:Any],var config=root["config"]as?[String:Any]else{return};config["enabled"] = !(config["enabled"]as?Bool ?? false);var update=URLRequest(url:observer.server.appendingPathComponent("api/auto/config"));update.httpMethod="PUT";update.setValue(observer.token,forHTTPHeaderField:"X-Journal-Token");update.setValue("application/json",forHTTPHeaderField:"Content-Type");update.httpBody=try? JSONSerialization.data(withJSONObject:["config":config,"revision":root["configRevision"] ?? ""]);URLSession.shared.dataTask(with:update){_,_,_ in DispatchQueue.main.async{observer.reload()}}.resume()}.resume()}
+ @objc func toggleTracking(){guard let observer=observer else{return};statusItem?.menu?.cancelTracking();var request=URLRequest(url:observer.server.appendingPathComponent("api/auto/status"));request.setValue(observer.token,forHTTPHeaderField:"X-Journal-Token");URLSession.shared.dataTask(with:request){data,_,_ in guard let data=data,let root=(try? JSONSerialization.jsonObject(with:data))as?[String:Any],var config=root["config"]as?[String:Any]else{return};config["enabled"] = !(config["enabled"]as?Bool ?? false);var update=URLRequest(url:observer.server.appendingPathComponent("api/auto/config"));update.httpMethod="PUT";update.setValue(observer.token,forHTTPHeaderField:"X-Journal-Token");update.setValue("application/json",forHTTPHeaderField:"Content-Type");update.httpBody=try? JSONSerialization.data(withJSONObject:["config":config,"revision":root["configRevision"] ?? ""]);URLSession.shared.dataTask(with:update){_,_,_ in DispatchQueue.main.async{observer.reload()}}.resume()}.resume()}
  func flushWindow(_ completion:@escaping(Bool)->Void){guard let view=webView else{completion(true);return};view.callAsyncJavaScript("return window.journalFlush ? await window.journalFlush() : true;",arguments:[:],in:nil,in:.page){result in if case .success(let value)=result{completion(value as?Bool == true)}else{completion(false)}}}
  func userContentController(_ userContentController:WKUserContentController,didReceive message:WKScriptMessage){guard let body=message.body as?[String:Any],let action=body["action"]as?String else{return};let id=body["id"]as?String ?? "";func reply(_ result:[String:Any]){self.webView?.callAsyncJavaScript("window.journalNativeReply && window.journalNativeReply(id,result)",arguments:["id":id,"result":result],in:nil,in:.page,completionHandler:nil)}
   if action=="startupReady",message.webView === webView{

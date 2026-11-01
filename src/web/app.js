@@ -339,7 +339,7 @@ if(state){
  viewMemory.enable();rememberView();
 }
 window.journalFlush=async()=>{if(!state)return true;const ok=window.journalQuitting||await flushDrafts()&&await automationUI.flush()&&await fetch('/api/auto/flush',{method:'POST'}).then(r=>r.ok);const viewSaved=await viewMemory.flush();if(!viewSaved){toast('界面偏好尚未保存，请重试关闭',true);return false}return ok};
-window.journalOpenTimelineDate=async date=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return false;await setPage('auto');if(page!=='auto')return false;await automationUI.openDate(date);return true};
+window.journalOpenTimelineDate=async (date,range=null)=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return false;await setPage('auto');if(page!=='auto')return false;if(range&&(!Number.isInteger(range.start)||!Number.isInteger(range.end)||range.start<0||range.end>1440||range.start>=range.end))return false;return (await automationUI.openDate(date,range?{range}:{}))!==false};
 window.journalViewReady=true;document.documentElement.classList.remove('app-starting');await notifyWindowsLaunchPainted();await finishWindowsLaunch();
 
 

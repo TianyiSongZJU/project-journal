@@ -12,6 +12,6 @@ export function pendingSuggestionDays({evidence=[],timelineDays={},timelineRead=
  return dates.flatMap(date=>{
   if(dateStamps[date]&&timelineRead[date]===dateStamps[date])return [];
   const day=timelineDays[date]||{},guides=evidenceGuides(evidence,date),slots=suggestTimeSlots({...guides,projectIds,gapMinutes,rules}),suggestions=availableSuggestions(slots,[...(day.blocks||[]),...(day.applied||[])]);
-  return suggestions.length?[{date,count:suggestions.length,minutes:suggestions.reduce((n,s)=>n+s.end-s.start,0)}]:[];
+  return suggestions.length?[{date,count:suggestions.length,minutes:suggestions.reduce((n,s)=>n+s.end-s.start,0),slots:suggestions.map(({start,end,projectId})=>({start,end,projectId}))}]:[];
  });
 }
