@@ -351,6 +351,18 @@ private let journalMenuMuted = NSColor(name:nil){appearance in
 private func journalMenuSymbol(_ name:String,_ size:CGFloat=14)->NSImage? {
  NSImage(systemSymbolName:name,accessibilityDescription:nil)?.withSymbolConfiguration(.init(pointSize:size,weight:.semibold))
 }
+final class JournalMenuDividerView:NSView {
+ override var allowsVibrancy:Bool{false}
+ override func draw(_ dirtyRect:NSRect){
+  let dark=effectiveAppearance.bestMatch(from:[.darkAqua,.aqua]) == .darkAqua
+  let color=dark ? NSColor(srgbRed:0.26,green:0.26,blue:0.25,alpha:1):NSColor(srgbRed:228.0/255,green:227.0/255,blue:224.0/255,alpha:1)
+  let scale=window?.backingScaleFactor ?? 2
+  color.setFill();NSRect(x:16,y:floor(bounds.midY*scale)/scale,width:bounds.width-32,height:1/scale).fill()
+ }
+}
+private func journalMenuDivider()->NSMenuItem {
+ let item=NSMenuItem();item.isEnabled=false;item.view=JournalMenuDividerView(frame:NSRect(x:0,y:0,width:260,height:8));return item
+}
 final class JournalMenuSummaryView:NSView {
  let timeLabel=NSTextField(labelWithString:"正在读取…")
  let detailLabel=NSTextField(labelWithString:"")
@@ -526,13 +538,13 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   }
   let menu=NSMenu();menu.delegate=self;menu.minimumWidth=260
   menu.autoenablesItems=false
-  let heading=NSMenuItem();let summary=JournalMenuSummaryView(frame:NSRect(x:0,y:0,width:260,height:72));heading.view=summary;menuSummary=summary;menu.addItem(heading);menu.addItem(.separator())
+  let heading=NSMenuItem();let summary=JournalMenuSummaryView(frame:NSRect(x:0,y:0,width:260,height:72));heading.view=summary;menuSummary=summary;menu.addItem(heading);menu.addItem(journalMenuDivider())
   let reminder=NSMenuItem(title:"近期建议",action:nil,keyEquivalent:"");let reminderInfo=JournalMenuInfoView(frame:NSRect(x:0,y:0,width:260,height:24));reminderInfo.update(title:"近期建议",detail:"准备中…",symbol:"clock.arrow.circlepath",color:.secondaryLabelColor);reminder.view=reminderInfo;reminder.isEnabled=false;menuReminderInfo=reminderInfo;menu.addItem(reminder);reminderItem=reminder
-  menu.addItem(.separator())
+  menu.addItem(journalMenuDivider())
   let state=NSMenuItem();let trackingInfo=JournalMenuInfoView(frame:NSRect(x:0,y:0,width:260,height:24));trackingInfo.update(title:"自动记录",detail:"读取中…",symbol:"record.circle",color:.secondaryLabelColor);state.view=trackingInfo;state.isEnabled=false;menuTrackingInfo=trackingInfo;menu.addItem(state);trackingStatusItem=state
   trackingInfo.makeToggle(target:self,action:#selector(toggleTracking));trackingInfo.control.isEnabled=false;trackingToggleItem=state
 
-  menu.addItem(.separator())
+  menu.addItem(journalMenuDivider())
   let open=menu.addItem(withTitle:"打开项目手记",action:#selector(openJournal),keyEquivalent:"");open.target=self;open.image=journalMenuSymbol("macwindow")
   let quit=menu.addItem(withTitle:"退出项目手记",action:#selector(NSApplication.terminate(_:)),keyEquivalent:"");quit.target=NSApp;quit.image=journalMenuSymbol("power")
   statusItem?.menu=menu
