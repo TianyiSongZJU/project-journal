@@ -13,3 +13,7 @@ For a new presentation control, register its typed key in `ui-preferences.js`, r
 Validation: `node --test tests/*.test.js`. The browser regression uses a separate temporary data directory and actual backend process; it recreates fresh browser contexts, restarts the backend on a new port, checks both desktop host styles, and verifies business state is unchanged. Run `JOURNAL_CORE=/path/to/test-core JOURNAL_PLAYWRIGHT_MODULE=/path/to/playwright node tests/ui-persistence.browser.cjs` from `src/` (Edge channel by default). No personal data directory is used.
 
 时段回顾另保存 `timeReview`：起止日期、固定显示天数（7／14／30）、日期锚点方向（起于／截至）、`startHour`（0 或 8）、`colorMode`（投入或项目）、所选日期，以及图内横纵滚动位置。恢复时验证日期并根据锚点重建固定长度窗口；旧的最近四周／本月偏好迁移到 30 天，其他旧自定义范围迁移到 14 天。`mode` 增加 `time`，只用于显示偏好，不改变业务数据结构。
+
+## 界面高光
+
+设置 → 外观 → 界面高光，默认开启，即时生效。选中的浅色标签和项目、主要绿色按钮及少数面板上沿使用轻微内缘高光；正文与普通热力格不增加装饰。关闭后收起这些光泽及时段图的白色装饰光晕，仍保留选中边框、键盘焦点和浮层层级。偏好使用本机查看状态中的 `ui.flags.highlights` 保存，不写入项目数据或跨设备同步设置，关闭前台、重启及后端端口变化后均恢复。

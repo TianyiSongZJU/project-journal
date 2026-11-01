@@ -24,6 +24,11 @@ const {chromium}=require(process.env.JOURNAL_PLAYWRIGHT_MODULE||process.env.JOUR
   envelope.state.settings.projectGroups=['科研','申报'];envelope.state.entries=[{projectId:'p-a',date:'2026-10-22',kind:'hours',hours:1,note:'fixture daily'}];await call(url,'/api/state',envelope);
   browser=await chromium.launch({...(process.env.JOURNAL_BROWSER?{executablePath:process.env.JOURNAL_BROWSER}:{channel:process.env.JOURNAL_BROWSER_CHANNEL||'msedge'}),headless:true});
   let {context,page}=await open(url,'mac');const baseline=(await call(url,'/api/state')).state;
+  assert.equal(await page.locator('html').getAttribute('data-highlights'),'on');
+  await click(page,'.workspace-header [data-page="settings"]');
+  const lit=await page.locator('#quick-record').evaluate(el=>getComputedStyle(el).boxShadow),size=await page.locator('#quick-record').boundingBox();
+  await page.locator('#interface-highlights').uncheck();assert.equal(await page.locator('html').getAttribute('data-highlights'),'off');assert.notEqual(await page.locator('#quick-record').evaluate(el=>getComputedStyle(el).boxShadow),lit);const unlitSize=await page.locator('#quick-record').boundingBox();assert.equal(unlitSize.width,size.width);assert.equal(unlitSize.height,size.height);
+
   await click(page,'.workspace-nav [data-page="projects"]');await page.waitForSelector('#project-list .project-group-heading');
   await click(page,'#project-list [data-fold-group="科研"]');await click(page,'#project-list .project-completed-toggle');await click(page,'#project-list .project-list-group-toggle');
   assert.equal(await pressed(page,'#project-list .project-list-group-toggle'),'false');
@@ -31,6 +36,9 @@ const {chromium}=require(process.env.JOURNAL_PLAYWRIGHT_MODULE||process.env.JOUR
   await click(page,'#project-show-done-deadlines');await click(page,'#project-record-panel>summary');await page.locator('#project-list .project-search').fill('论文');
   await flush(page);await context.close();
   ({context,page}=await open(url,'mac'));
+  assert.equal(await page.locator('html').getAttribute('data-highlights'),'off');assert.equal(await page.locator('#interface-highlights').isChecked(),false);
+  await click(page,'.workspace-header [data-page="settings"]');await page.locator('#interface-highlights').check();assert.equal(await page.locator('html').getAttribute('data-highlights'),'on');await click(page,'.workspace-nav [data-page="projects"]');
+
   assert.equal(await pressed(page,'#project-list .project-list-group-toggle'),'false');assert.equal(await page.locator('#project-list .project-search').inputValue(),'');assert.equal(await pressed(page,'#project-show-done-deadlines'),'true');assert.equal(await page.locator('#project-record-panel').evaluate(el=>el.open),false);
   await click(page,'#quick-record');assert.equal(await pressed(page,'#record-picker .project-list-group-toggle'),'false');await page.evaluate(()=>document.querySelector('#record-dialog').close());
   await click(page,'#project-list .project-list-group-toggle');assert.equal(await page.locator('#project-list [data-fold-group="科研"]').first().getAttribute('aria-expanded'),'false');
@@ -46,6 +54,7 @@ const {chromium}=require(process.env.JOURNAL_PLAYWRIGHT_MODULE||process.env.JOUR
   await page.evaluate(()=>document.querySelector('#auto-settings-dialog').close());await flush(page);await context.close();
   await stop();url=await start();
   ({context,page}=await open(url,'windows'));
+  assert.equal(await page.locator('html').getAttribute('data-highlights'),'on');assert.equal(await page.locator('#interface-highlights').isChecked(),true);
   assert.equal(await pressed(page,'#dt-default-picker .project-list-group-toggle'),'false');
   assert.equal(await pressed(page,'#dt-toggle-suggestions'),'false');assert.equal(await pressed(page,'#dt-full-day'),'true');assert.equal(await pressed(page,'.dt-client-layout'),'true');
   await click(page,'#auto-open-settings');await page.waitForFunction(()=>document.querySelector('#auto-settings-dialog').open);
@@ -56,7 +65,7 @@ const {chromium}=require(process.env.JOURNAL_PLAYWRIGHT_MODULE||process.env.JOUR
   await click(page,'#project-filter>summary');assert.equal(await pressed(page,'#filter-project-list .project-list-group-toggle'),'false');
   await click(page,'.workspace-nav [data-page="projects"]');assert.equal(await pressed(page,'#project-list .project-list-group-toggle'),'true');assert.equal(await page.locator('#project-list [data-fold-group="科研"]').first().getAttribute('aria-expanded'),'false');assert.equal(await page.locator('#project-record-panel').evaluate(el=>el.open),false);
   await flush(page);assert.deepEqual((await call(url,'/api/state')).state,baseline,'UI preferences must not modify project data');
-  const saved=JSON.parse(await fs.readFile(path.join(local,'view-state.json'),'utf8'));assert.equal(saved.ui.flags.foldersGrouped,false);assert.equal(saved.timeline.compare,true);assert.equal(saved.ui.lists['project-list'].completed,true);
+  const saved=JSON.parse(await fs.readFile(path.join(local,'view-state.json'),'utf8'));assert.equal(saved.ui.flags.foldersGrouped,false);assert.equal(saved.ui.flags.highlights,true);assert.equal(saved.timeline.compare,true);assert.equal(saved.ui.lists['project-list'].completed,true);
   await context.close();console.log('PASS foreground recreation, fresh browser storage, backend restart/new port, Mac/Windows hosts, scoped grouping/folds/flags/panels/timeline; business data unchanged');
  }finally{await browser?.close();await stop();if(!path.resolve(root).startsWith(path.resolve(os.tmpdir())+path.sep)||!path.basename(root).startsWith('journal-ui-persistence-'))throw Error('Unsafe temporary cleanup path');await fs.rm(root,{recursive:true,force:true})}
 })().catch(error=>{console.error(error);process.exitCode=1});
