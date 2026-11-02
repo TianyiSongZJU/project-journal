@@ -546,12 +546,12 @@ dialog #record-info{margin:0 0 0 auto;font-size:9px}
 .dt-report-context>small+button{margin-left:0}
 .dt-report-context>button:hover{background:#e8eedf;color:#4b6843}
 .dt-report-context>button svg{display:block;width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
-.dt-report-metrics{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:6px}
-.dt-report-metrics>div{display:flex;align-items:baseline;gap:7px;min-width:0}
+.dt-report-metrics{display:flex;align-items:flex-start;gap:20px;margin-top:7px}
+.dt-report-metrics>div{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0}
 .dt-report-metrics>div>span{font:400 9px/1.4 system-ui;color:#94a087;white-space:nowrap}
-.dt-report-metrics>div>strong{font:550 18px/1.3 system-ui;color:#41643f;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dt-report-metrics>div>strong{font:500 20px/1.3 var(--serif);color:#41643f;font-variant-numeric:tabular-nums;white-space:nowrap}
 .dt-report-metrics>div:last-child>strong{color:#85937a;font-weight:450}
-.dt-report-metrics em{font:400 10px/1 system-ui;color:#93a087;margin-left:2px}
+.dt-report-metrics em{font:400 14px/1 var(--serif);color:#93a087;margin-left:2px}
 .dt-range-inspector>ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:12px minmax(0,1fr) max-content 25px;column-gap:7px;row-gap:3px}
 .dt-range-inspector li{display:grid;grid-column:1/-1;grid-template-columns:12px minmax(0,1fr) 69px 25px;align-items:center;gap:7px;min-height:27px}
 @supports(grid-template-columns:subgrid){.dt-range-inspector li{grid-template-columns:subgrid}}
@@ -574,3 +574,11 @@ dialog #record-info{margin:0 0 0 auto;font-size:9px}
 .dt-activity-evidence-tip .dt-client-evidence>div{line-height:18px}
 .dt-activity-evidence-tip>footer:empty{display:none}
 @media(max-width:350px){.dt-range-inspector{padding:10px}.dt-report-metrics{gap:8px}.dt-report-metrics>div{gap:5px}.dt-range-inspector>ol{column-gap:5px}}
+
+/* The chart owns the popup viewport; long reports scroll under a fixed header. */
+.dt-range-inspector{display:flex;flex-direction:column;overflow:hidden}
+.dt-range-inspector>.dt-report-header{flex:none}
+.dt-range-inspector>ol{min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#c4cfb8 transparent}
+.dt-activity-evidence-tip{display:flex;flex-direction:column;overflow:hidden;pointer-events:auto}
+.dt-activity-evidence-tip>.dt-report-header,.dt-activity-evidence-tip>footer{flex:none}
+.dt-activity-evidence-tip>.dt-evidence-body{min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#c4cfb8 transparent}

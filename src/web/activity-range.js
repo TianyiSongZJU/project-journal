@@ -1,3 +1,4 @@
+import {placeTimelinePopover} from './timeline-popover.js';
 import {activitySlots} from './timeline-layout.js';
 import {quarterSelection} from './timeline-selection.js';
 
@@ -42,10 +43,7 @@ export function setupActivityRange({root,getActivities,getDay,esc,appColor,hideE
  function clear(){cancel();selection=null;hide()}
  function place(){
   if(!selection||!panel||panel.hidden||!marker)return;
-  const viewport=scroller.getBoundingClientRect(),box=marker.getBoundingClientRect(),r=panel.getBoundingClientRect();
-  const right=box.right+12,left=box.left-r.width-12;
-  panel.style.left=Math.max(10,Math.min(right+r.width<=innerWidth-10?right:left,innerWidth-r.width-10))+'px';
-  panel.style.top=Math.max(10,Math.min(Math.max(viewport.top+8,box.top),innerHeight-r.height-10))+'px';
+  placeTimelinePopover(panel,{anchor:marker.getBoundingClientRect(),scroller,beside:true});
  }
  function paint(){
   if(!selection||!marker)return;
