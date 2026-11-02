@@ -406,6 +406,7 @@ func main() {
 	if e = store.migrateStorage(); e != nil {
 		fatalLaunch(e)
 	}
+	go store.maintainHistoryArchives()
 	collector, autoErr := newAutoCollector(store, autoHome(store.dir, *autoDir))
 	if autoErr != nil {
 		fatalLaunch(autoErr)

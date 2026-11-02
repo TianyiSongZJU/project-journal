@@ -21,6 +21,12 @@ type diskState struct {
 	EntryOrder     []string          `json:"entryOrder,omitempty"`
 	Files          map[string]string `json:"files"`
 }
+
+// Version 3 stores each history manifest once, shared by successive undo lists.
+type historySnapshotRef struct {
+	SnapshotHash string `json:"snapshotHash"`
+}
+
 type projectNotes struct {
 	ProjectID string            `json:"projectId"`
 	Note      string            `json:"note"`
@@ -143,7 +149,7 @@ func (s *Store) archivePart(b []byte) (string, error) {
 	return hash, atomicWrite(path, b)
 }
 func splitState(st State) (diskState, map[string][]byte, error) {
-	d := diskState{StorageVersion: 2, Version: 2, Settings: st.Settings, Projects: []Project{}, Files: map[string]string{}}
+	d := diskState{StorageVersion: 3, Version: 2, Settings: st.Settings, Projects: []Project{}, Files: map[string]string{}}
 	parts := map[string][]byte{}
 	notes := map[string]*projectNotes{}
 	months := map[string]*monthRecords{}
@@ -206,7 +212,7 @@ func splitState(st State) (diskState, map[string][]byte, error) {
 	return d, parts, nil
 }
 func (s *Store) hydrateDisk(d diskState, archived bool) (State, error) {
-	if d.StorageVersion != 2 || d.Version != 2 {
+	if (d.StorageVersion != 2 && d.StorageVersion != 3) || d.Version != 2 {
 		return State{}, errors.New("无法读取此分文件数据版本")
 	}
 	st := State{Version: 1, Projects: d.Projects, Settings: d.Settings, Entries: []Entry{}, TimelineDays: map[string]TimelineDay{}, TimelineRead: map[string]string{}}
@@ -278,7 +284,24 @@ func (s *Store) hydrateDisk(d diskState, archived bool) (State, error) {
 			}
 			for i, v := range h.Versions {
 				var old diskState
-				if e = json.Unmarshal(v.Snapshot, &old); e != nil {
+				raw := v.Snapshot
+				var ref historySnapshotRef
+				if e = json.Unmarshal(raw, &ref); e != nil {
+					return st, e
+				}
+				if ref.SnapshotHash != "" {
+					if !archiveHash(ref.SnapshotHash) {
+						return st, errors.New("历史版本引用无效")
+					}
+					raw, e = os.ReadFile(storagePath(s.dir, "历史内容", ref.SnapshotHash+".json"))
+					if e != nil {
+						return st, fmt.Errorf("历史版本尚未同步完整：%w", e)
+					}
+					if revision(raw) != ref.SnapshotHash {
+						return st, errors.New("历史版本内容校验失败")
+					}
+				}
+				if e = json.Unmarshal(raw, &old); e != nil {
 					return st, e
 				}
 				if _, ok := old.Files["操作历史.json"]; ok {
@@ -362,9 +385,19 @@ func (s *Store) makeDisk(st State, withHistory bool) (diskState, map[string][]by
 			if err != nil {
 				return d, nil, err
 			}
-			h.Versions[i].Snapshot, _ = json.Marshal(doc)
+			// Archive an immutable manifest once; later undo lists reuse its hash.
+			raw, err := json.Marshal(doc)
+			if err != nil {
+				return d, nil, err
+			}
+			hash, err := s.archivePart(raw)
+			if err != nil {
+				return d, nil, err
+			}
+			h.Versions[i].Snapshot, _ = json.Marshal(historySnapshotRef{SnapshotHash: hash})
 		}
-		parts["操作历史.json"], e = diskJSON(h)
+		// Store the small list of references without indentation.
+		parts["操作历史.json"], e = json.Marshal(h)
 		if e != nil {
 			return d, nil, e
 		}
@@ -390,7 +423,7 @@ func (s *Store) commitDisk(st State, base string) (string, error) {
 			return "", errConflict
 		}
 		var current diskState
-		if json.Unmarshal(raw, &current) == nil && current.StorageVersion == 2 {
+		if json.Unmarshal(raw, &current) == nil && (current.StorageVersion == 2 || current.StorageVersion == 3) {
 			for name, hash := range current.Files {
 				if !safeStoragePath(name) {
 					return "", errors.New("数据索引路径无效")
@@ -517,7 +550,7 @@ func (s *Store) migrateStorage() error {
 	}
 	var head diskState
 	_ = json.Unmarshal(b, &head)
-	if head.StorageVersion == 2 {
+	if head.StorageVersion == 2 || head.StorageVersion == 3 {
 		return nil
 	}
 	if e = s.backupLegacy(); e != nil {
