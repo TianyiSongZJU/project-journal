@@ -22,3 +22,4 @@ html[data-highlights="off"] .tr-row .tr-day-total{text-shadow:none!important}
 .appearance-setting input:checked::before{transform:translateX(14px)}
 .appearance-setting input:focus-visible{outline:2px solid #9ab08b;outline-offset:3px}
 @media(prefers-reduced-motion:reduce){.appearance-setting input::before{transition:none}}
+html[data-highlights="off"] .dt-range-brush{outline:0;box-shadow:none}

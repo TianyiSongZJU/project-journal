@@ -529,34 +529,42 @@ dialog #record-info{margin:0 0 0 auto;font-size:9px}
 
 .dt-cancel-selection>svg{display:block;width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;pointer-events:none}
 
-/* Evidence brush: a quiet selection over the activity columns, with a persistent ranking. */
-.dt-range-brush{position:absolute;box-sizing:border-box;z-index:12;pointer-events:none;border:1px solid #6f8b68;border-radius:5px;background:#eff5e62b;box-shadow:inset 0 0 0 1px #ffffffb3,0 0 0 1px #ffffff9e}
-.dt-range-brush>span{position:absolute;left:5px;top:3px;padding:1px 5px;border-radius:4px;background:#f7faf1ed;color:#45643e;font:600 10px/16px system-ui;white-space:nowrap;box-shadow:0 1px 3px #334b2c12}
+/* Foreground inspection: one active detail layer and compact, aligned rankings. */
+.dt-range-brush{position:absolute;box-sizing:border-box;z-index:12;pointer-events:none;border:2px solid #587e53;border-radius:6px;background:#cde0ba24;outline:1px solid #fff;outline-offset:1px;box-shadow:inset 0 0 0 1px #ffffffd9,0 0 0 3px #ffffff80,0 2px 6px #405e3320}
+.dt-range-brush>span{position:absolute;left:5px;top:4px;padding:1px 6px;border:1px solid #53754c;border-radius:4px;background:#5a7d53;color:#fff;font:600 10px/17px system-ui;white-space:nowrap;box-shadow:0 1px 3px #334b2c20}
 .dt-client-column,.dt-app-area>.dt-area-name{cursor:crosshair;touch-action:none}
 .dt-inspecting,.dt-inspecting *{user-select:none!important;cursor:crosshair!important}
-.dt-range-inspector{position:fixed;z-index:1800;width:280px;max-width:calc(100vw - 20px);max-height:calc(100vh - 20px);box-sizing:border-box;overflow:auto;border:1px solid #d8e1ce;border-radius:13px;background:linear-gradient(135deg,#f2f6ec,#fcfdf9 65%);box-shadow:0 8px 28px #31442b24,0 1px 3px #31442b0d;color:#44543d;padding:13px 14px 10px;font:12px/1.5 system-ui}
+.dt-range-inspector{position:fixed;z-index:1800;width:340px;max-width:calc(100vw - 20px);max-height:calc(100vh - 20px);box-sizing:border-box;overflow:auto;border:1px solid #d8e1ce;border-radius:13px;background:linear-gradient(135deg,#f2f6ec,#fcfdf9 65%);box-shadow:0 8px 28px #31442b24,0 1px 3px #31442b0d;color:#44543d;padding:15px;font:12px/1.5 system-ui}
 .dt-range-inspector>header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
-.dt-range-inspector>header>div{display:flex;flex-direction:column;gap:3px;min-width:0}
-.dt-range-inspector>header strong{font-size:13px;font-weight:600;color:#3d5f42}
-.dt-range-inspector>header span{font-size:10px;color:#839078;font-variant-numeric:tabular-nums}
-.dt-range-inspector>header i{font-style:normal;margin:0 6px;color:#b0baa5}
+.dt-range-inspector>header>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.dt-range-inspector>header strong{font-size:20px;font-weight:600;line-height:1.25;letter-spacing:.15px;color:#365b3e;font-variant-numeric:tabular-nums}
+.dt-range-inspector>header span{font-size:10px;color:#8a977e}
 .dt-range-inspector>header button{display:grid;place-items:center;flex:none;width:22px;height:22px;min-height:22px;padding:0;border:0;border-radius:6px;background:transparent;box-shadow:none;color:#91a087}
 .dt-range-inspector>header button:hover{background:#e8eedf;color:#4b6843}
 .dt-range-inspector>header button svg{display:block;width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
-.dt-range-summary{display:flex;justify-content:space-between;align-items:baseline;margin:11px 0 10px;font-size:10px;color:#89967d}
-.dt-range-summary b{margin-left:7px;font-size:12px;font-weight:600;color:#4d6944;font-variant-numeric:tabular-nums}
-.dt-range-summary small{font-size:9px;color:#9ba68f}
-.dt-range-inspector>ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:11px}
-.dt-range-inspector li{display:flex;align-items:center;gap:8px}
-.dt-range-rank{flex:none;width:12px;color:#a5af9b;font:10px/1 system-ui;text-align:center;font-variant-numeric:tabular-nums}
-.dt-range-inspector li>div{flex:1;min-width:0}
-.dt-range-app{display:flex;align-items:baseline;gap:7px;margin-bottom:4px;font-size:11px}
-.dt-range-app>span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dt-range-app>b{flex:none;font-size:10px;font-weight:500;color:#627557;font-variant-numeric:tabular-nums}
-.dt-range-app>small{width:27px;text-align:right;font-size:9px;color:#9ba78e;font-variant-numeric:tabular-nums}
+.dt-range-summary{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:13px 0 8px;padding-bottom:10px;border-bottom:1px solid #e2e7da;font-size:10px;color:#89967d}
+.dt-range-summary>span{display:flex;align-items:baseline;gap:8px}
+.dt-range-summary b{font-size:20px;line-height:1.2;font-weight:600;color:#4d6944;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dt-range-summary em{font-style:normal;font-size:11px;font-weight:400;margin:0 2px;color:#7e8f71}
+.dt-range-summary small{font-size:9px;color:#9ba68f;white-space:nowrap}
+.dt-range-inspector>ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.dt-range-inspector li{display:grid;grid-template-columns:14px minmax(0,1fr) 46px 75px 26px;align-items:center;gap:7px;min-height:32px}
+.dt-range-rank{color:#a5af9b;font:10px/1 system-ui;text-align:center;font-variant-numeric:tabular-nums}
+.dt-range-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:500;color:#4b5e42}
+.dt-range-duration{font-size:13px;font-weight:600;color:#46623e;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.dt-range-duration em{font-size:9px;font-style:normal;font-weight:400;color:#8c997e;margin-left:1px}
+.dt-range-percent{font-size:9px;color:#9ba78e;text-align:right;font-variant-numeric:tabular-nums}
 .dt-range-track{height:4px;background:#e8eddf;border-radius:3px;overflow:hidden}
-.dt-range-track>i{display:block;height:100%;border-radius:3px;background:var(--app-color);opacity:.72}
-.dt-range-inspector>footer{margin-top:13px;padding-top:8px;border-top:1px solid #e1e7d9;font-size:9px;line-height:1.6;color:#9aa68e}
-.dt-range-empty{padding:14px 0 7px;margin:0;color:#94a086;font-size:11px}
-
+.dt-range-track>i{display:block;height:100%;min-width:2px;border-radius:3px;background:var(--app-color);opacity:.8}
+.dt-range-empty{padding:15px 0 2px;margin:0;color:#94a086;font-size:11px}
 .dt-overview-scale .dt-range-brush>span{display:none}
+.dt-activity-evidence-tip>header{display:flex;flex-direction:row;align-items:baseline;justify-content:space-between;gap:18px}
+.dt-activity-evidence-tip>header>time{font:600 18px/1.3 system-ui;color:#3c5f40;font-variant-numeric:tabular-nums}
+.dt-activity-evidence-tip>header>strong{font:600 19px/1.3 system-ui;color:#4d6c42;white-space:nowrap}
+.dt-activity-evidence-tip .dt-evidence-body{margin-top:6px;padding-top:0}
+.dt-activity-evidence-tip .dt-evidence-row{padding:5px 0}
+.dt-activity-evidence-tip .dt-evidence-row>b{font-size:13px;font-variant-numeric:tabular-nums}
+.dt-activity-evidence-tip .dt-client-evidence{margin-top:9px;padding-top:8px}
+.dt-activity-evidence-tip .dt-client-evidence>span{font-size:9px}
+.dt-activity-evidence-tip>footer:empty{display:none}
+@media(max-width:390px){.dt-range-inspector{padding:12px}.dt-range-inspector li{grid-template-columns:12px minmax(0,1fr) 30px 69px 24px;gap:5px}}

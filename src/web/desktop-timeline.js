@@ -1,4 +1,5 @@
 // Shared native desktop presentation. Device filters never change suggestions or saved time.
+import {observedDuration} from './activity-range.js';
 import {activitySlots} from './timeline-layout.js';
 export const clientKey = item => item.deviceId || item.device || item.deviceName || 'local';
 export const windowsAppName = app => app.replace(/\.exe$/i,'');
@@ -166,11 +167,11 @@ export function setupClientTimeline({esc,initialView={},onViewChange}) {
   function activityDetail(activities,run) {
     const names=new Set(run.apps.keys());
     const clients=activityClients(activities.filter(item=>names.has(item.app)&&item.start<run.end&&item.end>run.start));
-    const minuteLabel=seconds=>seconds<60?'不足1分':Math.round(seconds/60)+'分';
+    const minuteLabel=observedDuration;
     return `<div class="dt-client-evidence"><span>客户端来源</span>${clients.map(client=>{
       const seconds=activitySlots(client.activities,run.start,run.end).reduce((sum,slot)=>sum+slot.activeSeconds,0);
       return `<div><span>${esc(client.name)}</span><b>${minuteLabel(seconds)}</b></div>`;
-    }).join('')}<small>各端分别观测，重叠部分不能相加为工时</small></div>`;
+    }).join('')}</div>`;
   }
   return {getView:()=>({hiddenClients:[...hidden],compare}),includes,mount,renderActivities,activityDetail};
 }

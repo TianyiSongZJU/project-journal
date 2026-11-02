@@ -49,7 +49,9 @@ export function setupActivityRange({root,getActivities,getDay,esc,appColor,hideE
   const stats=summarizeActivitySlots(activities,start,end);
   if(!panel){panel=document.createElement('section');panel.className='dt-range-inspector';panel.setAttribute('aria-label','所选时段前台应用排名');document.body.append(panel)}
   panel.hidden=false;
-  panel.innerHTML=`<header><div><strong>前台应用分布</strong><span>${time(start)}–${time(end)}<i>·</i>${observedDuration((end-start)*60)}</span></div><button type="button" aria-label="关闭应用时间分布"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8m0-8-8 8"/></svg></button></header>${stats.apps.length?`<div class="dt-range-summary"><span>${client?esc(selection.clientName||'所选客户端'):stats.devices>1?stats.devices+' 个客户端':'前台活跃'}<b>${observedDuration(stats.seconds)}</b></span><small>${stats.apps.length} 个应用</small></div><ol>${stats.apps.map((row,index)=>`<li style="--app-color:${appColor(row.app)}"><span class="dt-range-rank">${index+1}</span><div><div class="dt-range-app"><span title="${esc(row.app)}">${esc(row.app)}</span><b>${observedDuration(row.seconds)}</b><small>${row.percent<1?'&lt;1':Math.round(row.percent)}%</small></div><div class="dt-range-track"><i style="width:${row.percent}%"></i></div></div></li>`).join('')}</ol>`:'<p class="dt-range-empty">这个时段暂无前台活动记录</p>'}<footer>按 15 分钟观测格统计${stats.devices>1?'；多端重叠不等同于工时':''}</footer>`;
+  hideEvidence();
+  const formatDuration=seconds=>esc(observedDuration(seconds)).replace(/(小时|分|秒)/g,'<em>$1</em>');
+  panel.innerHTML=`<header><div><strong>${time(start)}–${time(end)}</strong><span>所选时段 ${observedDuration((end-start)*60)}</span></div><button type="button" aria-label="关闭应用时间分布"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8m0-8-8 8"/></svg></button></header>${stats.apps.length?`<div class="dt-range-summary" title="按15分钟观测格统计"><span>观测时长<b>${formatDuration(stats.seconds)}</b></span><small>${client?esc(selection.clientName||'所选客户端'):stats.devices>1?stats.devices+' 端':''}${client||stats.devices>1?' · ':''}${stats.apps.length} 个应用</small></div><ol>${stats.apps.map((row,index)=>`<li style="--app-color:${appColor(row.app)}"><span class="dt-range-rank">${index+1}</span><span class="dt-range-name" title="${esc(row.app)}">${esc(row.app)}</span><div class="dt-range-track" aria-hidden="true"><i style="width:${row.percent}%"></i></div><b class="dt-range-duration">${formatDuration(row.seconds)}</b><small class="dt-range-percent">${row.percent<1?'&lt;1':Math.round(row.percent)}%</small></li>`).join('')}</ol>`:'<p class="dt-range-empty">这个时段暂无前台活动记录</p>'}`;
   panel.querySelector('button').onclick=clear;
   place();
  }
@@ -98,5 +100,5 @@ export function setupActivityRange({root,getActivities,getDay,esc,appColor,hideE
  function cancelSelection(){if(gesture){cancel();return true}if(selection){clear();return true}return false}
  document.addEventListener('keydown',e=>{if(e.key==='Escape')cancelSelection()});
  window.addEventListener('blur',cancel);
- return {mount,cancelSelection,hide(){cancel();hide()},isDragging:()=>!!gesture};
+ return {mount,cancelSelection,isOpen:()=>!!panel&&!panel.hidden,hide(){cancel();hide()},isDragging:()=>!!gesture};
 }
