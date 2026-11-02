@@ -1,0 +1,29 @@
+const {chromium}=require(process.env.JOURNAL_PLAYWRIGHT_MODULE||'playwright');
+const fs=require('fs'),os=require('os'),path=require('path'),crypto=require('crypto'),assert=require('assert/strict'),{spawn}=require('child_process');
+(async()=>{const temp=fs.mkdtempSync(path.join(os.tmpdir(),'journal-ranking-browser-')),data=path.join(temp,'data'),local=path.join(temp,'local');fs.mkdirSync(data);fs.mkdirSync(local);const server=spawn(process.env.JOURNAL_CORE,['--ui-only','--no-open','--data-dir',data,'--auto-home',local],{stdio:'ignore'});let browser;try{
+ const sf=path.join(os.tmpdir(),'project-journal-'+crypto.createHash('sha256').update(data).digest('hex').slice(0,24)+'.json');for(let i=0;!fs.existsSync(sf)&&i<100;i++)await new Promise(r=>setTimeout(r,100));const session=JSON.parse(fs.readFileSync(sf));browser=await chromium.launch({channel:'msedge',headless:true});const page=await browser.newPage({viewport:{width:1360,height:940},timezoneId:'Asia/Shanghai'}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.addInitScript(()=>{window.journalMacHost=true;addEventListener('DOMContentLoaded',()=>{document.documentElement.classList.add('native-mac');const link=document.createElement('link');link.rel='stylesheet';link.href='macos.css';document.head.append(link)})});
+ await page.goto(session.url+'/?token='+session.token);await page.waitForFunction(()=>window.journalViewReady);
+ await page.evaluate(async()=>{const d=await(await fetch('/api/state')).json();d.state.projects=[{id:'research',name:'方向探索',group:'科研',color:'#7b9f9b',note:'',deadlines:[]}];d.state.entries=[];await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:d.revision,state:d.state})})});
+ const date='2026-11-01',base=Date.parse(date+'T00:00:00+08:00')/1000;fs.mkdirSync(path.join(data,'activity'),{recursive:true});
+ for(const [device,rows]of [['mac',[['ChatGPT',960,600],['Typora',960,300],['ChatGPT',975,300],['Word',990,900],['微信',1020,900]]],['win',[['ChatGPT.exe',960,480]]]]){const evidence={};rows.forEach(([app,at,seconds],i)=>{const id=device+'/'+i;evidence[id]={id,date,projectId:'research',kind:'activity',app,name:app,bucketStart:base+at*60,seconds,stamp:String(seconds),at:new Date((base+at*60)*1000).toISOString()}});fs.writeFileSync(path.join(data,'activity',device+'.json'),JSON.stringify({version:1,deviceId:device,deviceName:device==='mac'?'Mac':'Windows',evidence}))}
+ await page.reload();await page.waitForFunction(()=>window.journalViewReady);await page.locator('#auto-entry').click();await page.locator('#dt-date').fill(date);await page.locator('#dt-date').dispatchEvent('change');await page.locator('.dt-app-run').first().waitFor();
+ const original=await page.evaluate(async()=>(await(await fetch('/api/state')).json()).state);
+ await page.locator('.sidebar-more>summary').click();await page.locator('[data-page="settings"]').first().click();
+ for(const scheme of ['light','dark'])for(const accent of ['fern','slate','iris','clay','sand']){
+  await page.locator(`[data-scheme="${scheme}"][role="radio"]`).click();await page.locator(`[data-accent="${accent}"][role="radio"]`).click();
+  assert.equal(await page.locator('html').getAttribute('data-scheme'),scheme);assert.equal(await page.locator('html').getAttribute('data-accent'),accent);
+  if(process.env.JOURNAL_APPEARANCE_SCREENSHOTS)await page.screenshot({path:`${process.env.JOURNAL_APPEARANCE_SCREENSHOTS}/${scheme}-${accent}.png`});
+ }
+ await page.locator('[data-scheme="system"][role="radio"]').click();await page.emulateMedia({colorScheme:'light'});await page.waitForTimeout(80);assert.equal(await page.locator('html').getAttribute('data-scheme'),'light');await page.emulateMedia({colorScheme:'dark'});await page.waitForTimeout(80);assert.equal(await page.locator('html').getAttribute('data-scheme'),'dark');
+ await page.locator('[data-scheme="light"][role="radio"]').click();await page.emulateMedia({colorScheme:'dark'});await page.waitForTimeout(80);assert.equal(await page.locator('html').getAttribute('data-scheme'),'light');
+ await page.locator('[data-accent="fern"][role="radio"]').focus();await page.keyboard.press('ArrowRight');assert.equal(await page.locator('html').getAttribute('data-accent'),'slate');
+ await page.locator('[data-scheme="dark"][role="radio"]').click();await page.evaluate(()=>window.journalFlush());await page.reload();await page.waitForFunction(()=>window.journalViewReady);assert.equal(await page.locator('html').getAttribute('data-scheme'),'dark');assert.equal(await page.locator('html').getAttribute('data-accent'),'slate');
+ for(const target of ['review','projects','auto']){
+  await page.locator(`[data-page="${target}"]`).first().click();if(process.env.JOURNAL_APPEARANCE_SCREENSHOTS)await page.screenshot({path:`${process.env.JOURNAL_APPEARANCE_SCREENSHOTS}/dark-${target}.png`});
+ }
+ await page.locator('#dt-date').fill(date);await page.locator('#dt-date').dispatchEvent('change');await page.locator('.dt-area-name').first().hover();await page.locator('.dt-activity-evidence-tip').waitFor();
+ const metrics=page.locator('.dt-activity-evidence-tip .dt-report-metrics');assert(await metrics.evaluate(el=>Math.abs(el.lastElementChild.getBoundingClientRect().right-el.getBoundingClientRect().right)<1));
+ if(process.env.JOURNAL_APPEARANCE_SCREENSHOTS)await page.screenshot({path:`${process.env.JOURNAL_APPEARANCE_SCREENSHOTS}/dark-report.png`});
+ assert.deepEqual(await page.evaluate(async()=>(await(await fetch('/api/state')).json()).state),original);assert.deepEqual(errors,[]);
+ console.log('PASS 10 palettes, system/manual mode, keyboard, reload, right-aligned metrics, unchanged records');
+}finally{if(browser)await browser.close();server.kill();await new Promise(resolve=>server.once('exit',resolve))}})().catch(e=>{console.error(e);process.exit(1)});

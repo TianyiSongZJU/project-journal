@@ -1,11 +1,11 @@
 /* Light comes from above; emphasis belongs to surfaces and deliberate actions. */
-html[data-highlights="on"] :is(.settings-panel,.tr-paper,.dt-surface,.dt-allocations,#project-detail,.month-inspector){box-shadow:inset 0 1px 0 #ffffffc2,0 2px 9px #3b4c3005}
-html[data-highlights="on"] #page-projects .project-layout>aside{box-shadow:inset 0 1px 0 #ffffff9e}
-html[data-highlights="on"] #page-review .review-analytics>.fold-panel{box-shadow:inset 0 1px 0 #ffffffc2}
-html[data-highlights="on"] :is(.segmented button.active,.tr-presets button.active,.workspace-nav button.active){box-shadow:inset 0 1px 0 #ffffffed,0 1px 3px #3b4c3014}
-html[data-highlights="on"] #page-projects .project-item.active{box-shadow:inset 2px 0 0 var(--green),inset 0 1px 0 #ffffff94}
-html[data-highlights="on"] button.primary:not(:disabled){box-shadow:inset 0 1px 0 #ffffff36,inset 0 -1px 0 #163c2a22,0 2px 5px #315c4614}
-html[data-highlights="on"] :is(.dt-toolbar,.tr-chart-tools){box-shadow:inset 0 1px 0 #ffffffb8}
+html[data-highlights="on"] :is(.settings-panel,.tr-paper,.dt-surface,.dt-allocations,#project-detail,.month-inspector){box-shadow:inset 0 1px 0 var(--tone-shadow-ffffffc2,#ffffffc2),0 2px 9px var(--tone-shadow-3b4c3005,#3b4c3005)}
+html[data-highlights="on"] #page-projects .project-layout>aside{box-shadow:inset 0 1px 0 var(--tone-shadow-ffffff9e,#ffffff9e)}
+html[data-highlights="on"] #page-review .review-analytics>.fold-panel{box-shadow:inset 0 1px 0 var(--tone-shadow-ffffffc2,#ffffffc2)}
+html[data-highlights="on"] :is(.segmented button.active,.tr-presets button.active,.workspace-nav button.active){box-shadow:inset 0 1px 0 var(--tone-shadow-ffffffed,#ffffffed),0 1px 3px var(--tone-shadow-3b4c3014,#3b4c3014)}
+html[data-highlights="on"] #page-projects .project-item.active{box-shadow:inset 2px 0 0 var(--green),inset 0 1px 0 var(--tone-shadow-ffffff94,#ffffff94)}
+html[data-highlights="on"] button.primary:not(:disabled){box-shadow:inset 0 1px 0 var(--tone-shadow-ffffff36,#ffffff36),inset 0 -1px 0 var(--tone-shadow-163c2a22,#163c2a22),0 2px 5px var(--tone-shadow-315c4614,#315c4614)}
+html[data-highlights="on"] :is(.dt-toolbar,.tr-chart-tools){box-shadow:inset 0 1px 0 var(--tone-shadow-ffffffb8,#ffffffb8)}
 /* Turning off decoration leaves focus borders and floating-menu depth intact. */
 html[data-highlights="off"] .tr-row:is(.is-hovered,:has(:focus-visible))::after,
 html[data-highlights="off"] .tr-summary-cell:is(:hover,:focus-visible)::after{box-shadow:none}
@@ -15,11 +15,11 @@ html[data-highlights="off"] .tr-row .tr-day-total{text-shadow:none!important}
 .appearance-setting{display:flex;align-items:center;justify-content:space-between;gap:20px;margin:14px 0 12px;cursor:pointer}
 .appearance-setting>span{display:grid;gap:5px}
 .appearance-setting strong{font-size:12px;font-weight:500;color:var(--ink)}
-.appearance-setting small{font-size:10px;color:#8b967e;line-height:1.5}
-.appearance-setting input[type="checkbox"]{appearance:none;-webkit-appearance:none;flex:none;position:relative;width:34px;height:20px;min-height:20px;margin:0;padding:0;border:1px solid #cdd6c4;border-radius:12px;background:#e2e7dc;box-shadow:none;cursor:pointer}
-.appearance-setting input::before{content:"";position:absolute;left:2px;top:2px;width:14px;height:14px;border-radius:50%;background:#fbfcf8;box-shadow:0 1px 2px #35472c26;transition:transform .15s ease}
-.appearance-setting input:checked{background:#80996d;border-color:#80996d}
+.appearance-setting small{font-size:10px;color:var(--tone-ink-8b967e,#8b967e);line-height:1.5}
+.appearance-setting input[type="checkbox"]{appearance:none;-webkit-appearance:none;flex:none;position:relative;width:34px;height:20px;min-height:20px;margin:0;padding:0;border:1px solid var(--tone-line-cdd6c4,#cdd6c4);border-radius:12px;background:var(--tone-surface-e2e7dc,#e2e7dc);box-shadow:none;cursor:pointer}
+.appearance-setting input::before{content:"";position:absolute;left:2px;top:2px;width:14px;height:14px;border-radius:50%;background:var(--tone-surface-fbfcf8,#fbfcf8);box-shadow:0 1px 2px var(--tone-shadow-35472c26,#35472c26);transition:transform .15s ease}
+.appearance-setting input:checked{background:var(--tone-surface-80996d,#80996d);border-color:var(--tone-line-80996d,#80996d)}
 .appearance-setting input:checked::before{transform:translateX(14px)}
-.appearance-setting input:focus-visible{outline:2px solid #9ab08b;outline-offset:3px}
+.appearance-setting input:focus-visible{outline:2px solid var(--tone-line-9ab08b,#9ab08b);outline-offset:3px}
 @media(prefers-reduced-motion:reduce){.appearance-setting input::before{transition:none}}
 html[data-highlights="off"] .dt-range-brush{outline:0;box-shadow:none}

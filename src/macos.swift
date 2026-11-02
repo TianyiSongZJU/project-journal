@@ -96,7 +96,14 @@ final class JournalLaunchSurface:NSView {
   self.cold=cold;super.init(frame:frame)
   autoresizingMask=[.width,.height];wantsLayer=true;layer?.masksToBounds=true
   setAccessibilityElement(true);setAccessibilityRole(.progressIndicator);setAccessibilityLabel("正在打开")
-  func color(_ r:CGFloat,_ g:CGFloat,_ b:CGFloat,_ a:CGFloat=1)->CGColor{NSColor(calibratedRed:r,green:g,blue:b,alpha:a).cgColor}
+  func color(_ r:CGFloat,_ g:CGFloat,_ b:CGFloat,_ a:CGFloat=1)->CGColor{
+   if NSApp.effectiveAppearance.bestMatch(from:[.darkAqua,.aqua]) == .darkAqua {
+    if a<1{return NSColor.white.withAlphaComponent(a*0.15).cgColor}
+    let brightness=(r+g+b)/3,level=brightness>0.65 ? 0.12+(1-brightness)*0.5:0.04
+    return (journalAccentColor().blended(withFraction:0.82,of:NSColor(white:level,alpha:1)) ?? .windowBackgroundColor).cgColor
+   }
+   return NSColor(calibratedRed:r,green:g,blue:b,alpha:a).cgColor
+  }
   backdrop.colors=[color(0.9833,0.9882,0.9804),color(0.9333,0.9529,0.9216),color(0.9263,0.9486,0.9125)];backdrop.startPoint=CGPoint(x:0.2,y:1);backdrop.endPoint=CGPoint(x:0.85,y:0)
   layer?.addSublayer(backdrop);layer?.addSublayer(artwork);artwork.addSublayer(tiles)
   artwork.opacity=1
@@ -332,7 +339,7 @@ final class JournalTitleText: NSView {
  override func draw(_ dirtyRect:NSRect){
   guard let context=NSGraphicsContext.current?.cgContext else{return}
   let font=NSFont(name:"Songti SC",size:17) ?? NSFont.systemFont(ofSize:16,weight:.regular)
-  let text=NSAttributedString(string:"项目手记",attributes:[.font:font,.foregroundColor:NSColor(calibratedRed:0.19,green:0.24,blue:0.20,alpha:1)])
+  let text=NSAttributedString(string:"项目手记",attributes:[.font:font,.foregroundColor:NSColor.labelColor])
   let line=CTLineCreateWithAttributedString(text)
   context.saveGState();context.textMatrix = .identity
   let ink=CTLineGetImageBounds(line,context)
@@ -342,8 +349,28 @@ final class JournalTitleText: NSView {
 }
 
 // Menu views use semantic colors so the system material remains readable in either appearance.
+private func journalAccentColor()->NSColor {
+ let rgb:[CGFloat]
+ switch UserDefaults.standard.string(forKey:"JournalAccent") ?? "fern" {
+ case "slate":rgb=[76,107,136]
+ case "iris":rgb=[116,97,133]
+ case "clay":rgb=[151,99,81]
+ case "sand":rgb=[135,111,63]
+ default:rgb=[49,92,70]
+ }
+ return NSColor(srgbRed:rgb[0]/255,green:rgb[1]/255,blue:rgb[2]/255,alpha:1)
+}
+private let journalMenuAccentFill = NSColor(name:nil){_ in journalAccentColor()}
 private let journalMenuGreen = NSColor(name:nil){appearance in
- appearance.bestMatch(from:[.darkAqua,.aqua]) == .darkAqua ? NSColor(srgbRed:0.64,green:0.79,blue:0.65,alpha:1) : NSColor(srgbRed:0.23,green:0.39,blue:0.29,alpha:1)
+ let color=journalAccentColor()
+ return appearance.bestMatch(from:[.darkAqua,.aqua]) == .darkAqua ? color.blended(withFraction:0.48,of:.white) ?? color:color
+}
+private func journalApplyNativeAppearance(){
+ switch UserDefaults.standard.string(forKey:"JournalColorScheme") ?? "system" {
+ case "light":NSApp.appearance=NSAppearance(named:.aqua)
+ case "dark":NSApp.appearance=NSAppearance(named:.darkAqua)
+ default:NSApp.appearance=nil
+ }
 }
 private let journalMenuMuted = NSColor(name:nil){appearance in
  appearance.bestMatch(from:[.darkAqua,.aqua]) == .darkAqua ? NSColor.white.withAlphaComponent(0.48):NSColor.black.withAlphaComponent(0.42)
@@ -406,12 +433,12 @@ private func journalMenuDivider()->NSMenuItem {
 }
 private func journalPendingMenuTitle(_ count:Int)->NSAttributedString {
  let image=NSImage(size:NSSize(width:20,height:20),flipped:false){rect in
-  let circle=NSBezierPath(ovalIn:rect.insetBy(dx:0.7,dy:0.7));journalMenuGreen.withAlphaComponent(0.14).setFill();circle.fill();journalMenuGreen.withAlphaComponent(0.18).setStroke();circle.lineWidth=1.4;circle.stroke()
-  journalMenuGlyph("exclamationmark",10,journalMenuGreen).draw(in:NSRect(x:5,y:5,width:10,height:10));return true
+  let circle=NSBezierPath(ovalIn:rect.insetBy(dx:0.7,dy:0.7));journalMenuAccentFill.setFill();circle.fill()
+  journalMenuGlyph("exclamationmark",10,.white).draw(in:NSRect(x:5,y:5,width:10,height:10));return true
  }
  let attachment=NSTextAttachment();attachment.image=image;attachment.bounds=NSRect(x:0,y:-5,width:20,height:20)
  let text=NSMutableAttributedString(attachment:attachment)
- text.append(NSAttributedString(string:"  待处理建议",attributes:[.font:NSFont.systemFont(ofSize:12,weight:.medium)]))
+ text.append(NSAttributedString(string:"  待处理建议",attributes:[.font:NSFont.systemFont(ofSize:12,weight:.medium),.foregroundColor:NSColor.labelColor]))
  text.append(NSAttributedString(string:"\t\(count) 天",attributes:[.font:NSFont.systemFont(ofSize:10),.foregroundColor:journalMenuGreen]))
  let paragraph=NSMutableParagraphStyle();paragraph.tabStops=[NSTextTab(textAlignment:.right,location:195)];paragraph.defaultTabInterval=195
  text.addAttribute(.paragraphStyle,value:paragraph,range:NSRange(location:0,length:text.length));return text
@@ -488,8 +515,8 @@ final class JournalMenuInfoView:NSView {
  override func draw(_ dirtyRect:NSRect){
   let color=isEmphasized ? journalMenuGreen:NSColor.labelColor
   let circle=NSBezierPath(ovalIn:NSRect(x:15,y:(bounds.height-20)/2,width:20,height:20).insetBy(dx:0.7,dy:0.7))
-  color.withAlphaComponent(isEmphasized ? 0.14:0.07).setFill();circle.fill();color.withAlphaComponent(isEmphasized ? 0.18:0.06).setStroke();circle.lineWidth=1.4;circle.stroke()
-  if !control.isHidden{journalMenuGlyph(toggleSymbol,10,isEmphasized ? journalMenuGreen:journalMenuMuted).draw(in:NSRect(x:20,y:(bounds.height-10)/2,width:10,height:10))}
+  (isEmphasized ? journalMenuAccentFill:color.withAlphaComponent(0.07)).setFill();circle.fill()
+  if !control.isHidden{journalMenuGlyph(toggleSymbol,10,isEmphasized ? .white:journalMenuMuted).draw(in:NSRect(x:20,y:(bounds.height-10)/2,width:10,height:10))}
  }
  func update(title:String,detail:String,symbol:String,color:NSColor){titleLabel.stringValue=title;detailLabel.stringValue=detail;let inner=symbol=="tray" ? "tray":symbol=="exclamationmark.circle" ? "exclamationmark":"clock"
   icon.image=journalMenuGlyph(inner,10,color);icon.contentTintColor=color;control.contentTintColor=color;needsDisplay=true;setAccessibilityLabel(title+"，"+detail);needsLayout=true}
@@ -528,6 +555,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
  var outputBuffer = ""
  var startupTimer: Timer?
  func applicationDidFinishLaunching(_ notification: Notification) {
+  journalApplyNativeAppearance()
   startupTiming?.mark("appLaunched")
   let menu = NSMenu(); let appItem = NSMenuItem(); menu.addItem(appItem)
   let appMenu = NSMenu();appMenu.addItem(withTitle:"关于项目手记", action:#selector(NSApplication.orderFrontStandardAboutPanel(_:)),keyEquivalent:"");appMenu.addItem(.separator());appMenu.addItem(withTitle:"隐藏项目手记",action:#selector(NSApplication.hide(_:)),keyEquivalent:"h");appMenu.addItem(withTitle:"退出项目手记",action:#selector(NSApplication.terminate(_:)),keyEquivalent:"q");appItem.submenu=appMenu
@@ -554,6 +582,8 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   })();
   """,injectionTime:.atDocumentStart,forMainFrameOnly:true))
   config.userContentController.addUserScript(WKUserScript(source:"window.journalMacHost = true",injectionTime:.atDocumentStart,forMainFrameOnly:true))
+  let initialAppearance=["scheme":UserDefaults.standard.string(forKey:"JournalColorScheme") ?? "system","accent":UserDefaults.standard.string(forKey:"JournalAccent") ?? "fern"]
+  if let data=try? JSONSerialization.data(withJSONObject:initialAppearance),let json=String(data:data,encoding:.utf8){config.userContentController.addUserScript(WKUserScript(source:"window.journalInitialAppearance = "+json,injectionTime:.atDocumentStart,forMainFrameOnly:true))}
   config.userContentController.addUserScript(WKUserScript(source:"""
   document.documentElement.classList.add('native-mac');
   const journalMacStyle = document.createElement('link');
@@ -570,7 +600,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   """,injectionTime:.atDocumentEnd,forMainFrameOnly:true))
   config.userContentController.add(self,name:"journalNative")
   webView=WKWebView(frame:.zero,configuration:config);webView.navigationDelegate=self;webView.uiDelegate=self
-  window=NSWindow(contentRect:NSRect(x:0,y:0,width:1120,height:720),styleMask:[.titled,.closable,.miniaturizable,.resizable,.fullSizeContentView],backing:.buffered,defer:false);window.isReleasedWhenClosed=false;window.title="项目手记";window.titleVisibility = .hidden;window.titlebarAppearsTransparent = true;window.backgroundColor=NSColor(calibratedRed:0.933333,green:0.929412,blue:0.913725,alpha:1);window.minSize=NSSize(width:740,height:560);window.isMovable=true;window.isMovableByWindowBackground=true;window.delegate=self;window.contentView=webView;
+  window=NSWindow(contentRect:NSRect(x:0,y:0,width:1120,height:720),styleMask:[.titled,.closable,.miniaturizable,.resizable,.fullSizeContentView],backing:.buffered,defer:false);window.isReleasedWhenClosed=false;window.title="项目手记";window.titleVisibility = .hidden;window.titlebarAppearsTransparent = true;window.backgroundColor = .windowBackgroundColor;webView.underPageBackgroundColor = .windowBackgroundColor;window.minSize=NSSize(width:740,height:560);window.isMovable=true;window.isMovableByWindowBackground=true;window.delegate=self;window.contentView=webView;
   let titleAccessory=NSTitlebarAccessoryViewController();titleAccessory.layoutAttribute = .left
   window.titlebarAppearsTransparent = true
   let titleView=JournalTitleContainer(frame:NSRect(x:0,y:0,width:165,height:38))
@@ -651,7 +681,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
     guard let self=self,generation==self.reminderGeneration,let item=self.reminderItem else{return}
     self.pendingCheckInFlight=false
     guard let days=result else{if !self.pendingHasResult{self.menuReminderInfo?.update(title:"待处理建议",detail:"稍后重试",symbol:"exclamationmark.circle",color:.systemOrange);item.isEnabled=false};return}
-    self.pendingHasResult=true;self.updatePendingDayCount(days.count);item.submenu=nil
+    self.pendingHasResult=true;self.updatePendingDayCount(days.count);item.representedObject=days.count;item.submenu=nil
     if days.isEmpty{item.attributedTitle=nil;item.setAccessibilityLabel(nil);item.view=self.menuReminderInfo;item.title="待处理建议";self.menuReminderInfo?.update(title:"待处理建议",detail:incomplete ? "部分线索待同步":"暂无",symbol:incomplete ? "arrow.triangle.2.circlepath":"tray",color:journalMenuMuted);item.isEnabled=false;return}
     item.view=nil;item.title="待处理建议";item.image=nil;item.attributedTitle=journalPendingMenuTitle(days.count);item.setAccessibilityLabel("待处理建议，\(days.count)天");item.toolTip="过去7天（不含今天）有\(days.count)天建议待划取"+(incomplete ? "，部分线索待同步":"");item.isEnabled=true
     let dates=NSMenu();dates.autoenablesItems=false
@@ -724,6 +754,13 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   }
   else if action=="openReady",message.webView === webView,let timing=openingTiming,body["measurementID"] as? String == timing.launchID{
    timing.mark("pageReady",page:body["page"] as? String);openingTiming=nil;navigatePendingReminder()
+  }
+  else if action=="appearance",message.webView === webView {
+   guard let scheme=body["scheme"] as? String,["system","light","dark"].contains(scheme),let accent=body["accent"] as? String,["fern","slate","iris","clay","sand"].contains(accent) else{return}
+   UserDefaults.standard.set(scheme,forKey:"JournalColorScheme");UserDefaults.standard.set(accent,forKey:"JournalAccent");journalApplyNativeAppearance()
+   menuTrackingInfo?.needsDisplay=true;menuReminderInfo?.needsDisplay=true;menuSummary?.needsDisplay=true
+   // Refresh the cached title only; changing appearance must not rescan suggestions.
+   if let count=reminderItem?.representedObject as? Int,count>0{reminderItem?.attributedTitle=journalPendingMenuTitle(count)}
   }
   else if action=="headerRegions" {
    if let rects=body["rects"] as? [[String:Double]] {headerControlRects=rects.compactMap{r in guard let x=r["x"],let y=r["y"],let w=r["width"],let h=r["height"],w>0,h>0 else{return nil};return NSRect(x:x,y:y,width:w,height:h)};alignTitlebar()}

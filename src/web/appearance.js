@@ -1,0 +1,8 @@
+export function setupAppearance(preferences){
+ const api=globalThis.JournalAppearance,host=document.querySelector('#appearance-controls');
+ host.innerHTML=`<div class="appearance-option"><span>明暗模式</span><div class="appearance-modes" role="radiogroup" aria-label="明暗模式">${[['system','跟随系统'],['light','浅色'],['dark','深色']].map(([value,name])=>`<button type="button" role="radio" data-scheme="${value}">${name}</button>`).join('')}</div></div><div class="appearance-option"><span>主题色</span><div class="appearance-accents" role="radiogroup" aria-label="主题色">${Object.entries(api.palettes).map(([value,p])=>`<button type="button" role="radio" data-accent="${value}" style="--swatch:${p.solid}"><i aria-hidden="true"></i>${p.name}</button>`).join('')}</div></div>`;
+ function apply(){const choice=preferences.appearance();api.apply(choice);for(const key of ['scheme','accent'])host.querySelectorAll('[data-'+key+']').forEach(button=>{const selected=button.dataset[key]===choice[key];button.setAttribute('aria-checked',String(selected));button.tabIndex=selected?0:-1})}
+ host.querySelectorAll('button').forEach(button=>button.onclick=()=>{const key=button.dataset.scheme?'scheme':'accent';preferences.setAppearance({...preferences.appearance(),[key]:button.dataset[key]});apply()});
+ host.querySelectorAll('[role="radiogroup"]').forEach(group=>group.onkeydown=e=>{const buttons=[...group.querySelectorAll('button')],i=buttons.indexOf(document.activeElement);if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(e.key))return;e.preventDefault();const next=e.key==='Home'?0:e.key==='End'?buttons.length-1:(i+(['ArrowLeft','ArrowUp'].includes(e.key)?-1:1)+buttons.length)%buttons.length;buttons[next].click();buttons[next].focus()});
+ return {apply};
+}

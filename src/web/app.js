@@ -3,6 +3,7 @@ import {createTimeReview} from './time-review.js';
 import {defaultTimeReview,sanitizeTimeReview} from './time-review-model.js';
 
 import {uiPreferences,bindPreferencePanel} from './ui-preferences.js';
+import {setupAppearance} from './appearance.js';
 import {createViewMemory,sanitizeViewState} from './view-state.js';
 import {setupAppAliasSettings} from './app-aliases.js';
 import {renderDesktopSaveStatus} from './desktop-icons.js';
@@ -151,7 +152,7 @@ async function flushDrafts(){clearTimeout(autoSaveTimer);if(flushPromise)return 
 async function saveRecordDraft(){if(!recordDirty)return true;const pid=lastRecordProject,date=lastRecordDate,kind=$('#record-kind').value,hours=kind==='hours'?Number($('#record-hours').value):0;if(!pid||!date||!Number.isFinite(hours)||hours<0||hours>24){toast('小时需介于 0 至 24，填写有效值后会自动保存。',true);return false}const version=recordEditVersion,next=clone(state);try{writeDaily(next,pid,date,kind,hours,$('#record-note').value)}catch(e){toast(e.message,true);return false}const ok=await commit(next);if(ok&&version===recordEditVersion){recordDirty=false;recordSaveStatus('已自动保存')}return ok}
 async function closeRecord(){if(await flushDrafts()){$('#record-dialog').close();recordDirty=false}}
 
-function renderSettings(){applySurfaceHighlights();appAliasSettings.render();const f=$('#estimate-form');['tiny','short','medium','long','extended'].forEach((name,i)=>f.elements[name].value=estimates()[KINDS[i]]??'');$('#data-location').textContent='数据位置：'+dataPath}
+function renderSettings(){appearanceUI.apply();applySurfaceHighlights();appAliasSettings.render();const f=$('#estimate-form');['tiny','short','medium','long','extended'].forEach((name,i)=>f.elements[name].value=estimates()[KINDS[i]]??'');$('#data-location').textContent='数据位置：'+dataPath}
 function renderAll(){renderReviewDeadlineBadge();renderHistory();if(page==='review')renderReview(false);else{renderFilters();renderStats();}if(page==='projects'&&!noteDirty)renderProjects();renderSettings();if($('#day-dialog').open)renderDayDialog();$('#footer-date').textContent=new Intl.DateTimeFormat('zh-CN',{dateStyle:'long'}).format(new Date())}
 
 function renderSyncCopies(){
@@ -234,10 +235,11 @@ timeReview=createTimeReview($('#time-review-chart'),{today,
 $('#tr-close-inspector').onclick=async()=>{if(!await leaveInspector())return;timeReviewOptions.selectedDate='';renderReview(false)};
 $('#tr-open-timeline').onclick=async()=>{if(!await leaveInspector())return;focusInspectorDate(timeReviewOptions.selectedDate);await setPage('auto')};
 uiPreferences.onChange(rememberView);
+const appearanceUI=setupAppearance(uiPreferences);
 function applySurfaceHighlights(){const enabled=uiPreferences.flag('highlights',true);document.documentElement.dataset.highlights=enabled?'on':'off';$('#interface-highlights').checked=enabled}
 $('#interface-highlights').onchange=e=>{uiPreferences.setFlag('highlights',e.currentTarget.checked);applySurfaceHighlights()};
 function restoreUIPreferences(){
- applySurfaceHighlights();
+ appearanceUI.apply();applySurfaceHighlights();
  projectDeadlineShowDone=uiPreferences.flag('projectDone');inspectorDeadlineShowDone=uiPreferences.flag('inspectorDone');
  const button=$('#show-done-deadlines'),done=uiPreferences.flag('reviewDone');button.setAttribute('aria-pressed',String(done));button.classList.toggle('active',done);
  paintGroupingButton('deadline-by-group');

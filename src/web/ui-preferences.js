@@ -13,6 +13,7 @@ export function sanitizeUIPreferences(raw={},ids){
  }
  for(const [key,value] of Object.entries(object(raw.flags)))if(flagKeys.has(key)&&typeof value==='boolean')out.flags[key]=value;
  for(const [key,value] of Object.entries(object(raw.panels)))if(typeof value==='boolean'&&(panelKeys.has(key)||key.startsWith('folder.')&&key.length<=180&&(!ids||ids.includes(key.slice(7)))))out.panels[key]=value;
+ if(raw.appearance&&typeof raw.appearance==='object')out.appearance={scheme:['system','light','dark'].includes(raw.appearance.scheme)?raw.appearance.scheme:'system',accent:['fern','slate','iris','clay','sand'].includes(raw.appearance.accent)?raw.appearance.accent:'fern'};
  return out;
 }
 export function createUIPreferences(){
@@ -20,6 +21,8 @@ export function createUIPreferences(){
  function write(section,key,next){if(JSON.stringify(value[section][key])===JSON.stringify(next))return;value[section][key]=next;changed()}
  return {
   restore(raw,ids){value=sanitizeUIPreferences(raw,ids)},onChange(callback){changed=callback},snapshot(){return structuredClone(value)},
+  appearance(){return {...(value.appearance||{scheme:'system',accent:'fern'})}},
+  setAppearance(next){const choice=sanitizeUIPreferences({appearance:next}).appearance;if(choice&&JSON.stringify(value.appearance)!==JSON.stringify(choice)){value.appearance=choice;changed()}},
   flag(key,fallback=false){return value.flags[key]??fallback},setFlag(key,next){if(flagKeys.has(key))write('flags',key,!!next)},
   panel(key,fallback=false){return value.panels[key]??fallback},setPanel(key,next){if(panelKeys.has(key)||key.startsWith('folder.'))write('panels',key,!!next)},
   list(key){const v=value.lists[key]||{};return {grouped:v.grouped??true,completed:v.completed??false,folded:new Set(v.folded||[])}},

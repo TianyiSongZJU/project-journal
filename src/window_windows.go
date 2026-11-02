@@ -144,6 +144,20 @@ func runWindowUI(address string) {
 	})
 	previous, _, _ = setProc.Call(uintptr(w.Window()), ^uintptr(3), hook)
 	w.Bind("journalChooseFolder", func() []string { return windowsChooseFolder(uintptr(w.Window())) })
+	w.Bind("journalSetAppearance", func(dark bool) {
+		w.Dispatch(func() {
+			var value int32
+			if dark {
+				value = 1
+			}
+			// Windows 10 20H1 and later use attribute 20; older builds use 19.
+			proc := syscall.NewLazyDLL("dwmapi.dll").NewProc("DwmSetWindowAttribute")
+			result, _, _ := proc.Call(uintptr(w.Window()), 20, uintptr(unsafe.Pointer(&value)), 4)
+			if int32(result) < 0 {
+				proc.Call(uintptr(w.Window()), 19, uintptr(unsafe.Pointer(&value)), 4)
+			}
+		})
+	})
 	w.Navigate(address)
 	w.Run()
 }

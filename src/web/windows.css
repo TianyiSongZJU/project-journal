@@ -2,36 +2,36 @@
 
 /* Loaded only by the native Windows host. Keep macOS typography unchanged. */
 :root {
-  --serif: "Noto Serif SC", "Source Han Serif SC", "Microsoft YaHei UI", serif;
-  font-family: "Segoe UI Variable Text", "Segoe UI", "Noto Sans SC", "Microsoft YaHei UI", sans-serif;
+  --serif:"Noto Serif SC", "Source Han Serif SC", "Microsoft YaHei UI", serif;
+  font-family:"Segoe UI Variable Text", "Segoe UI", "Noto Sans SC", "Microsoft YaHei UI", sans-serif;
 }
 
 /* The native title bar already displays the application name. */
-.app-header { display: none; }
-main { height: 100vh; }
+.app-header { display:none; }
+main { height:100vh; }
 
-dialog h2 { font-family: inherit; }
+dialog h2 { font-family:inherit; }
 
 /* Match the year/month control without changing the shared navigation. */
 .workspace-nav {
-  gap: 2px;
-  padding: 2px;
-  border-radius: 8px;
-  background: #dfe2d7;
+  gap:2px;
+  padding:2px;
+  border-radius:8px;
+  background:var(--tone-surface-dfe2d7,#dfe2d7);
 }
 
 .workspace-nav button {
-  min-height: 30px;
-  padding: 3px 12px;
-  border-radius: 6px;
+  min-height:30px;
+  padding:3px 12px;
+  border-radius:6px;
 }
 
 .workspace-nav button.active {
-  background: var(--panel);
-  box-shadow: 0 1px 3px #30352d17;
+  background:var(--panel);
+  box-shadow:0 1px 3px var(--tone-shadow-30352d17,#30352d17);
 }
 
-.workspace-nav button:not(.active):hover { background: #d5dacd; }
+.workspace-nav button:not(.active):hover { background:var(--tone-surface-d5dacd,#d5dacd); }
 
 /* A compact 16px cursor keeps the precise hotspot at the cross intersection. */
 .calendar-surface.selection-mode [data-date],
