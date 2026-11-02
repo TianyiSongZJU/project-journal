@@ -25,3 +25,11 @@ test('active circle palettes keep white symbols readable',()=>{
  for(const p of Object.values(api.palettes))assert(1.05/(luminance(p.solid)+.05)>=4.5,p.name);
  assert.deepEqual(api.normalize({accent:'__proto__'}),{scheme:'system',accent:'fern'});
 });
+
+test('dark surfaces are neutral, and blue emphasis stays muted',()=>{
+ for(const palette of Object.keys(api.palettes)){
+  const surface=api.tone('surface','#fafaf7',palette,true);assert.match(surface,/ 3% /);
+  const line=api.tone('line','#e2e7da',palette,true);assert.match(line,/ 3% /);
+ }
+ const blue=api.tone('ink','#315c46','slate',true);assert.match(blue,/ 11% /);
+});

@@ -26,7 +26,7 @@ export function observedDuration(seconds){
 // Both activity reports answer the same questions in the same reading order.
 export function activityReportHeader({start,end,seconds,meta='',close=false,esc}){
  const metric=value=>esc(observedDuration(value)).replace(/(小时|分)/g,'<em>$1</em>');
- return `<div class="dt-report-context"><div class="dt-report-period"><time>${time(start)}</time><span aria-hidden="true">—</span><time>${time(end)}</time></div>${meta?`<small>${esc(meta)}</small>`:''}${close?'<button type="button" aria-label="关闭应用时间分布"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8m0-8-8 8"/></svg></button>':''}</div><div class="dt-report-metrics"><div><span>观测时长</span><strong>${metric(seconds)}</strong></div><div><span>总时长</span><strong>${metric((end-start)*60)}</strong></div></div>`;
+ return `<div class="dt-report-context"><div class="dt-report-period"><time>${time(start)}</time><span aria-hidden="true">—</span><time>${time(end)}</time></div>${close?'<button type="button" aria-label="关闭应用时间分布"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8m0-8-8 8"/></svg></button>':''}</div><div class="dt-report-metrics"><div><span>观测时长</span><strong>${metric(seconds)}</strong></div><div><span>总时长</span><strong>${metric((end-start)*60)}</strong></div></div>`;
 }
 const time=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
 const clientKey=item=>item.deviceId||item.device||'local';
@@ -58,6 +58,7 @@ export function setupActivityRange({root,getActivities,getDay,esc,appColor,hideE
   const formatDuration=seconds=>esc(observedDuration(seconds)).replace(/(小时|分)/g,'<em>$1</em>');
   const meta=[client?selection.clientName||'所选客户端':stats.devices>1?stats.devices+' 端':'',stats.apps.length+' 个应用'].filter(Boolean).join(' · ');
   panel.innerHTML=`<header class="dt-report-header">${activityReportHeader({start,end,seconds:stats.seconds,meta,close:true,esc})}</header>${stats.apps.length?`<ol>${stats.apps.map((row,index)=>`<li style="--app-color:${appColor(row.app)}"><span class="dt-range-rank">${index+1}</span><div class="dt-range-namebar"><div class="dt-range-track" aria-hidden="true"><i style="width:${row.percent}%"></i></div><span class="dt-range-name" title="${esc(row.app)}">${esc(row.app)}</span></div><b class="dt-range-duration">${formatDuration(row.seconds)}</b><small class="dt-range-percent">${row.percent<1?'&lt;1':Math.round(row.percent)}%</small></li>`).join('')}</ol>`:'<p class="dt-range-empty">这个时段暂无前台活动记录</p>'}`;
+  if(meta)panel.insertAdjacentHTML('beforeend',`<footer class="dt-report-meta">${esc(meta)}</footer>`);
   panel.querySelector('button').onclick=clear;
   place();
  }

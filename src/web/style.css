@@ -539,10 +539,11 @@ dialog #record-info{margin:0 0 0 auto;font-size:9px}
 .dt-range-inspector>.dt-report-header,.dt-activity-evidence-tip>.dt-report-header{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;column-gap:10px;row-gap:3px;padding:0 0 8px;margin:0 0 6px;border-bottom:1px solid var(--tone-line-e2e7da,#e2e7da)}
 .dt-activity-evidence-tip>.dt-report-header{grid-template-columns:minmax(0,1fr) auto}
 .dt-report-context{display:contents}
-.dt-report-period{grid-column:1;grid-row:1;display:flex;align-items:baseline;gap:5px;font:500 11px/1.4 system-ui;color:var(--tone-ink-73816c,#73816c);font-variant-numeric:tabular-nums;white-space:nowrap}
+.dt-report-period{grid-column:1;grid-row:1;display:grid;grid-template-columns:max-content max-content max-content;align-items:baseline;column-gap:5px;row-gap:2px;font:500 16px/1.6 var(--serif);color:var(--tone-ink-73816c,#73816c);font-variant-numeric:tabular-nums;white-space:nowrap}
+.dt-report-period::before{content:"时间范围";grid-column:1/-1;font:400 9px/1.4 system-ui;color:var(--muted)}
 .dt-report-header .dt-report-period>time{font:inherit;color:inherit}
 .dt-report-period>span{font:400 10px/1 system-ui;color:var(--tone-ink-b2b9ab,#b2b9ab)}
-.dt-report-context>small{grid-column:1/-1;grid-row:2;margin:0;font:400 9px/1.4 system-ui;color:var(--tone-ink-a1aa96,#a1aa96);white-space:nowrap}
+.dt-report-meta{display:block;flex:none;margin-top:6px;padding-top:6px;border-top:1px solid var(--line);color:var(--muted);font:400 9px/1.4 system-ui}
 .dt-report-context>button{grid-column:3;grid-row:1;display:grid;place-items:center;flex:none;margin-left:0;width:20px;height:20px;min-height:20px;padding:0;border:0;border-radius:5px;background:transparent;box-shadow:none;color:var(--tone-ink-91a087,#91a087)}
 .dt-report-context>button:hover{background:var(--tone-surface-e8eedf,#e8eedf);color:var(--tone-ink-4b6843,#4b6843)}
 .dt-report-context>button svg{display:block;width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}

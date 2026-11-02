@@ -352,10 +352,10 @@ final class JournalTitleText: NSView {
 private func journalAccentColor()->NSColor {
  let rgb:[CGFloat]
  switch UserDefaults.standard.string(forKey:"JournalAccent") ?? "fern" {
- case "slate":rgb=[76,107,136]
- case "iris":rgb=[116,97,133]
- case "clay":rgb=[151,99,81]
- case "sand":rgb=[135,111,63]
+ case "slate":rgb=[82,103,119]
+ case "iris":rgb=[116,101,120]
+ case "clay":rgb=[137,104,93]
+ case "sand":rgb=[125,111,80]
  default:rgb=[49,92,70]
  }
  return NSColor(srgbRed:rgb[0]/255,green:rgb[1]/255,blue:rgb[2]/255,alpha:1)
