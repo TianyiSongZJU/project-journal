@@ -7,3 +7,5 @@
 在共享 CSS 中增加固定颜色后，运行 `python3 scripts/theme-tokens.py`，同时提交生成的 src/web/theme-colors.js 和样式变更。该命令可重复运行；appearance.css 使用语义变量，不参与转换。新增界面优先使用 --paper、--panel、--ink、--muted、--line、--green（文字）和 --accent-solid（实色按钮底）。
 
 验证：`node --test src/tests/*.test.js`。浏览器检查使用 src/tests/appearance.browser.cjs，传入 JOURNAL_CORE 和 JOURNAL_PLAYWRIGHT_MODULE；程序只建立临时测试数据。JOURNAL_APPEARANCE_SCREENSHOTS 可指定截图目录。
+
+启动浮雕使用同一本机主题选择。macOS 在创建动画图层时解析颜色；Windows 在打开窗口前读取视图偏好与系统明暗状态，并预计算背景和纹理颜色，不在每帧重新调色。默认浅色苔绿保留原始画面。

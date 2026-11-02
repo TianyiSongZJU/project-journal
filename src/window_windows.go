@@ -37,6 +37,26 @@ func runWindowUI(address string) {
 		windowsMessage("项目手记 · 缺少系统组件", "请先安装 Microsoft WebView2 Runtime，再重新打开项目手记。\n\n官方下载：https://developer.microsoft.com/microsoft-edge/webview2/\n\n这只需安装一次，项目数据不会上传。")
 		return
 	}
+	var view struct {
+		UI struct {
+			Appearance launchTheme `json:"appearance"`
+		} `json:"ui"`
+	}
+	viewHome := autoHome(flag.Lookup("data-dir").Value.String(), flag.Lookup("auto-home").Value.String())
+	if data, err := os.ReadFile(filepath.Join(viewHome, "view-state.json")); err == nil {
+		_ = json.Unmarshal(data, &view)
+	}
+	nativeLaunchAppearance = view.UI.Appearance
+	if nativeLaunchAppearance.Scheme == "dark" {
+		nativeLaunchAppearance.Dark = true
+	} else if nativeLaunchAppearance.Scheme != "light" {
+		var light uint32 = 1
+		size := uint32(4)
+		key, _ := syscall.UTF16PtrFromString(`Software\Microsoft\Windows\CurrentVersion\Themes\Personalize`)
+		name, _ := syscall.UTF16PtrFromString("AppsUseLightTheme")
+		syscall.NewLazyDLL("advapi32.dll").NewProc("RegGetValueW").Call(0x80000001, uintptr(unsafe.Pointer(key)), uintptr(unsafe.Pointer(name)), 0x10, 0, uintptr(unsafe.Pointer(&light)), uintptr(unsafe.Pointer(&size)))
+		nativeLaunchAppearance.Dark = light == 0
+	}
 	cache, _ := os.UserCacheDir()
 	var launchCover *windowsLaunchCover
 	w := webview2.NewWithOptions(webview2.WebViewOptions{DataPath: filepath.Join(cache, "ProjectJournal", "WebView2"), AutoFocus: true, WindowOptions: webview2.WindowOptions{Title: "项目手记", IconId: windowsAppIconID, Width: 1120, Height: 740, Center: true, OnCreated: func(hwnd uintptr) { launchCover = newWindowsLaunchCover(hwnd, windowsWarmOpen) }}})
@@ -158,6 +178,9 @@ func runWindowUI(address string) {
 			}
 		})
 	})
+	if initial, err := json.Marshal(nativeLaunchAppearance); err == nil {
+		w.Init("window.journalInitialAppearance = " + string(initial))
+	}
 	w.Navigate(address)
 	w.Run()
 }

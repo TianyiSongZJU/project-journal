@@ -20,6 +20,8 @@ var nativeTilePNG []byte
 //go:embed windows/launch-native/featherTexture.png
 var nativeFeatherPNG []byte
 
+var nativeLaunchAppearance launchTheme
+
 type nativeLaunchRenderer struct {
 	scene                           *nativeReliefScene
 	exit                            *nativeReliefExit
@@ -68,6 +70,27 @@ func newNativeLaunchRenderer(w, h int, warm bool) (*nativeLaunchRenderer, error)
 		rgba := image.NewRGBA(decoded.Bounds())
 		draw.Draw(rgba, rgba.Bounds(), decoded, decoded.Bounds().Min, draw.Src)
 		if i == 0 {
+			if nativeLaunchAppearance.Dark || nativeLaunchAppearance.Accent != "" && nativeLaunchAppearance.Accent != "fern" {
+				var tones [511][3]float64
+				for i := range tones {
+					tones[i] = nativeLaunchAppearance.color(float64(i)/2, float64(i)/2, float64(i)/2)
+				}
+				for y := 0; y < rgba.Rect.Dy(); y++ {
+					for x := 0; x < rgba.Rect.Dx(); x++ {
+						i := y*rgba.Stride + x*4
+						a := float64(rgba.Pix[i+3])
+						if a == 0 {
+							continue
+						}
+						red, green, blue := float64(rgba.Pix[i])*255/a, float64(rgba.Pix[i+1])*255/a, float64(rgba.Pix[i+2])*255/a
+						level := int(math.Round(math.Max(red, math.Max(green, blue)) + math.Min(red, math.Min(green, blue))))
+						c := tones[min(510, max(0, level))]
+						for j := 0; j < 3; j++ {
+							rgba.Pix[i+j] = uint8(math.Round(c[j] * a / 255))
+						}
+					}
+				}
+			}
 			r.texture = rgba
 		} else {
 			r.feather = rgba
@@ -113,11 +136,11 @@ func (r *nativeLaunchRenderer) resize(w, h int) {
 	r.light = make([]uint8, w*h)
 	// Cache full-window gradients and the projected tile; only positions and
 	// opacity change per frame. Resizing rebuilds this cache once.
+	colors := [3][3]float64{nativeLaunchAppearance.color(250.7415, 251.991, 250.002), nativeLaunchAppearance.color(238, 243, 235), nativeLaunchAppearance.color(236.2065, 241.893, 232.6875)}
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
 			vx, vy := float64(w)*.65, float64(h)
 			t := reliefClamp(((float64(x)-float64(w)*.2)*vx + float64(y)*vy) / (vx*vx + vy*vy))
-			colors := [3][3]float64{{250.7415, 251.991, 250.002}, {238, 243, 235}, {236.2065, 241.893, 232.6875}}
 			a, b, f := colors[0], colors[1], t*2
 			if t > .5 {
 				a, b, f = colors[1], colors[2], (t-.5)*2
@@ -129,7 +152,11 @@ func (r *nativeLaunchRenderer) resize(w, h int) {
 			r.background[i+3] = 255
 			vx, vy = float64(w)*.5, float64(h)*.8
 			t = reliefClamp(((float64(x)-float64(w)*.2)*vx + float64(y)*vy) / (vx*vx + vy*vy))
-			r.light[y*w+x] = uint8(math.Round(.28 * (1 - t) * 255))
+			strength := .28
+			if nativeLaunchAppearance.Dark {
+				strength *= .15
+			}
+			r.light[y*w+x] = uint8(math.Round(strength * (1 - t) * 255))
 		}
 	}
 	ex, ey := (math.Abs(s.a)+math.Abs(s.c))*215, (math.Abs(s.b)+math.Abs(s.d))*215

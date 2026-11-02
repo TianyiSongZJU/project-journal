@@ -97,12 +97,15 @@ final class JournalLaunchSurface:NSView {
   autoresizingMask=[.width,.height];wantsLayer=true;layer?.masksToBounds=true
   setAccessibilityElement(true);setAccessibilityRole(.progressIndicator);setAccessibilityLabel("正在打开")
   func color(_ r:CGFloat,_ g:CGFloat,_ b:CGFloat,_ a:CGFloat=1)->CGColor{
-   if NSApp.effectiveAppearance.bestMatch(from:[.darkAqua,.aqua]) == .darkAqua {
-    if a<1{return NSColor.white.withAlphaComponent(a*0.15).cgColor}
-    let brightness=(r+g+b)/3,level=brightness>0.65 ? 0.12+(1-brightness)*0.5:0.04
-    return (journalAccentColor().blended(withFraction:0.82,of:NSColor(white:level,alpha:1)) ?? .windowBackgroundColor).cgColor
-   }
-   return NSColor(calibratedRed:r,green:g,blue:b,alpha:a).cgColor
+   let dark=NSApp.effectiveAppearance.bestMatch(from:[.darkAqua,.aqua]) == .darkAqua
+   let accent=UserDefaults.standard.string(forKey:"JournalAccent") ?? "fern"
+   if !dark && accent=="fern"{return NSColor(calibratedRed:r,green:g,blue:b,alpha:a).cgColor}
+   let hue:CGFloat=["fern":148,"slate":211,"iris":282,"clay":17,"sand":41][accent] ?? 148
+   let source=(max(r,g,b)+min(r,g,b))/2
+   let level=dark ? (source>0.65 ? 0.12+(1-source)*0.5:0.04):source
+   let saturation:CGFloat=dark ? 0.045:(source>0.94 ? 0.10:0.18)
+   let brightness=level+saturation*min(level,1-level)
+   return NSColor(calibratedHue:hue/360,saturation:brightness>0 ? 2*(1-level/brightness):0,brightness:brightness,alpha:dark && a<1 ? a*0.15:a).cgColor
   }
   backdrop.colors=[color(0.9833,0.9882,0.9804),color(0.9333,0.9529,0.9216),color(0.9263,0.9486,0.9125)];backdrop.startPoint=CGPoint(x:0.2,y:1);backdrop.endPoint=CGPoint(x:0.85,y:0)
   layer?.addSublayer(backdrop);layer?.addSublayer(artwork);artwork.addSublayer(tiles)

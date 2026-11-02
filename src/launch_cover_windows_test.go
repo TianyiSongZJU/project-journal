@@ -97,3 +97,22 @@ func TestNativeLaunchResize(t *testing.T) {
 		}
 	}
 }
+
+func TestNativeLaunchThemeSurfaces(t *testing.T) {
+	previous := nativeLaunchAppearance
+	defer func() { nativeLaunchAppearance = previous }()
+	for _, dark := range []bool{false, true} {
+		nativeLaunchAppearance = launchTheme{Accent: "slate", Dark: dark}
+		renderer, err := newNativeLaunchRenderer(320, 220, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if dark && renderer.background[0] > 55 {
+			t.Fatal("bright startup in dark mode")
+		}
+		if i := len(renderer.background) - 4; renderer.background[i+2] <= renderer.background[i] {
+			t.Fatal("blue startup has no blue tint")
+		}
+		renderer.render(200)
+	}
+}

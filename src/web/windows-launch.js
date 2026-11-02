@@ -10,12 +10,13 @@ export function notifyWindowsLaunchPainted(){
  return nativeReveal;
 }
 const surface=(width,height)=>Object.assign(document.createElement('canvas'),{width,height});
+const launchColor=(r,g,b,a=1)=>globalThis.JournalAppearance?.launchColor(r,g,b,a)||`rgba(${r},${g},${b},${a})`;
 export function tileTexture(){
  const image=surface(860,860),ctx=image.getContext('2d');ctx.scale(2,2);ctx.translate(215,215);
- ctx.shadowColor='rgba(97,117,89,.14)';ctx.shadowBlur=14;ctx.shadowOffsetX=8;ctx.shadowOffsetY=-10;
- ctx.fillStyle='#dce8d3';ctx.beginPath();ctx.roundRect(-155,-155,310,310,30);ctx.fill();ctx.shadowColor='transparent';
- const edge=ctx.createLinearGradient(-155,155,155,-155);edge.addColorStop(0,'rgb(224.4,237.15,214.2)');edge.addColorStop(1,'rgb(204,219.3,188.7)');ctx.fillStyle=edge;ctx.beginPath();ctx.roundRect(-155,-159,310,310,30);ctx.fill();
- const face=ctx.createLinearGradient(-130.2,155,139.5,-117.8);face.addColorStop(0,'rgb(239.802,245.004,233.4525)');face.addColorStop(1,'#dce8d3');ctx.fillStyle=face;ctx.beginPath();ctx.roundRect(-155,-155,310,310,30);ctx.fill();ctx.strokeStyle='rgba(255,255,255,.42)';ctx.lineWidth=1;ctx.stroke();
+ ctx.shadowColor=launchColor(97,117,89,.14);ctx.shadowBlur=14;ctx.shadowOffsetX=8;ctx.shadowOffsetY=-10;
+ ctx.fillStyle=launchColor(220,232,211);ctx.beginPath();ctx.roundRect(-155,-155,310,310,30);ctx.fill();ctx.shadowColor='transparent';
+ const edge=ctx.createLinearGradient(-155,155,155,-155);edge.addColorStop(0,launchColor(224.4,237.15,214.2));edge.addColorStop(1,launchColor(204,219.3,188.7));ctx.fillStyle=edge;ctx.beginPath();ctx.roundRect(-155,-159,310,310,30);ctx.fill();
+ const face=ctx.createLinearGradient(-130.2,155,139.5,-117.8);face.addColorStop(0,launchColor(239.802,245.004,233.4525));face.addColorStop(1,launchColor(220,232,211));ctx.fillStyle=face;ctx.beginPath();ctx.roundRect(-155,-155,310,310,30);ctx.fill();ctx.strokeStyle=launchColor(255,255,255,.42);ctx.lineWidth=1;ctx.stroke();
  return image;
 }
 export function featherTexture(){
@@ -51,14 +52,14 @@ export function startWindowsLaunch(){
  function draw(now){
   if(done||document.hidden)return;const time=elapsed(now),{width,height}=scene,dpr=canvas.width/width;
   ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);ctx.globalAlpha=1;
-  const background=ctx.createLinearGradient(width*.2,0,width*.85,height);background.addColorStop(0,'rgb(250.7415,251.991,250.002)');background.addColorStop(.5,'rgb(238,243,235)');background.addColorStop(1,'rgb(236.2065,241.893,232.6875)');ctx.fillStyle=background;ctx.fillRect(0,0,width,height);
+  const background=ctx.createLinearGradient(width*.2,0,width*.85,height);background.addColorStop(0,launchColor(250.7415,251.991,250.002));background.addColorStop(.5,launchColor(238,243,235));background.addColorStop(1,launchColor(236.2065,241.893,232.6875));ctx.fillStyle=background;ctx.fillRect(0,0,width,height);
   const maximum=exit?updateMask(time):255;
   if(exit){ctx.globalCompositeOperation='destination-in';ctx.drawImage(mask,0,0,width,height);ctx.globalCompositeOperation='source-over';}
   for(const piece of scene.sources){const wave=reliefWave(scene,piece,time,exit?.sweep),fade=exit?.tiles.find(p=>p.row===piece.row&&p.col===piece.col),opacity=fade&&time>=fade.exit?reliefOpacity(scene,fade,time):wave.opacity;if(opacity<=0)continue;
    ctx.save();ctx.globalAlpha=opacity;ctx.transform(scene.a,scene.b,scene.c,scene.d,piece.center.x,piece.center.y-scene.scale*wave.lift);ctx.drawImage(tile,-215,-215,430,430);ctx.restore();
   }
   // The lighting wash sits over the artwork and shares the backdrop's mask.
-  lc.setTransform(1,0,0,1,0,0);lc.clearRect(0,0,light.width,light.height);const wash=lc.createLinearGradient(light.width*.2,0,light.width*.7,light.height*.8);wash.addColorStop(0,'rgba(255,255,249.9,.28)');wash.addColorStop(1,'rgba(255,255,249.9,0)');lc.fillStyle=wash;lc.fillRect(0,0,light.width,light.height);
+  lc.setTransform(1,0,0,1,0,0);lc.clearRect(0,0,light.width,light.height);const wash=lc.createLinearGradient(light.width*.2,0,light.width*.7,light.height*.8);wash.addColorStop(0,launchColor(255,255,249.9,.28));wash.addColorStop(1,'rgba(255,255,249.9,0)');lc.fillStyle=wash;lc.fillRect(0,0,light.width,light.height);
   if(exit){lc.globalCompositeOperation='destination-in';lc.drawImage(mask,0,0);lc.globalCompositeOperation='source-over';}ctx.drawImage(light,0,0,width,height);
   if(exit&&time>=exit.end&&maximum<=1){clearSince??=now;if(now-clearSince>=33){ctx.clearRect(0,0,width,height);stop();return;}}else clearSince=null;
   if(!motion.matches)raf=requestAnimationFrame(draw);

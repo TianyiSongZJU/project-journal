@@ -17,5 +17,5 @@ html[data-scheme="dark"][data-highlights="on"] :is(.settings-panel,.dt-surface,.
 
 .dt-report-metrics{justify-content:flex-end}
 
-html[data-scheme="dark"] :is(.dt-range-inspector,.dt-activity-evidence-tip,.dt-evidence-tip,.tr-tip,.tr-day-tip,dialog,.sidebar-menu,.project-picker-menu,.dt-client-menu){background:#2c2c2a;border-color:#454541;box-shadow:0 12px 32px #00000040,inset 0 1px 0 #ffffff05}
-html[data-scheme="dark"] :is(.paper-panel,.dt-surface,.dt-allocations,.tr-paper,.month-inspector){border-color:#393936}
+html[data-scheme="dark"] :is(.dt-range-inspector,.dt-activity-evidence-tip,.dt-evidence-tip,.tr-tip,.tr-day-tip,dialog,.sidebar-menu,.project-picker-menu,.dt-client-menu){background:var(--surface-elevated);border-color:var(--surface-edge);box-shadow:0 12px 32px #00000040,inset 0 1px 0 #ffffff05}
+html[data-scheme="dark"] :is(.paper-panel,.dt-surface,.dt-allocations,.tr-paper,.month-inspector){border-color:var(--line)}

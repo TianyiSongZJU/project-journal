@@ -26,10 +26,16 @@ test('active circle palettes keep white symbols readable',()=>{
  assert.deepEqual(api.normalize({accent:'__proto__'}),{scheme:'system',accent:'fern'});
 });
 
-test('dark surfaces are neutral, and blue emphasis stays muted',()=>{
+test('surface tints remain restrained and blue emphasis stays muted',()=>{
  for(const palette of Object.keys(api.palettes)){
-  const surface=api.tone('surface','#fafaf7',palette,true);assert.match(surface,/ 3% /);
-  const line=api.tone('line','#e2e7da',palette,true);assert.match(line,/ 3% /);
+  const surface=api.tone('surface','#fafaf7',palette,true);assert.match(surface,/ 4% /);assert(surface.startsWith('hsl('+api.palettes[palette].h+' '));
+  const line=api.tone('line','#e2e7da',palette,true);assert.match(line,/ 7% /);
  }
  const blue=api.tone('ink','#315c46','slate',true);assert.match(blue,/ 11% /);
+});
+test('startup artwork follows the saved palette and dark scheme',()=>{
+ api.apply({scheme:'light',accent:'fern'});assert.equal(api.launchColor(220,232,211),'rgb(220 232 211 / 1)');
+ api.apply({scheme:'dark',accent:'slate'});assert.match(api.launchColor(250,252,250),/^hsl\(211 5% 13% /);
+ api.apply({scheme:'light',accent:'iris'});assert.match(api.launchColor(220,232,211),/^hsl\(282 /);
+ api.apply({scheme:'system',accent:'fern'});
 });
