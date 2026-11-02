@@ -528,3 +528,35 @@ dialog #record-info{margin:0 0 0 auto;font-size:9px}
 .dt-suggestion.reminder-target{outline:2px solid var(--green);outline-offset:2px;box-shadow:0 0 0 4px #ffffffa0;z-index:4}
 
 .dt-cancel-selection>svg{display:block;width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;pointer-events:none}
+
+/* Evidence brush: a quiet selection over the activity columns, with a persistent ranking. */
+.dt-range-brush{position:absolute;box-sizing:border-box;z-index:12;pointer-events:none;border:1px solid #6f8b68;border-radius:5px;background:#eff5e62b;box-shadow:inset 0 0 0 1px #ffffffb3,0 0 0 1px #ffffff9e}
+.dt-range-brush>span{position:absolute;left:5px;top:3px;padding:1px 5px;border-radius:4px;background:#f7faf1ed;color:#45643e;font:600 10px/16px system-ui;white-space:nowrap;box-shadow:0 1px 3px #334b2c12}
+.dt-client-column,.dt-app-area>.dt-area-name{cursor:crosshair;touch-action:none}
+.dt-inspecting,.dt-inspecting *{user-select:none!important;cursor:crosshair!important}
+.dt-range-inspector{position:fixed;z-index:1800;width:280px;max-width:calc(100vw - 20px);max-height:calc(100vh - 20px);box-sizing:border-box;overflow:auto;border:1px solid #d8e1ce;border-radius:13px;background:linear-gradient(135deg,#f2f6ec,#fcfdf9 65%);box-shadow:0 8px 28px #31442b24,0 1px 3px #31442b0d;color:#44543d;padding:13px 14px 10px;font:12px/1.5 system-ui}
+.dt-range-inspector>header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.dt-range-inspector>header>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.dt-range-inspector>header strong{font-size:13px;font-weight:600;color:#3d5f42}
+.dt-range-inspector>header span{font-size:10px;color:#839078;font-variant-numeric:tabular-nums}
+.dt-range-inspector>header i{font-style:normal;margin:0 6px;color:#b0baa5}
+.dt-range-inspector>header button{display:grid;place-items:center;flex:none;width:22px;height:22px;min-height:22px;padding:0;border:0;border-radius:6px;background:transparent;box-shadow:none;color:#91a087}
+.dt-range-inspector>header button:hover{background:#e8eedf;color:#4b6843}
+.dt-range-inspector>header button svg{display:block;width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.dt-range-summary{display:flex;justify-content:space-between;align-items:baseline;margin:11px 0 10px;font-size:10px;color:#89967d}
+.dt-range-summary b{margin-left:7px;font-size:12px;font-weight:600;color:#4d6944;font-variant-numeric:tabular-nums}
+.dt-range-summary small{font-size:9px;color:#9ba68f}
+.dt-range-inspector>ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:11px}
+.dt-range-inspector li{display:flex;align-items:center;gap:8px}
+.dt-range-rank{flex:none;width:12px;color:#a5af9b;font:10px/1 system-ui;text-align:center;font-variant-numeric:tabular-nums}
+.dt-range-inspector li>div{flex:1;min-width:0}
+.dt-range-app{display:flex;align-items:baseline;gap:7px;margin-bottom:4px;font-size:11px}
+.dt-range-app>span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dt-range-app>b{flex:none;font-size:10px;font-weight:500;color:#627557;font-variant-numeric:tabular-nums}
+.dt-range-app>small{width:27px;text-align:right;font-size:9px;color:#9ba78e;font-variant-numeric:tabular-nums}
+.dt-range-track{height:4px;background:#e8eddf;border-radius:3px;overflow:hidden}
+.dt-range-track>i{display:block;height:100%;border-radius:3px;background:var(--app-color);opacity:.72}
+.dt-range-inspector>footer{margin-top:13px;padding-top:8px;border-top:1px solid #e1e7d9;font-size:9px;line-height:1.6;color:#9aa68e}
+.dt-range-empty{padding:14px 0 7px;margin:0;color:#94a086;font-size:11px}
+
+.dt-overview-scale .dt-range-brush>span{display:none}
