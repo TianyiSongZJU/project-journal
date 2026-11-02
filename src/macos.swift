@@ -351,6 +351,20 @@ private let journalMenuMuted = NSColor(name:nil){appearance in
 private func journalMenuSymbol(_ name:String,_ size:CGFloat=14)->NSImage? {
  NSImage(systemSymbolName:name,accessibilityDescription:nil)?.withSymbolConfiguration(.init(pointSize:size,weight:.semibold))
 }
+// SF Symbols carry text-baseline alignment metadata. Center the visible mask instead.
+private func journalStatusBarImage()->NSImage? {
+ guard let symbol=NSImage(systemSymbolName:"square.grid.3x3.fill",accessibilityDescription:"项目手记"),let data=symbol.tiffRepresentation,let bitmap=NSBitmapImageRep(data:data) else{return NSImage(systemSymbolName:"square.grid.3x3.fill",accessibilityDescription:"项目手记")}
+ var minX=bitmap.pixelsWide,minY=bitmap.pixelsHigh,maxX = -1,maxY = -1
+ for y in 0..<bitmap.pixelsHigh {for x in 0..<bitmap.pixelsWide {if (bitmap.colorAt(x:x,y:y)?.alphaComponent ?? 0)>0.05 {minX=min(minX,x);maxX=max(maxX,x);minY=min(minY,y);maxY=max(maxY,y)}}}
+ guard maxX>=minX,maxY>=minY else{return symbol}
+ let px=CGFloat(bitmap.pixelsWide)/symbol.size.width,py=CGFloat(bitmap.pixelsHigh)/symbol.size.height
+ let ink=NSRect(x:CGFloat(minX)/px,y:CGFloat(bitmap.pixelsHigh-maxY-1)/py,width:CGFloat(maxX-minX+1)/px,height:CGFloat(maxY-minY+1)/py)
+ let factor=14/max(ink.width,ink.height),canvas=NSSize(width:18,height:18)
+ let image=NSImage(size:canvas,flipped:false){rect in
+  symbol.draw(in:NSRect(x:rect.midX-ink.midX*factor,y:rect.midY-ink.midY*factor,width:symbol.size.width*factor,height:symbol.size.height*factor));return true
+ }
+ image.alignmentRect=NSRect(origin:.zero,size:canvas);image.isTemplate=true;return image
+}
 // All menu glyphs share geometric centering and a 1.4 pt stroke.
 private func journalMenuGlyphPath(_ name:String)->NSBezierPath {
  let p=NSBezierPath()
@@ -571,7 +585,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
  func installStatusItem(){
   statusItem=NSStatusBar.system.statusItem(withLength:NSStatusItem.squareLength)
   if let button=statusItem?.button {
-   button.image=NSImage(systemSymbolName:"square.grid.3x3.fill",accessibilityDescription:"项目手记")
+   button.image=journalStatusBarImage()
    button.imagePosition = .imageOnly
    button.toolTip="项目手记"
    button.title=""
