@@ -170,7 +170,7 @@ export function setupClientTimeline({esc,initialView={},onViewChange}) {
     const minuteLabel=observedDuration;
     return `<div class="dt-client-evidence"><span>客户端来源</span>${clients.map(client=>{
       const seconds=activitySlots(client.activities,run.start,run.end).reduce((sum,slot)=>sum+slot.activeSeconds,0);
-      return `<div><span>${esc(client.name)}</span><b>${minuteLabel(seconds)}</b></div>`;
+      return `<div><span>${esc(client.name)}</span><b>${esc(minuteLabel(seconds))}</b></div>`;
     }).join('')}</div>`;
   }
   return {getView:()=>({hiddenClients:[...hidden],compare}),includes,mount,renderActivities,activityDetail};

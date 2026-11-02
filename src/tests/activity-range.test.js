@@ -17,7 +17,7 @@ test('matches chart semantics for overlapping devices and app aliases',()=>{
  const rows=displayActivities([{app:'Weixin',deviceId:'mac',start:960,end:975,seconds:300},{app:'wechat.exe',deviceId:'win',start:960,end:975,seconds:480}],{});
  const stats=activityRangeStats(rows,960,975);assert.equal(stats.apps.length,1);assert.equal(stats.apps[0].app,'微信');assert.equal(stats.seconds,480);assert.equal(stats.devices,2);
 });
-test('does not invent activity in empty quarters, and formats specific durations',()=>{
+test('does not invent activity in empty quarters, and rounds display durations to minutes',()=>{
  assert.deepEqual(activityRangeStats([],960,975),{apps:[],seconds:0,devices:0});
- assert.equal(observedDuration(3631),'1小时31秒');assert.equal(observedDuration(750),'12分30秒');assert.equal(observedDuration(0),'0分');
+ assert.equal(observedDuration(3631),'1小时1分');assert.equal(observedDuration(750),'13分');assert.equal(observedDuration(0),'0分');assert.equal(observedDuration(59),'<1分');assert.equal(observedDuration(835),'14分');assert.equal(observedDuration(1761),'29分');
 });
