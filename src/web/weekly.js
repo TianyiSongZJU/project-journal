@@ -4,10 +4,23 @@ import {addDays,dateKey,parseDate,summarize,fmt} from './model.js';
 export function weekStart(date){const d=parseDate(date);return addDays(date,-(d.getDay()+6)%7)}
 export function weekNumber(date){const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+3);const year=d.getUTCFullYear(),first=new Date(Date.UTC(year,0,4,12));first.setUTCDate(first.getUTCDate()-(first.getUTCDay()+6)%7);return {year,number:Math.round((d-first)/604800000)+1}}
 export function weekRange(date){const end=addDays(date,6),month=Number(date.slice(5,7)),day=Number(date.slice(8));return `${date.slice(0,4)}年${month}月${day}日 — ${end.slice(0,4)!==date.slice(0,4)?end.slice(0,4)+'年':''}${end.slice(0,7)!==date.slice(0,7)?Number(end.slice(5,7))+'月':''}${Number(end.slice(8))}日`}
+// Georgia's old-style figures have different visible extents (for example 28 vs 44).
+// Align the visible ink, rather than the line boxes, with the two metadata lines.
+function alignWeekHeader(host){
+ const number=host.querySelector('.weekly-week-number'),context=host.querySelector('.weekly-week-context');
+ if(!number?.getClientRects().length||!context?.getClientRects().length)return;
+ context.style.transform='none';
+ const canvas=document.createElement('canvas').getContext('2d');if(!canvas)return;
+ const ink=element=>{const text=element.textContent,style=getComputedStyle(element);canvas.font=[style.fontStyle,style.fontWeight,style.fontSize,style.fontFamily].join(' ');const metrics=canvas.measureText(text),probe=document.createElement('span');probe.style.cssText='display:inline-block;width:0;height:0;padding:0;border:0;vertical-align:baseline';element.append(probe);const baseline=probe.getBoundingClientRect().top;probe.remove();return {top:baseline-metrics.actualBoundingBoxAscent,bottom:baseline+metrics.actualBoundingBoxDescent}};
+ const digit=ink(number),dates=[...host.querySelectorAll('.weekly-range-dates time')].map(ink),year=ink(host.querySelector('.weekly-range-year'));
+ const offset=(digit.top+digit.bottom-Math.min(...dates.map(date=>date.top))-year.bottom)/2;
+ context.style.transform=`translateY(${Math.round(offset*2)/2}px)`;
+}
 const empty=()=>({title:'',goals:[],note:''}),copy=(value={})=>({title:value?.title||'',goals:structuredClone(value?.goals||[]),note:value?.note||''});
 export function createWeekly(host,{getState,commit,flush,schedule,onViewChange,onSelect,confirmClear,esc,today=dateKey(new Date())}){
  const current=weekStart(today);let selected=current,dirty=false,version=0,draft=empty(),loaded='',rendered='';
  host.innerHTML=`<article class="weekly-page paper-panel"><header class="weekly-page-heading"><div class="weekly-period-row weekly-heading"><div class="weekly-date-title"><strong class="weekly-week-number"></strong><div class="weekly-week-context"><span class="weekly-range"></span></div></div><div class="weekly-summary" aria-label="本周投入摘要"></div><div class="weekly-stepper"><button type="button" data-week-step="-1" aria-label="上一周"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m10 4-4 4 4 4"/></svg></button><button type="button" data-week-step="1" aria-label="下一周"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 4 4 4-4 4"/></svg></button></div></div><div class="weekly-title-row"><label class="weekly-title-label"><span class="sr-only">每周标题</span><input id="weekly-title" maxlength="120" placeholder="给这一周起个名字" autocomplete="off"></label></div></header><section class="weekly-goals-section node-section"><div class="weekly-section-heading win-node-heading"><h2 class="win-node-title">本周目标</h2><span class="weekly-goal-count win-node-count"></span><button type="button" class="weekly-add-goal quiet win-node-add"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg><span>添加目标</span></button></div><div class="weekly-goals"></div></section><section class="weekly-note-section"><label class="editor-label journal-note-editor" for="weekly-note"><span class="editor-heading"><strong>本周手记</strong><span class="weekly-save-status hint" role="status" aria-live="polite"></span><button type="button" class="weekly-clear-note quiet desktop-note-action" aria-label="清除本周手记" title="清除本周手记">${desktopIcon('trash')}</button></span><textarea id="weekly-note" rows="12" maxlength="200000" placeholder="这一周的进展、感受，或下一步的想法…"></textarea></label></section></article>`;
+ window.addEventListener('resize',()=>alignWeekHeader(host));document.fonts?.ready.then(()=>alignWeekHeader(host));
  const $=s=>host.querySelector(s),status=text=>{const el=$('.weekly-save-status');renderDesktopSaveStatus(el,text);const label=document.createElement('span');label.className='sr-only';label.textContent=text;el.append(label);$('.weekly-clear-note').disabled=!$('#weekly-note').value};
  function changed(){dirty=true;version++;status('保存中…');schedule();updateGoalCount()}
  function updateGoalCount(){const goals=draft.goals.filter(g=>g.text.trim());$('.weekly-goal-count').textContent=goals.length?`${goals.filter(g=>g.done).length} / ${goals.length} 已完成`:'未设置'}
@@ -23,7 +36,7 @@ export function createWeekly(host,{getState,commit,flush,schedule,onViewChange,o
 
   const rows=state.entries.filter(e=>e.date>=selected&&e.date<=addDays(selected,6)),summary=summarize(rows,state.settings.estimates||{});
   $('.weekly-summary').innerHTML=`<span>投入 <strong>${fmt(summary.total)}<small>小时</small></strong>${summary.estimated?'<small>含估算</small>':''}</span>${summary.missing?`<span class="weekly-estimate-hint">${summary.missing} 条记录待配置估算</span>`:''}`;
-  refineDesktopNotes();
+  refineDesktopNotes();alignWeekHeader(host);
   host.querySelectorAll('[data-week-step]').forEach(b=>b.disabled=addDays(selected,Number(b.dataset.weekStep)*7)<'1900-01-01'||addDays(selected,Number(b.dataset.weekStep)*7)>'2200-12-31');
  }
  async function select(date){if(!await flush())return false;selected=weekStart(date);render();onViewChange();return true}
