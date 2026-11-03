@@ -36,8 +36,8 @@ test('surface tints remain restrained and blue emphasis stays muted',()=>{
 });
 test('startup artwork follows the saved palette and dark scheme',()=>{
  api.apply({scheme:'light',accent:'fern'});assert.equal(api.launchColor(220,232,211),'rgb(220 232 211 / 1)');
- api.apply({scheme:'dark',accent:'slate'});assert.match(api.launchColor(250,252,250),/^hsl\(211 5% 13% /);
- api.apply({scheme:'light',accent:'iris'});assert(api.launchColor(220,232,211).startsWith('hsl('+Math.round(api.rotateHue(api.parse('#dce8d3').h,282))+' '));
+ api.apply({scheme:'dark',accent:'slate'});assert.match(api.launchColor(250,252,250),/^hsl\(218 5% 13% /);
+ api.apply({scheme:'light',accent:'iris'});assert.match(api.launchColor(220,232,211),/^hsl\(28[0-9] /);
  api.apply({scheme:'system',accent:'fern'});
 });
 
@@ -47,7 +47,7 @@ test('light themes change hue while preserving the green reference saturation, l
   const source=api.parse(hex);
   for(const accent of ['slate','iris','clay','sand']){const [h,s,l,a]=values(api.tone(role,hex,accent,false));assert(Math.abs(((h-api.rotateHue(source.h,api.palettes[accent].h)+540)%360)-180)<.51);assert(Math.abs(s/100-source.s)<=.0051);assert(Math.abs(l/100-source.l)<=.0051);assert(Math.abs(a-source.a)<=.0006)}
  }
- const reference=api.parse(api.palettes.fern.solid);for(const palette of Object.values(api.palettes)){const color=api.parse(palette.solid);assert(Math.abs(color.s-reference.s)<.004);assert(Math.abs(color.l-reference.l)<.004)}
+ assert.equal(api.resolvePalette('custom',148).solid,api.palettes.fern.solid);
 });
 test('dark themes share tonal levels across every hue and preserve status colors',()=>{
  const levels=value=>value.slice(value.indexOf(' '));
@@ -78,7 +78,7 @@ test('reference hue reproduces every green token exactly in both schemes',()=>{
  assert.equal(api.resolvePalette('custom',148).solid,api.palettes.fern.solid);
  api.apply({scheme:'light',accent:'custom',hue:148});assert.equal(api.launchColor(220,232,211),'rgb(220 232 211 / 1)');api.apply({scheme:'system',accent:'fern'});
 });
-test('preset themes and the same custom hue produce identical palettes',()=>{
+test('base hue conversion stays consistent underneath curated preset colors',()=>{
  for(const [accent,palette]of Object.entries(api.palettes).filter(([accent])=>accent!=='custom'))for(const dark of [false,true])for(const [role,hex]of [['surface','#dfe6d7'],['ink','#315c46'],['line','#99ac91'],['ink','#a2553e']])assert.equal(api.tone(role,hex,accent,dark),api.tone(role,hex,'custom',dark,palette.h));
  const first=api.parse('#dfe6d7'),second=api.parse('#315c46');assert.notEqual(Math.round(api.rotateHue(first.h,211)),Math.round(api.rotateHue(second.h,211)));
 });
@@ -100,4 +100,16 @@ test('recommended paper and jade palette has editable independent light and dark
  for(const mode of ['light','dark'])assert.equal(Object.keys(recommended[mode]).length,18);
  assert.equal(recommended.light.panel,'#fafaf6');assert.equal(recommended.dark.panel,'#222924');
  recommended.light.panel='#ffffff';assert.equal(globalThis.JournalManualColors.preset().light.panel,'#fafaf6');
+});
+
+
+test('curated palettes use distinct muted color families and leave fern intact',()=>{
+ const families={slate:[205,225],iris:[275,300],clay:[15,35],sand:[28,43],rose:[325,355],macaron:[325,350]};
+ assert.equal(globalThis.JournalManualColors.theme('fern'),null);
+ for(const [accent,[min,max]]of Object.entries(families))for(const dark of [false,true]){
+  const palette=api.manualDefaults({accent,scheme:dark?'dark':'light'},dark);
+  for(const key of ['accent',...Array.from({length:5},(_,i)=>'heat'+(i+1))]){const c=api.parse(palette[key]);assert(c.h>=min&&c.h<=max,`${accent} ${key}: ${c.h}`);assert(c.s<(accent==='macaron'?.65:.4))}
+  const levels=Array.from({length:6},(_,i)=>api.parse(palette['heat'+i]).l);for(let i=1;i<levels.length;i++)assert(dark?levels[i]>levels[i-1]:levels[i]<levels[i-1]);
+ }
+ const prefs=createUIPreferences();prefs.setAppearance({scheme:'dark',accent:'macaron',colors:{macaron:{dark:{panel:'#302020'}},rose:{light:{button:'#987070'}}}});assert.equal(prefs.appearance().accent,'macaron');assert.equal(prefs.appearance().colors.rose.light.button,'#987070');
 });

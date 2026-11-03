@@ -14,7 +14,7 @@ export function sanitizeUIPreferences(raw={},ids){
  }
  for(const [key,value] of Object.entries(object(raw.flags)))if(flagKeys.has(key)&&typeof value==='boolean')out.flags[key]=value;
  for(const [key,value] of Object.entries(object(raw.panels)))if(typeof value==='boolean'&&(panelKeys.has(key)||key.startsWith('folder.')&&key.length<=180&&(!ids||ids.includes(key.slice(7)))))out.panels[key]=value;
- if(raw.appearance&&typeof raw.appearance==='object')out.appearance={scheme:['system','light','dark'].includes(raw.appearance.scheme)?raw.appearance.scheme:'system',accent:['fern','slate','iris','clay','sand','custom'].includes(raw.appearance.accent)?raw.appearance.accent:'fern',...((typeof raw.appearance.hue==='number'&&Number.isFinite(raw.appearance.hue)||raw.appearance.accent==='custom')?{hue:typeof raw.appearance.hue==='number'&&Number.isFinite(raw.appearance.hue)?Math.round(Math.max(0,Math.min(359,raw.appearance.hue))):148}:{})};
+ if(raw.appearance&&typeof raw.appearance==='object')out.appearance={scheme:['system','light','dark'].includes(raw.appearance.scheme)?raw.appearance.scheme:'system',accent:['fern','slate','iris','clay','sand','rose','macaron','custom'].includes(raw.appearance.accent)?raw.appearance.accent:'fern',...((typeof raw.appearance.hue==='number'&&Number.isFinite(raw.appearance.hue)||raw.appearance.accent==='custom')?{hue:typeof raw.appearance.hue==='number'&&Number.isFinite(raw.appearance.hue)?Math.round(Math.max(0,Math.min(359,raw.appearance.hue))):148}:{})};
  if(out.appearance){const colors=globalThis.JournalManualColors.sanitize(raw.appearance.colors);if(Object.keys(colors).length)out.appearance.colors=colors}
  return out;
 }

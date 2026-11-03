@@ -18,7 +18,7 @@ export function setupAppearance(preferences){
   editor.querySelector('.palette-context').textContent=`${api.palettes[choice.accent].name} · ${selectedMode==='dark'?'深色':'浅色'}${count?` · 已调整 ${count} 项`:''}`;
   editor.querySelector('[data-reset-palette]').disabled=!count;
   for(const field of fields){const value=overrides[field.key]||defaults[field.key];editor.querySelector(`[data-color="${field.key}"]`).value=value;const hex=editor.querySelector(`[data-hex="${field.key}"]`);if(document.activeElement!==hex)hex.value=value;editor.querySelector(`[data-reset-color="${field.key}"]`).disabled=!overrides[field.key]}
-  for(const [accent,palette]of Object.entries(api.palettes))host.querySelector(`[data-accent="${accent}"]`).style.setProperty('--swatch',choice.colors?.[accent]?.[selectedMode]?.button||api.resolvePalette(accent,choice.hue).solid);
+  for(const [accent,palette]of Object.entries(api.palettes))host.querySelector(`[data-accent="${accent}"]`).style.setProperty('--swatch',choice.colors?.[accent]?.[selectedMode]?.button||api.manualDefaults({...choice,accent},selectedMode==='dark').button);
  }
  function editColor(key,value){const choice=preferences.appearance(),selectedMode=mode(choice),colors=choice.colors||{};colors[choice.accent]??={};colors[choice.accent][selectedMode]??={};if(key===null)delete colors[choice.accent][selectedMode];else if(value===null)delete colors[choice.accent][selectedMode][key];else colors[choice.accent][selectedMode][key]=value;preferences.setAppearance({...choice,colors});apply();renderManual()}
  editor.querySelectorAll('[data-color]').forEach(input=>input.oninput=()=>editColor(input.dataset.color,input.value));

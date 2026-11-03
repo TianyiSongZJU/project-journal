@@ -11,7 +11,7 @@ type launchTheme struct {
 }
 
 func (t launchTheme) color(r, g, b float64) [3]float64 {
-	hue, ok := map[string]float64{"fern": 148, "slate": 211, "iris": 282, "clay": 17, "sand": 41}[t.Accent]
+	hue, ok := map[string]float64{"fern": 148, "slate": 218, "iris": 286, "clay": 24, "sand": 34, "rose": 340, "macaron": 334}[t.Accent]
 	if !ok {
 		hue = 148
 	}
@@ -40,7 +40,12 @@ func (t launchTheme) color(r, g, b float64) [3]float64 {
 				sourceHue = ((r-g)/(max-min) + 4) * 60
 			}
 		}
-		hue = math.Mod(sourceHue+hue-148+720, 360)
+		if t.Accent != "fern" && t.Accent != "custom" && ok {
+			hue = math.Mod(hue+(math.Mod(sourceHue-110+540, 360)-180)*.15+360, 360)
+			s = math.Min(.14, s*.65)
+		} else {
+			hue = math.Mod(sourceHue+hue-148+720, 360)
+		}
 	}
 	if t.Dark {
 		s = .045

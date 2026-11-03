@@ -7,7 +7,7 @@ func TestLaunchThemeColors(t *testing.T) {
 	if got := (launchTheme{Accent: "fern"}).color(220, 232, 211); got != original {
 		t.Fatal("default artwork changed", got)
 	}
-	for _, accent := range []string{"fern", "slate", "iris", "clay", "sand"} {
+	for _, accent := range []string{"fern", "slate", "iris", "clay", "sand", "rose", "macaron"} {
 		c := (launchTheme{Accent: accent, Dark: true}).color(250, 252, 250)
 		for _, v := range c {
 			if v < 20 || v > 55 {
@@ -60,6 +60,24 @@ func TestReferenceHueReproducesOriginalArtwork(t *testing.T) {
 			if base != custom {
 				t.Fatalf("reference hue changed artwork: %v != %v", base, custom)
 			}
+		}
+	}
+}
+
+func TestCuratedStartupColorFamilies(t *testing.T) {
+	for _, accent := range []string{"slate", "iris", "clay", "sand", "rose", "macaron"} {
+		c := (launchTheme{Accent: accent}).color(220, 232, 211)
+		if accent == "slate" && !(c[2] > c[1] && c[1] > c[0]) {
+			t.Fatalf("blue became cyan: %v", c)
+		}
+		if accent == "iris" && !(c[2] > c[1] && c[0] > c[1]) {
+			t.Fatalf("purple became blue: %v", c)
+		}
+		if (accent == "clay" || accent == "sand") && !(c[0] > c[1] && c[1] > c[2]) {
+			t.Fatalf("warm earth color shifted: %v", c)
+		}
+		if (accent == "rose" || accent == "macaron") && !(c[0] > c[2] && c[2] > c[1]) {
+			t.Fatalf("pink shifted: %v", c)
 		}
 	}
 }

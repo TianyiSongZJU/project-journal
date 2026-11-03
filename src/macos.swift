@@ -104,7 +104,8 @@ final class JournalLaunchSurface:NSView {
    let source=(max(r,g,b)+min(r,g,b))/2
    let level=dark ? (source>0.65 ? 0.12+(1-source)*0.5:0.04):source
    let spread=max(r,g,b)-min(r,g,b)
-   let saturation:CGFloat=dark ? 0.045:(spread==0 ? 0:spread/(1-abs(2*source-1)))
+   let referenceSaturation:CGFloat=dark ? 0.045:(spread==0 ? 0:spread/(1-abs(2*source-1)))
+   let preset = !["fern","custom"].contains(UserDefaults.standard.string(forKey:"JournalAccent") ?? "fern");let saturation:CGFloat = !dark && preset ? min(0.14,referenceSaturation*0.65):referenceSaturation
    let brightness=level+saturation*min(level,1-level)
    return NSColor(calibratedHue:hue/360,saturation:brightness>0 ? 2*(1-level/brightness):0,brightness:brightness,alpha:dark && a<1 ? a*0.15:a).cgColor
   }
@@ -356,12 +357,14 @@ final class JournalTitleText: NSView {
 private func journalAccentHue()->CGFloat {
  let accent=UserDefaults.standard.string(forKey:"JournalAccent") ?? "fern"
  if accent=="custom"{let value=UserDefaults.standard.object(forKey:"JournalCustomHue") as? Double ?? 148;return CGFloat(value.isFinite ? min(359,max(0,value.rounded())):148)}
- return ["fern":148,"slate":211,"iris":282,"clay":17,"sand":41][accent] ?? 148
+ return ["fern":148,"slate":218,"iris":286,"clay":24,"sand":34,"rose":340,"macaron":334][accent] ?? 148
 }
 private func journalRotatedHue(_ r:CGFloat,_ g:CGFloat,_ b:CGFloat,target:CGFloat)->CGFloat {
  let upper=max(r,g,b),lower=min(r,g,b),spread=upper-lower
  var hue:CGFloat=0
  if spread>0{if upper==r{hue=((g-b)/spread).truncatingRemainder(dividingBy:6)*60}else if upper==g{hue=((b-r)/spread+2)*60}else{hue=((r-g)/spread+4)*60}}
+ let accent=UserDefaults.standard.string(forKey:"JournalAccent") ?? "fern"
+ if !["fern","custom"].contains(accent){return (target+((hue-110+540).truncatingRemainder(dividingBy:360)-180)*0.15+360).truncatingRemainder(dividingBy:360)}
  return (hue+target-148+720).truncatingRemainder(dividingBy:360)
 }
 private func journalAccentColor()->NSColor {
@@ -767,7 +770,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   }
   else if action=="appearance",message.webView === webView {
    if let solid=body["solid"] as? String,solid.range(of:"^#[0-9a-fA-F]{6}$",options:.regularExpression) != nil{UserDefaults.standard.set(solid,forKey:"JournalAccentSolid")}
-   guard let scheme=body["scheme"] as? String,["system","light","dark"].contains(scheme),let accent=body["accent"] as? String,["fern","slate","iris","clay","sand","custom"].contains(accent) else{return}
+   guard let scheme=body["scheme"] as? String,["system","light","dark"].contains(scheme),let accent=body["accent"] as? String,["fern","slate","iris","clay","sand","rose","macaron","custom"].contains(accent) else{return}
    if let hue=body["hue"] as? Double,hue.isFinite{UserDefaults.standard.set(min(359,max(0,hue.rounded())),forKey:"JournalCustomHue")}
    UserDefaults.standard.set(scheme,forKey:"JournalColorScheme");UserDefaults.standard.set(accent,forKey:"JournalAccent");journalApplyNativeAppearance()
    menuTrackingInfo?.needsDisplay=true;menuReminderInfo?.needsDisplay=true;menuSummary?.needsDisplay=true
