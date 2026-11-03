@@ -619,7 +619,6 @@ dialog #record-info{margin:0 0 0 auto;font-size:9px}
 .distribution-period[hidden]{display:none!important}
 
 /* Priority uses the existing accent; timing alone keeps its warm status color. */
-.deadline-card[data-priority=high]:not(.is-done)>.deadline-surface{box-shadow:inset 2px 0 0 var(--green)}
 .deadline-card[data-priority=high]:not(.is-done) .deadline-card-heading>button{font-weight:600}
 .deadline-card[data-priority=low]:not(.is-done) .deadline-card-heading>button{font-weight:400;color:var(--muted)}
 .deadline-card .priority-badge{display:inline-flex;align-items:center;justify-content:center;min-height:20px;line-height:20px;background:transparent;color:var(--muted)}
@@ -639,4 +638,30 @@ dialog #record-info{margin:0 0 0 auto;font-size:9px}
 .inspector-due-row{padding-left:8px;padding-right:2px}
 
 /* Match the checkbox stroke center to the name input’s visible text. */
-#deadline-dialog .deadline-header-complete input{transform:translateY(2px)}
+#deadline-dialog .deadline-name-field{display:flex;align-items:baseline;flex:1;min-width:0;height:36px}
+#deadline-dialog .deadline-title-baseline{display:inline-block;flex:none;width:0;height:0;align-self:baseline}
+#deadline-dialog .deadline-header-complete input{appearance:none;-webkit-appearance:none;position:relative;padding:0;border:1.5px solid var(--muted);border-radius:5px;background:var(--panel);box-shadow:none}
+#deadline-dialog .deadline-header-complete input:checked{border-color:var(--green);background:var(--accent-solid,var(--green))}
+#deadline-dialog .deadline-header-complete input:checked::after{content:"";position:absolute;left:5px;top:2px;width:5px;height:9px;border:solid white;border-width:0 1.6px 1.6px 0;transform:rotate(45deg)}
+#deadline-dialog .deadline-header-complete input:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+
+/* A single scan line, with priority expressed through weight and a quiet full-row tint. */
+.deadline-card.deadline-item{display:block;padding:7px 10px;border:0;border-radius:7px;background:var(--tone-surface-f7f8f3,#f7f8f3)}
+.deadline-item>.deadline-surface{display:grid;grid-template-columns:18px minmax(0,1fr) max-content 54px;align-items:center;gap:12px;padding:0;border:0;background:transparent;box-shadow:none}
+.deadline-item>.deadline-surface>:is(.timeline-content,.deadline-content){display:block;min-width:0;min-height:0}
+.deadline-item .deadline-card-heading{display:block}
+.deadline-item .deadline-card-heading>button{display:block;max-width:none;width:100%;white-space:normal}
+.deadline-item .deadline-inline-note{margin-top:2px}
+.deadline-item .deadline-meta{display:block;margin-top:2px}
+.deadline-item .deadline-surface>.deadline-state{display:inline-flex;align-items:baseline;justify-content:flex-end;gap:2px;min-width:0;padding:0;font:400 10px/20px system-ui;white-space:nowrap}
+.deadline-item .deadline-state b{font:400 20px/24px var(--serif);font-variant-numeric:tabular-nums}
+.deadline-item .deadline-surface>time{width:54px;min-height:32px;padding:0;gap:1px;align-items:flex-end;background:transparent;white-space:nowrap}
+.deadline-item .deadline-surface>time strong{font:500 12px/20px system-ui}
+.deadline-item .deadline-surface>time small{font:400 9px/12px system-ui}
+.deadline-item .deadline-surface>input{width:16px;height:16px;min-height:16px;padding:0;margin:0;align-self:center;accent-color:var(--green);cursor:pointer}
+.deadline-card.deadline-item[data-priority=high]:not(.is-done){background:color-mix(in srgb,var(--tone-surface-dfe6d7,#dfe6d7) 35%,var(--tone-surface-f7f8f3,#f7f8f3))}
+@media(max-width:500px){.deadline-item>.deadline-surface{gap:8px;grid-template-columns:16px minmax(0,1fr) max-content 44px}.deadline-item .deadline-surface>time{width:44px}.deadline-item .deadline-surface>.deadline-state{font-size:9px}.deadline-item .deadline-state b{font-size:18px}}
+.deadline-card.deadline-item:has(.deadline-inline-note) .deadline-card-heading>button{max-width:none}
+
+.deadline-item>.deadline-surface{row-gap:2px}
+.deadline-item>.deadline-surface>.deadline-inline-note{grid-column:2;grid-row:2;margin:0}

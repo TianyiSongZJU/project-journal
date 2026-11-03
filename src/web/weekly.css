@@ -37,7 +37,7 @@ html[data-highlights="on"] #weekly-workspace{box-shadow:inset 0 1px 0 var(--surf
 @media(hover:none){.week-journal-trigger{opacity:1}}
 
 /* The same writing tools and surface belong to daily and weekly notes. */
-#weekly-workspace{padding:12px 22px 20px;background:var(--panel);border:0;border-radius:16px;min-width:0}
+#weekly-workspace{padding:var(--weekly-top-inset,17px) 22px 20px;background:var(--panel);border:0;border-radius:16px;min-width:0}
 #page-review:not(.month-view) #weekly-workspace{min-height:540px;display:flex;flex-direction:column}
 #page-review:not(.month-view) #weekly-workspace .weekly-page{flex:1}
 #weekly-workspace .weekly-goals-section{flex:none;padding:0;border-radius:7px;background:var(--tone-surface-f3f5ef,#f3f5ef)}
@@ -95,3 +95,9 @@ html[data-scheme=dark] .month-week.week-inspected::after{box-shadow:0 0 0 2px #f
 .weekly-range-dates{display:flex;align-items:baseline;gap:5px;font:500 12px/1 system-ui;color:var(--ink)}
 .weekly-range-dates>span{font:400 10px/1 system-ui;color:var(--muted)}
 .weekly-range-year{font:400 9px/1 system-ui;letter-spacing:.02em;color:var(--tone-ink-969b8e,#969b8e)}
+
+/* Match the soft white edge of the period summary selection. */
+:root{--week-selection-glow:0 0 0 1px var(--tone-shadow-fffffff2,#fffffff2),0 0 7px 2px var(--tone-shadow-ffffffd9,#ffffffd9),inset 0 0 0 1px var(--tone-shadow-ffffffa6,#ffffffa6)}
+.month-week.week-inspected::after,html[data-scheme=dark] .month-week.week-inspected::after,.heat-grid.has-week-highlight::after{box-shadow:var(--week-selection-glow)}
+.weekly-overview-item[aria-pressed=true]{box-shadow:var(--week-selection-glow)}
+#weekly-overview-list{padding:5px 0}

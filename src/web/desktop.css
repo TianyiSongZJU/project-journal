@@ -343,10 +343,16 @@
 :is(.native-windows,.native-mac) .win-node-title{font:400 10px/24px system-ui}
 :is(.native-windows,.native-mac) .win-node-heading .win-node-add{font:400 9px/24px system-ui;color:var(--tone-ink-6b7b5e,#6b7b5e)}
 
-/* Keep priority labels centered even beside large remaining-day numerals. */
-:is(.native-windows,.native-mac) #project-deadline-panel .priority-badge{align-self:center;min-height:20px;line-height:20px}
-:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card[data-priority=high]:not(.is-done) .priority-badge{color:var(--green);font-weight:500}
-:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card[data-priority=high]:not(.is-done) .deadline-card-heading>button{font-weight:600}
-:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card[data-priority=low]:not(.is-done) .deadline-card-heading>button{font-weight:400;color:var(--muted)}
+/* Shared node order: completion, name, remaining time, deadline date. */
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-item>.deadline-surface{grid-template-columns:18px minmax(0,1fr) max-content 54px;gap:12px;padding:0;background:transparent;box-shadow:none}
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-item .deadline-card-heading{display:block}
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-item .deadline-card-heading>button{display:block;max-width:none;width:100%;font-weight:500}
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-item[data-priority=high]:not(.is-done) .deadline-card-heading>button{font-weight:600}
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-item[data-priority=low]:not(.is-done) .deadline-card-heading>button{font-weight:400;color:var(--muted)}
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-item .deadline-inline-note{max-width:none;margin-top:2px}
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-item .deadline-surface>time{align-items:flex-end}
 :is(.native-windows,.native-mac) .inspector-project-node{padding-left:18px}
-:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card[data-priority=high]:not(.is-done)>.deadline-surface{box-shadow:inset 2px 0 0 var(--green)}
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-item[data-priority=high]:not(.is-done){background:color-mix(in srgb,var(--tone-surface-dfe6d7,#dfe6d7) 35%,var(--tone-surface-f7f8f3,#f7f8f3))}
+
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-item>.deadline-surface{row-gap:2px}
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-item .deadline-inline-note{grid-column:2;grid-row:2;margin:0}

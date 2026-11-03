@@ -25,13 +25,6 @@ export function refineDesktopProject(project) {
   toggle.textContent=(toggle.getAttribute('aria-pressed')==='true'?'收起已完成':'已完成')+' '+info.done;
   const meta=summary.querySelector('.fold-meta');
   meta.textContent=info.pending?info.pending+' 个待完成':'';
-  panel.querySelectorAll('.deadline-card').forEach(card=>{
-    const state=card.querySelector(':scope>.deadline-state');
-    const heading=card.querySelector('.deadline-card-heading'),check=heading.querySelector('input');
-    const priority=card.querySelector('.priority-badge');
-    if(priority)heading.insertBefore(priority,check);
-    if(state)heading.insertBefore(state,check);
-  });
   let empty=panel.querySelector('.win-deadline-empty');
   if(!empty){empty=document.createElement('p');empty.className='win-deadline-empty';panel.querySelector('.fold-content').append(empty);}
   panel.querySelector('.fold-content>.empty')?.remove();

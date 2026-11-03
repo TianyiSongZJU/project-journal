@@ -10,6 +10,11 @@ function alignWeekHeader(host){
  if(!context?.getClientRects().length)return;
  const canvas=document.createElement('canvas').getContext('2d');if(!canvas)return;
  const ink=element=>{const text=element.textContent,style=getComputedStyle(element);canvas.font=[style.fontStyle,style.fontWeight,style.fontSize,style.fontFamily].join(' ');const metrics=canvas.measureText(text),probe=document.createElement('span');probe.style.cssText='display:inline-block;width:0;height:0;padding:0;border:0;vertical-align:baseline';element.append(probe);const baseline=probe.getBoundingClientRect().top;probe.remove();return {top:baseline-metrics.actualBoundingBoxAscent,bottom:baseline+metrics.actualBoundingBoxDescent}};
+ const dateInk=ink(host.querySelector('.weekly-range-dates time')),number=host.querySelector('.weekly-week-number'),numberStyle=getComputedStyle(number);
+ canvas.font=[numberStyle.fontStyle,numberStyle.fontWeight,numberStyle.fontSize,numberStyle.fontFamily].join(' ');
+ const numberInk=canvas.measureText(number.textContent),outer=host.getBoundingClientRect(),inset=number.getBoundingClientRect().left-numberInk.actualBoundingBoxLeft-outer.left;
+ const correction=inset-(dateInk.top-outer.top+host.scrollTop);
+ if(Math.abs(correction)>.25)host.style.setProperty('--weekly-top-inset',`${Math.round((parseFloat(getComputedStyle(host).paddingTop)+correction)*2)/2}px`);
  const year=ink(host.querySelector('.weekly-range-year'));
  const summary=host.querySelector('.weekly-summary'),stepper=host.querySelector('.weekly-stepper');
  if(summary){
