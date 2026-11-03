@@ -45,13 +45,13 @@ test('light themes change hue while preserving the green reference saturation, l
  const values=value=>value.match(/^hsl\((\d+) (\d+)% (\d+)% \/ ([\d.]+)\)$/).slice(1).map(Number);
  for(const [role,hex]of [['surface','#e5e7dd'],['surface','#dfe6d7'],['line','#99ac91'],['ink','#315c46'],['shadow','#315c4614']]){
   const source=api.parse(hex);
-  for(const accent of ['slate','iris','clay','sand']){const [h,s,l,a]=values(api.tone(role,hex,accent,false));assert(Math.abs(((h-api.rotateHue(source.h,api.palettes[accent].h)+540)%360)-180)<.51);assert(Math.abs(s/100-source.s)<=.0051);assert(Math.abs(l/100-source.l)<=.0051);assert(Math.abs(a-source.a)<=.0006)}
+  for(const accent of ['iris','sand']){const [h,s,l,a]=values(api.tone(role,hex,accent,false));assert(Math.abs(((h-api.rotateHue(source.h,api.palettes[accent].h)+540)%360)-180)<.51);assert(Math.abs(s/100-source.s)<=.0051);assert(Math.abs(l/100-source.l)<=.0051);assert(Math.abs(a-source.a)<=.0006)}
  }
  assert.equal(api.resolvePalette('custom',148).solid,api.palettes.fern.solid);
 });
 test('dark themes share tonal levels across every hue and preserve status colors',()=>{
  const levels=value=>value.slice(value.indexOf(' '));
- for(const [role,hex]of [['surface','#fafaf7'],['line','#e2e7da'],['ink','#315c46'],['shadow','#315c4614']]){const reference=levels(api.tone(role,hex,'fern',true));for(const accent of Object.keys(api.palettes))assert.equal(levels(api.tone(role,hex,accent,true)),reference)}
+ for(const [role,hex]of [['surface','#fafaf7'],['line','#e2e7da'],['ink','#315c46'],['shadow','#315c4614']]){const reference=levels(api.tone(role,hex,'fern',true));for(const accent of Object.keys(api.palettes).filter(accent=>!['slate','clay'].includes(accent)))assert.equal(levels(api.tone(role,hex,accent,true)),reference)}
  for(const hex of ['#a2553e','#a77f68','#a57751'])for(const accent of ['slate','iris','clay','sand'])assert.equal(api.tone('ink',hex,accent,false),hex);
 });
 
@@ -66,7 +66,7 @@ test('custom hue is bounded, remembered with preset switches and preserved in lo
  }
  for(const hue of [0,60,120,180,240,300,359]){
   assert.equal(api.resolvePalette('custom',hue).h,hue);
-  const custom=api.tone('surface','#dfe6d7','custom',false,hue),reference=api.tone('surface','#dfe6d7','slate',false);
+  const custom=api.tone('surface','#dfe6d7','custom',false,hue),reference=api.tone('surface','#dfe6d7','iris',false);
   assert.equal(custom.slice(custom.indexOf(' ')),reference.slice(reference.indexOf(' ')));
   api.apply({scheme:'light',accent:'custom',hue});assert(api.launchColor(220,232,211).startsWith('hsl('+Math.round(api.rotateHue(api.parse('#dce8d3').h,hue))+' '));
  }
@@ -79,7 +79,7 @@ test('reference hue reproduces every green token exactly in both schemes',()=>{
  api.apply({scheme:'light',accent:'custom',hue:148});assert.equal(api.launchColor(220,232,211),'rgb(220 232 211 / 1)');api.apply({scheme:'system',accent:'fern'});
 });
 test('base hue conversion stays consistent underneath curated preset colors',()=>{
- for(const [accent,palette]of Object.entries(api.palettes).filter(([accent])=>accent!=='custom'))for(const dark of [false,true])for(const [role,hex]of [['surface','#dfe6d7'],['ink','#315c46'],['line','#99ac91'],['ink','#a2553e']])assert.equal(api.tone(role,hex,accent,dark),api.tone(role,hex,'custom',dark,palette.h));
+ for(const [accent,palette]of Object.entries(api.palettes).filter(([accent])=>!['custom','slate','clay'].includes(accent)))for(const dark of [false,true])for(const [role,hex]of [['surface','#dfe6d7'],['ink','#315c46'],['line','#99ac91'],['ink','#a2553e']])assert.equal(api.tone(role,hex,accent,dark),api.tone(role,hex,'custom',dark,palette.h));
  const first=api.parse('#dfe6d7'),second=api.parse('#315c46');assert.notEqual(Math.round(api.rotateHue(first.h,211)),Math.round(api.rotateHue(second.h,211)));
 });
 
@@ -104,7 +104,7 @@ test('recommended paper and jade palette has editable independent light and dark
 
 
 test('curated palettes use distinct muted color families and leave fern intact',()=>{
- const families={slate:[205,225],iris:[275,300],clay:[15,35],sand:[28,43],rose:[325,355],macaron:[325,350]};
+ const families={slate:[205,225],iris:[275,300],clay:[8,24],sand:[28,43],rose:[325,355],macaron:[325,350]};
  assert.equal(globalThis.JournalManualColors.theme('fern'),null);
  for(const [accent,[min,max]]of Object.entries(families))for(const dark of [false,true]){
   const palette=api.manualDefaults({accent,scheme:dark?'dark':'light'},dark);
@@ -112,4 +112,12 @@ test('curated palettes use distinct muted color families and leave fern intact',
   const levels=Array.from({length:6},(_,i)=>api.parse(palette['heat'+i]).l);for(let i=1;i<levels.length;i++)assert(dark?levels[i]>levels[i-1]:levels[i]<levels[i-1]);
  }
  const prefs=createUIPreferences();prefs.setAppearance({scheme:'dark',accent:'macaron',colors:{macaron:{dark:{panel:'#302020'}},rose:{light:{button:'#987070'}}}});assert.equal(prefs.appearance().accent,'macaron');assert.equal(prefs.appearance().colors.rose.light.button,'#987070');
+});
+
+
+test('blue fallback control fills cannot shift into cyan and clay stays brick red',()=>{
+ for(const hex of ['#e4e6da','#e6e8e2','#edeee7','#e0e7d6','#dfe6d7','#99ac91']){
+  const blue=api.parse(api.colorHex(api.tone('surface',hex,'slate',false)));assert(blue.h>=205&&blue.h<=230,`${hex}: ${blue.h}`);assert(blue.s<.2);
+  const red=api.parse(api.colorHex(api.tone('surface',hex,'clay',false)));assert(red.h>=0&&red.h<=24,`${hex}: ${red.h}`);
+ }
 });

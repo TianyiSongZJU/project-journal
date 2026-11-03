@@ -4,7 +4,7 @@
  function parse(hex){let v=hex.slice(1);if(v.length<5)v=[...v].map(c=>c+c).join('');const channels=[0,2,4].map(i=>parseInt(v.slice(i,i+2),16)/255),alpha=v.length===8?parseInt(v.slice(6),16)/255:1;const [r,g,b]=channels,max=Math.max(...channels),min=Math.min(...channels),d=max-min,l=(max+min)/2;let h=0,s=0;if(d){s=d/(1-Math.abs(2*l-1));h=(max===r?(g-b)/d+(g<b?6:0):max===g?(b-r)/d+2:(r-g)/d+4)*60}return {h,s,l,a:alpha}}
  const hsl=(h,s,l,a=1)=>`hsl(${Math.round(h)} ${Math.round(clamp(s)*100)}% ${Math.round(clamp(l)*100)}% / ${a.toFixed(3)})`;
  // Shift the complete green reference palette; retain each color's relative hue.
- const hueChoices={fern:['苔绿',148],slate:['雾蓝',218],iris:['烟紫',286],clay:['陶红',24],sand:['暖杏',34],rose:['灰粉',340],macaron:['马卡龙粉',334],custom:['自定义',148]};
+ const hueChoices={fern:['苔绿',148],slate:['雾蓝',218],iris:['烟紫',286],clay:['陶红',14],sand:['暖杏',34],rose:['灰粉',340],macaron:['马卡龙粉',334],custom:['自定义',148]};
  const rotateHue=(h,target)=>((h+target-148)%360+360)%360;
  function solidAt(target){if(target===148)return '#315c46';const reference=parse('#315c46'),h=rotateHue(reference.h,target),{s,l}=reference,c=(1-Math.abs(2*l-1))*s,x=c*(1-Math.abs(h/60%2-1)),m=l-c/2,channels=h<60?[c,x,0]:h<120?[x,c,0]:h<180?[0,c,x]:h<240?[0,x,c]:h<300?[x,0,c]:[c,0,x];return '#'+channels.map(v=>Math.round((v+m)*255).toString(16).padStart(2,'0')).join('')}
  const palettes=Object.fromEntries(Object.entries(hueChoices).map(([key,[name,h]])=>[key,{name,h,s:.27,solid:globalThis.JournalManualColors.theme(key)?.button||(key==='fern'?'#315c46':solidAt(h))}]));
@@ -29,7 +29,13 @@
    else if(c.l>.72){l=.13+(c.l-.72)*.25;if(a<1){l=.85;a*=.06}}
    else{l=green?.27:clamp(.14+c.l*.2,.16,.29);if(green){h=148;s=p.s*.65}}
   }
-  if(!semantic)h=rotateHue(h,p.h);
+  if(!semantic){
+   // Neutral control fills must stay in the preset's color family even when
+   // they do not map to one of the editable roles. Reference rotation alone
+   // sends yellow-green controls toward cyan in the blue palette.
+   if(['slate','clay'].includes(palette)){h=(p.h+(((h-110+540)%360)-180)*.12+360)%360;if(!dark)s=Math.min(s*.75,role==='ink'?.30:.18)}
+   else h=rotateHue(h,p.h);
+  }
   return hsl(h,s,l,a);
  }
  function launchColor(r,g,b,a=1){

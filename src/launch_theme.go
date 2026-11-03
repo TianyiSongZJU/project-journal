@@ -11,7 +11,7 @@ type launchTheme struct {
 }
 
 func (t launchTheme) color(r, g, b float64) [3]float64 {
-	hue, ok := map[string]float64{"fern": 148, "slate": 218, "iris": 286, "clay": 24, "sand": 34, "rose": 340, "macaron": 334}[t.Accent]
+	hue, ok := map[string]float64{"fern": 148, "slate": 218, "iris": 286, "clay": 14, "sand": 34, "rose": 340, "macaron": 334}[t.Accent]
 	if !ok {
 		hue = 148
 	}

@@ -357,7 +357,7 @@ final class JournalTitleText: NSView {
 private func journalAccentHue()->CGFloat {
  let accent=UserDefaults.standard.string(forKey:"JournalAccent") ?? "fern"
  if accent=="custom"{let value=UserDefaults.standard.object(forKey:"JournalCustomHue") as? Double ?? 148;return CGFloat(value.isFinite ? min(359,max(0,value.rounded())):148)}
- return ["fern":148,"slate":218,"iris":286,"clay":24,"sand":34,"rose":340,"macaron":334][accent] ?? 148
+ return ["fern":148,"slate":218,"iris":286,"clay":14,"sand":34,"rose":340,"macaron":334][accent] ?? 148
 }
 private func journalRotatedHue(_ r:CGFloat,_ g:CGFloat,_ b:CGFloat,target:CGFloat)->CGFloat {
  let upper=max(r,g,b),lower=min(r,g,b),spread=upper-lower
