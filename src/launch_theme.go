@@ -11,9 +11,6 @@ type launchTheme struct {
 }
 
 func (t launchTheme) color(r, g, b float64) [3]float64 {
-	if !t.Dark && (t.Accent == "" || t.Accent == "fern") {
-		return [3]float64{r, g, b}
-	}
 	hue, ok := map[string]float64{"fern": 148, "slate": 211, "iris": 282, "clay": 17, "sand": 41}[t.Accent]
 	if !ok {
 		hue = 148
@@ -21,11 +18,29 @@ func (t launchTheme) color(r, g, b float64) [3]float64 {
 	if t.Accent == "custom" && t.Hue != nil && !math.IsNaN(*t.Hue) && !math.IsInf(*t.Hue, 0) {
 		hue = math.Round(math.Max(0, math.Min(359, *t.Hue)))
 	}
+	if !t.Dark && hue == 148 {
+		return [3]float64{r, g, b}
+	}
 	source := (math.Max(r, math.Max(g, b)) + math.Min(r, math.Min(g, b))) / 510
 	l, s := source, 0.0
 	spread := (math.Max(r, math.Max(g, b)) - math.Min(r, math.Min(g, b))) / 255
 	if spread > 0 {
 		s = spread / (1 - math.Abs(2*source-1))
+	}
+	if !t.Dark {
+		max, min := math.Max(r, math.Max(g, b)), math.Min(r, math.Min(g, b))
+		sourceHue := 0.0
+		if max != min {
+			switch max {
+			case r:
+				sourceHue = math.Mod((g-b)/(max-min), 6) * 60
+			case g:
+				sourceHue = ((b-r)/(max-min) + 2) * 60
+			default:
+				sourceHue = ((r-g)/(max-min) + 4) * 60
+			}
+		}
+		hue = math.Mod(sourceHue+hue-148+720, 360)
 	}
 	if t.Dark {
 		s = .045

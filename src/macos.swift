@@ -98,9 +98,9 @@ final class JournalLaunchSurface:NSView {
   setAccessibilityElement(true);setAccessibilityRole(.progressIndicator);setAccessibilityLabel("正在打开")
   func color(_ r:CGFloat,_ g:CGFloat,_ b:CGFloat,_ a:CGFloat=1)->CGColor{
    let dark=NSApp.effectiveAppearance.bestMatch(from:[.darkAqua,.aqua]) == .darkAqua
-   let accent=UserDefaults.standard.string(forKey:"JournalAccent") ?? "fern"
-   if !dark && accent=="fern"{return NSColor(calibratedRed:r,green:g,blue:b,alpha:a).cgColor}
-   let hue=journalAccentHue()
+   let target=journalAccentHue()
+   if !dark && target==148{return NSColor(calibratedRed:r,green:g,blue:b,alpha:a).cgColor}
+   let hue=dark ? target:journalRotatedHue(r,g,b,target:target)
    let source=(max(r,g,b)+min(r,g,b))/2
    let level=dark ? (source>0.65 ? 0.12+(1-source)*0.5:0.04):source
    let spread=max(r,g,b)-min(r,g,b)
@@ -358,10 +358,16 @@ private func journalAccentHue()->CGFloat {
  if accent=="custom"{let value=UserDefaults.standard.object(forKey:"JournalCustomHue") as? Double ?? 148;return CGFloat(value.isFinite ? min(359,max(0,value.rounded())):148)}
  return ["fern":148,"slate":211,"iris":282,"clay":17,"sand":41][accent] ?? 148
 }
+private func journalRotatedHue(_ r:CGFloat,_ g:CGFloat,_ b:CGFloat,target:CGFloat)->CGFloat {
+ let upper=max(r,g,b),lower=min(r,g,b),spread=upper-lower
+ var hue:CGFloat=0
+ if spread>0{if upper==r{hue=((g-b)/spread).truncatingRemainder(dividingBy:6)*60}else if upper==g{hue=((b-r)/spread+2)*60}else{hue=((r-g)/spread+4)*60}}
+ return (hue+target-148+720).truncatingRemainder(dividingBy:360)
+}
 private func journalAccentColor()->NSColor {
- if (UserDefaults.standard.string(forKey:"JournalAccent") ?? "fern")=="fern"{return NSColor(srgbRed:49/255,green:92/255,blue:70/255,alpha:1)}
+ if journalAccentHue()==148{return NSColor(srgbRed:49/255,green:92/255,blue:70/255,alpha:1)}
  let level:CGFloat=141/510,saturation:CGFloat=43/141,brightness=level+saturation*min(level,1-level)
- return NSColor(calibratedHue:journalAccentHue()/360,saturation:2*(1-level/brightness),brightness:brightness,alpha:1)
+ return NSColor(calibratedHue:journalRotatedHue(49/255,92/255,70/255,target:journalAccentHue())/360,saturation:2*(1-level/brightness),brightness:brightness,alpha:1)
 }
 private let journalMenuAccentFill = NSColor(name:nil){_ in journalAccentColor()}
 private let journalMenuGreen = NSColor(name:nil){appearance in

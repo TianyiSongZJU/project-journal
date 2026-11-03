@@ -50,3 +50,16 @@ func TestCustomLaunchHue(t *testing.T) {
 		t.Fatalf("custom hue ignored: %v %v", a, b)
 	}
 }
+
+func TestReferenceHueReproducesOriginalArtwork(t *testing.T) {
+	reference := 148.0
+	for _, dark := range []bool{false, true} {
+		for _, rgb := range [][3]float64{{220, 232, 211}, {250, 252, 250}, {97, 117, 89}} {
+			base := (launchTheme{Accent: "fern", Dark: dark}).color(rgb[0], rgb[1], rgb[2])
+			custom := (launchTheme{Accent: "custom", Hue: &reference, Dark: dark}).color(rgb[0], rgb[1], rgb[2])
+			if base != custom {
+				t.Fatalf("reference hue changed artwork: %v != %v", base, custom)
+			}
+		}
+	}
+}
