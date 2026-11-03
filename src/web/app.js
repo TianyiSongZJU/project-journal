@@ -414,7 +414,7 @@ document.addEventListener('keydown',e=>{
  if(viewMenu){consume();const trigger=viewMenu.querySelector('.windows-inspector-view-trigger');trigger.click();trigger.focus({preventScroll:true});return}
  if(menus.length){consume();const menu=menus.at(-1);menu.open=false;menu.querySelector('summary')?.focus({preventScroll:true});return}
  // Finish the current Markdown paragraph before Escape reaches page deselection.
- const paragraph=e.target.closest?.('textarea.md-paragraph-source');
+ const paragraph=e.target.closest?.('textarea.md-paragraph-source,.markdown-live [contenteditable=true]');
  if(paragraph){consume();paragraph.closest('.markdown-editor')?.querySelector(':scope>textarea')?._markdownLive?.commit();return}
  // Keep each dialog's existing cancel/save handling and block underlying page handlers.
  if(modal){e.stopImmediatePropagation();return}

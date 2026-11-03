@@ -10,3 +10,7 @@
 *.log
 .env
 .env.*
+
+**/node_modules/
+/editor-build/
+**/node_modules

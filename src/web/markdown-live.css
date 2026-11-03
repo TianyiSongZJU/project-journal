@@ -1,10 +1,6 @@
 .markdown-live[hidden],.markdown-preview[hidden],.markdown-editor>textarea[hidden]{display:none!important}
 .markdown-live{flex:1;min-height:140px;overflow-wrap:anywhere;padding:10px;border:1px solid var(--line);border-radius:8px;background:linear-gradient(115deg,var(--tone-surface-e8eee3,#e8eee3) 0%,var(--tone-surface-f1f4ec,#f1f4ec) 45%,var(--panel) 100%);cursor:text;font:400 13px/1.8 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--ink);outline:none}
 .markdown-live:focus-within{border-color:var(--tone-line-99ac91,#99ac91);box-shadow:0 0 0 2px var(--tone-shadow-315c4612,#315c4612)}
-.md-live-block{min-height:1.8em;padding:1px 0;white-space:normal}
-.md-live-block>:first-child{margin-top:0}.md-live-block>:last-child{margin-bottom:0}
-.md-live-block.is-editing{border-radius:4px;background:color-mix(in srgb,var(--panel) 35%,transparent)}
-html[data-scheme] .markdown-editor .markdown-live .md-paragraph-source{display:block;box-sizing:border-box;width:100%;min-height:20px!important;max-height:none;margin:0;padding:0 2px!important;border:0!important;border-radius:0!important;background:transparent!important;background-image:none!important;box-shadow:none!important;resize:none!important;font:400 13px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif!important;line-height:20px!important;color:var(--ink)!important;overflow:hidden;outline:0!important;flex:none!important;white-space:pre-wrap}
 /* Every note tool occupies the same box, including the save indicator. */
 .markdown-heading{column-gap:6px!important}
 .markdown-mode{gap:6px;align-items:center}
@@ -23,14 +19,40 @@ html :is(.markdown-mode,.markdown-heading) :is(.desktop-note-action,.desktop-sav
 .project-detail-section:has(#project-note) .markdown-live{background:transparent;border:0;padding:0;box-shadow:none;min-height:160px}
 .markdown-live .md-empty{color:var(--muted);opacity:.7;font:inherit}
 
-.md-live-block+.md-live-block{margin-top:8px}.markdown-body .md-task:has(>ul,>ol){flex-wrap:wrap}.markdown-body .md-task>ul,.markdown-body .md-task>ol{flex-basis:100%;margin-left:14px}
 
 /* Source and paragraph modes share one note surface; suppress native textarea
    fills and focus shadows so WebKit cannot add a separate white rectangle. */
-html[data-scheme] .markdown-editor.is-source>textarea{appearance:none;-webkit-appearance:none;box-sizing:border-box;flex:1;min-height:140px;margin:0;padding:10px!important;border:1px solid var(--line)!important;border-radius:8px!important;background:linear-gradient(115deg,var(--tone-surface-e8eee3,#e8eee3) 0%,var(--tone-surface-f1f4ec,#f1f4ec) 45%,var(--panel) 100%)!important;box-shadow:none!important;outline:none!important;resize:none;font:400 13px/1.8 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--ink);scrollbar-color:var(--line) transparent}
+html[data-scheme] .markdown-editor.is-source>textarea{appearance:none;-webkit-appearance:none;box-sizing:border-box;flex:1;min-height:140px;margin:0;padding:10px!important;border:1px solid var(--line)!important;border-radius:8px!important;background:linear-gradient(115deg,var(--tone-surface-e8eee3,#e8eee3) 0%,var(--tone-surface-f1f4ec,#f1f4ec) 45%,var(--panel) 100%)!important;box-shadow:none!important;outline:none!important;resize:none;font:400 13px/1.5 ui-monospace,Menlo,monospace;color:var(--ink);scrollbar-color:var(--line) transparent}
 html[data-scheme] .markdown-editor.is-source>textarea:focus{border-color:var(--tone-line-99ac91,#99ac91)!important;box-shadow:0 0 0 2px var(--tone-shadow-315c4612,#315c4612)!important}
 html[data-scheme] .project-detail-section:has(#project-note) .markdown-editor.is-source>textarea{min-height:160px;background:transparent!important;border:0!important;padding:0!important;box-shadow:none!important}
-.md-live-block.is-editing{background:transparent}
 .markdown-editor.is-source>textarea::-webkit-scrollbar-track{background:transparent}
 
-.md-live-block.is-blank,.md-live-block.is-blank+.md-live-block{margin-top:0}
+
+/* Native rich text gives every line a glyph-sized caret; never stretch a
+   textarea to simulate the current paragraph. All colors follow the theme. */
+.markdown-live .milkdown{--crepe-font-default:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--crepe-font-title:var(--crepe-font-default);--crepe-font-code:ui-monospace,Menlo,monospace;--crepe-base-font-size:13px;--crepe-color-background:transparent;--crepe-color-on-background:var(--ink);--crepe-color-surface:var(--panel);--crepe-color-surface-low:var(--editor-bg);--crepe-color-on-surface:var(--ink);--crepe-color-outline:var(--muted);--crepe-color-primary:var(--green);--crepe-color-on-primary:var(--panel);--crepe-color-selected:color-mix(in srgb,var(--green) 18%,transparent);--crepe-color-hover:color-mix(in srgb,var(--green) 8%,transparent);--crepe-shadow-1:0 3px 12px #0001;--crepe-shadow-2:0 5px 20px #0002;background:transparent;font-size:13px}
+html .markdown-live .milkdown>.ProseMirror{padding:0;min-height:120px;outline:0;font:400 13px/1.5 var(--crepe-font-default);white-space:pre-wrap;overflow-wrap:anywhere;caret-color:var(--ink)}
+.markdown-live .ProseMirror :is(p,li){font-size:13px;line-height:1.5;font-weight:400}
+.markdown-live .ProseMirror p{min-height:1.5em;margin:0 0 6px}
+.markdown-live .ProseMirror :is(h1,h2,h3,h4,h5,h6){font-family:var(--crepe-font-default);font-weight:600;line-height:1.3;margin:8px 0}
+.markdown-live .ProseMirror h1{font-size:24px}.markdown-live .ProseMirror h2{font-size:21px}.markdown-live .ProseMirror h3{font-size:18px}
+.markdown-live .ProseMirror :is(ul,ol){padding-left:22px;margin:4px 0;list-style:none}
+.markdown-live .ProseMirror blockquote{border-left:2px solid var(--line);padding-left:12px;color:var(--muted);margin:6px 0}
+.markdown-live .milkdown span[data-type=math_inline]{padding:0 2px;vertical-align:baseline}
+.markdown-live .milkdown .milkdown-latex-inline-edit .ProseMirror{font:13px/1.5 var(--crepe-font-code);min-height:20px;padding:2px}
+.markdown-live .milkdown .milkdown-image-block{margin:8px 0}
+.markdown-live .milkdown .milkdown-image-block img{max-width:100%;height:auto;border-radius:6px}
+.markdown-live .milkdown :is(button,input){font:inherit;color:var(--ink)}
+.markdown-live .milkdown .milkdown-code-block{font-size:12px;background:color-mix(in srgb,var(--ink) 4%,var(--panel));border-radius:6px}
+.markdown-live .milkdown .cm-editor{background:transparent;color:var(--ink)}
+.markdown-live .milkdown .cm-gutters{background:transparent;color:var(--muted);border:0}
+.markdown-live .milkdown .cm-cursor{border-left-width:1px;border-color:var(--ink)}
+.markdown-live .ProseMirror-focused{--prosemirror-virtual-cursor-color:var(--ink)}
+.markdown-live .ProseMirror .prosemirror-virtual-cursor{border-left-width:1px}
+.markdown-live .ProseMirror ul{list-style:disc}.markdown-live .ProseMirror ol{list-style:decimal}
+.markdown-live .ProseMirror li{padding-left:2px;margin:2px 0}
+.markdown-live .ProseMirror li>p{margin:0}
+.markdown-live .ProseMirror li[data-item-type=task]{list-style:none;position:relative;display:flex;gap:7px;align-items:flex-start}
+.markdown-live .ProseMirror li[data-item-type=task]>div{min-width:0;flex:1}
+.markdown-live .ProseMirror .journal-task-box{appearance:none;width:13px;height:13px;min-height:13px;flex:none;margin:3px 0 0;border:1.4px solid var(--muted);border-radius:3px;background:transparent}
+.markdown-live .ProseMirror .journal-task-box:checked{background:var(--green);border-color:var(--green)}

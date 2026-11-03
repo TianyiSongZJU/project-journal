@@ -9,7 +9,7 @@ const paths={
   edit:'<path d="m4 13 9-9 3 3-9 9-4 1zM11 6l3 3"/>',
   resize:'<path d="m6 16 10-10m-5 10 5-5"/>'
 };
-export const desktopIcon=name=>`<svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${paths[name]||paths.saved}</svg>`;
+export const desktopIcon=name=>`<svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round">${paths[name]||paths.saved}</svg>`;
 export const saveState=text=>/失败|错误|冲突|未保存/.test(text)?'error':/保存中|正在/.test(text)?'saving':'saved';
 export function renderDesktopSaveStatus(element,text){
   if(!element)return;

@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "@milkdown/crepe": "^7.23.0",
+    "@milkdown/kit": "^7.23.0",
+    "esbuild": "^0.28.2"
+  },
+  "name": "project-journal-markdown-editor",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  }
+}
