@@ -26,6 +26,8 @@ const fs=require('fs'),os=require('os'),path=require('path'),crypto=require('cry
  const downloading=page.waitForEvent('download');await page.locator('#export-data').dispatchEvent('click');const exported=await downloading;const backup=JSON.parse(fs.readFileSync(await exported.path(),'utf8'));assert.equal(backup.weekly[selected].title,'保存失败后仍保留的草稿');
  await page.unroute('**/api/state');await page.locator('#weekly-title').fill(keptTitle);assert(await page.evaluate(()=>window.journalFlush()));
  await page.locator('#toast').evaluate(el=>el.hidden=true);
+ const rowGeometry=await page.locator('.weekly-node[aria-current="date"]').evaluate(el=>{const row=el.getBoundingClientRect(),title=el.querySelector('strong').getBoundingClientRect();return {height:row.height,bottom:row.bottom-title.bottom}});assert(rowGeometry.height<60);assert(rowGeometry.bottom<=10);
+ const pageLayout=await page.locator('.weekly-page').evaluate(el=>{const title=el.querySelector('.weekly-title-label').getBoundingClientRect(),date=el.querySelector('.weekly-range').getBoundingClientRect();return {ordered:title.bottom<=date.top+1,fits:el.getBoundingClientRect().right<=innerWidth}});assert(pageLayout.ordered);assert(pageLayout.fits);
  if(process.env.JOURNAL_WEEKLY_SCREENSHOT)await page.screenshot({path:process.env.JOURNAL_WEEKLY_SCREENSHOT});
  await page.emulateMedia({colorScheme:'dark'});await page.waitForTimeout(100);if(process.env.JOURNAL_WEEKLY_DARK_SCREENSHOT)await page.screenshot({path:process.env.JOURNAL_WEEKLY_DARK_SCREENSHOT});
  await page.setViewportSize({width:790,height:620});assert(await page.locator('.weekly-page').isVisible());assert(await page.locator('.weekly-page').evaluate(el=>el.getBoundingClientRect().right<=innerWidth));
