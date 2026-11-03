@@ -108,7 +108,7 @@ function fitNotePane(){
 export function refineDesktopNotes(){
   if(!noteLayoutListening){window.addEventListener('resize',fitNotePane);noteLayoutListening=true;}
   requestAnimationFrame(fitNotePane);
-  for(const id of ['inspector-note','inspector-project-note','record-note']){
+  for(const id of ['inspector-note','inspector-project-note','record-note','weekly-note']){
     const input=$('#'+id),editor=input?.closest('.markdown-editor');
     if(!editor||editor.querySelector('.desktop-note-resize'))continue;
     const grip=document.createElement('div');grip.className='desktop-note-resize';grip.tabIndex=0;grip.setAttribute('role','separator');grip.setAttribute('aria-orientation','horizontal');grip.setAttribute('aria-label','调整笔记高度');grip.title='拖动调整高度，双击恢复填满';grip.innerHTML=desktopIcon('resize');editor.append(grip);

@@ -11,7 +11,7 @@
 .weekly-note-section{padding-top:22px}.weekly-note-section .editor-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;min-height:26px}.weekly-note-section .editor-heading strong{font:600 12px/1.5 system-ui}.weekly-note-section .markdown-editor{padding:13px 15px;border:1px solid var(--line);border-radius:10px;background:var(--editor-bg);min-height:260px;box-sizing:border-box}.weekly-note-section .markdown-editor:focus-within{border-color:color-mix(in srgb,var(--green) 40%,var(--line))}
 .weekly-note-section textarea,.weekly-note-section .markdown-preview{display:block;width:100%;box-sizing:border-box;min-height:232px;padding:0;border:0;box-shadow:none;background:transparent;font:400 13px/1.9 system-ui;color:var(--ink)}.weekly-note-section textarea{resize:vertical}.weekly-note-section textarea:focus{outline:none}.weekly-save-status{display:block;margin-top:auto;padding-top:15px;color:var(--muted);font:400 9px/1.5 system-ui;text-align:right}
 .weekly-stepper svg,.weekly-add-goal svg,.weekly-goal button svg{display:block;flex:none;width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-html[data-highlights="on"] .weekly-page{box-shadow:inset 0 1px 0 var(--surface-sheen)}
+html[data-highlights="on"] #weekly-workspace{box-shadow:inset 0 1px 0 var(--surface-sheen)}
 .weekly-note-section{display:flex;flex:1;flex-direction:column}.weekly-note-section>.editor-label{display:flex;flex:1;flex-direction:column;gap:0}.weekly-note-section .markdown-editor{display:flex;flex:1;flex-direction:column}.weekly-note-section textarea,.weekly-note-section .markdown-preview{flex:1}
 /* Weekly writing shares the monthly inspector; the calendar keeps its seven columns. */
 .month-rail{position:relative;min-height:100%;padding-bottom:30px;box-sizing:border-box}
@@ -21,7 +21,9 @@ html[data-highlights="on"] .weekly-page{box-shadow:inset 0 1px 0 var(--surface-s
 .week-journal-trigger.has-content{color:var(--green)}
 .week-journal-trigger:hover,.week-journal-trigger[aria-pressed=true]{background:var(--editor-bg);color:var(--green)}
 .week-journal-trigger:focus-visible{opacity:1;outline:2px solid var(--green);outline-offset:1px}
-.month-week.week-inspected .month-day-wrap{outline:1px solid color-mix(in srgb,var(--green) 45%,transparent);outline-offset:-1px}
+.month-week{position:relative;isolation:isolate}
+.month-week.week-inspected::after{content:"";position:absolute;inset:-2px 0 -2px 38px;pointer-events:none;z-index:4;border:1.5px solid color-mix(in srgb,var(--green) 48%,transparent);border-radius:9px;box-shadow:0 0 0 2px color-mix(in srgb,var(--green) 5%,transparent);background:color-mix(in srgb,var(--green) 4%,transparent)}
+@media(max-width:800px){.month-week.week-inspected::after{left:29px}}
 #weekly-workspace[hidden],#month-inspector[hidden]{display:none!important}
 #weekly-workspace{overflow-y:auto;overscroll-behavior:contain}
 #weekly-workspace .weekly-page{padding:0;min-height:100%;border-radius:0;background:transparent}
@@ -36,3 +38,43 @@ html[data-highlights="on"] .weekly-page{box-shadow:inset 0 1px 0 var(--surface-s
 #weekly-workspace .weekly-note-section .markdown-editor{min-height:220px}
 #weekly-workspace .weekly-note-section textarea,#weekly-workspace .weekly-note-section .markdown-preview{min-height:190px}
 @media(hover:none){.week-journal-trigger{opacity:1}}
+
+/* The same writing tools and surface belong to daily and weekly notes. */
+#weekly-workspace{padding:20px 22px;background:var(--panel);border:0;border-radius:16px;min-width:0}
+#page-review:not(.month-view) #weekly-workspace{min-height:540px;display:flex;flex-direction:column}
+#page-review:not(.month-view) #weekly-workspace .weekly-page{flex:1}
+#weekly-workspace .weekly-goals-section{flex:none;padding:0 10px 4px;border-radius:7px;background:var(--tone-surface-f3f5ef,#f3f5ef)}
+#weekly-workspace .weekly-section-heading{min-height:36px;margin:0;align-items:center;gap:7px}
+#weekly-workspace .weekly-section-heading h2{font:500 11px/20px system-ui;color:var(--green)}
+#weekly-workspace .weekly-goal-count{font-size:9px}
+#weekly-workspace .weekly-add-goal{background:transparent;padding:0 0 0 5px;font-size:10px;min-height:28px}
+#weekly-workspace .weekly-section-hint{border:0;padding:0 0 7px;font-size:10px;margin:0;color:var(--muted)}
+#weekly-workspace .weekly-goal{grid-template-columns:16px minmax(0,1fr) 24px;min-height:32px;margin:0;padding:2px 0;border:0;border-radius:4px;background:transparent;gap:8px}
+#weekly-workspace .weekly-goal [type=text]{font:400 11px/24px system-ui;min-height:26px;height:26px;margin:0;padding:0;border:0;vertical-align:middle}
+#weekly-workspace .weekly-goal [type=checkbox]{width:13px;height:13px;min-height:13px;border-radius:3px;border-width:1px}
+#weekly-workspace .weekly-goal [type=checkbox]:checked::after{left:3px;top:1px;width:3px;height:6px}
+#weekly-workspace .weekly-note-section .editor-heading{justify-content:flex-start;gap:2px;margin:0 0 10px;padding:0 10px;min-height:28px;color:var(--muted)}
+#weekly-workspace .weekly-note-section .editor-heading strong{font:500 11px/24px system-ui;margin-right:auto}
+#weekly-workspace .weekly-save-status{margin:0;padding:0;text-align:center}
+#weekly-workspace .weekly-clear-note{margin:0;border:0;background:transparent;box-shadow:none;color:var(--muted)}
+#weekly-workspace .weekly-clear-note:disabled{opacity:.4}
+#weekly-workspace .markdown-mode{margin:0;display:flex}
+#weekly-workspace .markdown-preview-toggle{background:transparent;color:var(--muted)}
+#weekly-workspace .weekly-note-section .markdown-editor{position:relative;padding:0;border:0;background:transparent;border-radius:8px}
+#weekly-workspace .weekly-note-section :is(textarea,.markdown-preview){min-height:190px;height:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:linear-gradient(115deg,var(--tone-surface-e8eee3,#e8eee3),var(--tone-surface-f1f4ec,#f1f4ec) 45%,var(--panel));font:400 12px/1.8 system-ui;resize:none}
+#weekly-workspace .weekly-note-section :is(textarea,.markdown-preview):focus{outline:none;border-color:color-mix(in srgb,var(--green) 35%,var(--line))}
+#weekly-workspace :is(textarea,.markdown-preview)[hidden]{display:none!important}
+.heat-grid{position:relative}
+.heat-grid.has-week-highlight::after{content:"";position:absolute;pointer-events:none;top:-3px;bottom:-3px;left:calc(var(--selected-week-column)*18px - 3px);width:20px;border:1.5px solid var(--green);border-radius:5px;background:color-mix(in srgb,var(--green) 8%,transparent);box-sizing:border-box;z-index:3}
+#weekly-overview-list{position:relative;max-height:360px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:0}
+.weekly-overview-track{position:relative;padding:0 0 0 18px}
+.weekly-overview-track::before{content:"";position:absolute;top:9px;bottom:9px;left:4px;width:1px;background:var(--line)}
+.weekly-overview-item{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:4px;width:100%;min-height:0;margin:0 0 7px;padding:9px 11px;border:1px solid transparent;border-radius:8px;background:transparent;box-shadow:none;text-align:left;color:var(--ink)}
+.weekly-overview-item::before{content:"";position:absolute;left:-18px;top:15px;width:7px;height:7px;border:1px solid var(--muted);border-radius:50%;background:var(--panel);box-sizing:border-box}
+.weekly-overview-item[aria-pressed=true]{background:var(--editor-bg);border-color:color-mix(in srgb,var(--green) 20%,transparent)}
+.weekly-overview-item[aria-pressed=true]::before{background:var(--green);border-color:var(--green);box-shadow:0 0 0 3px color-mix(in srgb,var(--green) 12%,transparent)}
+.weekly-overview-item:hover{background:var(--editor-bg)}
+.weekly-overview-date{display:flex;align-items:center;gap:5px;color:var(--muted);font:400 10px/16px system-ui;font-variant-numeric:tabular-nums}
+.weekly-overview-date i{font:500 8px/14px system-ui;color:var(--green);border:1px solid color-mix(in srgb,var(--green) 20%,transparent);padding:0 4px;border-radius:4px;margin-left:auto;font-style:normal}
+.weekly-overview-item strong{font:500 12px/18px system-ui;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.weekly-overview-item small{font:400 10px/16px system-ui;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

@@ -331,3 +331,11 @@
  :is(.native-windows,.native-mac) .windows-inspector-view.is-open>.windows-inspector-view-menu{display:grid;gap:3px}
  :is(.native-windows,.native-mac) #inspector-content .windows-inspector-view-menu button{width:100%;height:28px;min-height:28px;text-align:left;padding:0 10px}
 }
+
+/* Center both the node heading and the rows on their actual control boxes. */
+:is(.native-windows,.native-mac) .win-node-heading{min-height:36px;box-sizing:border-box;padding:3px 10px;align-items:center;line-height:24px}
+:is(.native-windows,.native-mac) .win-node-heading :is(.win-node-title,.win-node-count){display:flex;align-items:center;line-height:24px;margin:0}
+:is(.native-windows,.native-mac) .win-node-heading button{display:inline-flex;align-items:center;justify-content:center;min-height:24px;height:24px;line-height:24px;padding-top:0;padding-bottom:0;margin-top:0;margin-bottom:0}
+:is(.native-windows,.native-mac) .inspector-project-node{align-items:center}
+:is(.native-windows,.native-mac) .inspector-project-node>button{align-items:center;height:26px;padding-top:0;padding-bottom:0}
+:is(.native-windows,.native-mac) .inspector-project-node>button strong{line-height:24px}

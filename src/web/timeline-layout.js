@@ -58,7 +58,7 @@ export function applicationRuns(activities,start,end){
 }
 
 
-// Repeat names when a run becomes visually disconnected or expands after a thin neck.
+// Each connected region places its name where the whole line has the most room.
 export function applicationLabels(slots,start,scale){
  const segments=[];let segment;
  for(const slot of slots){
@@ -69,14 +69,16 @@ export function applicationLabels(slots,start,scale){
  const labels=[],height=scale<1?12:15;
  for(const group of segments){
   const end=(group.at(-1).at+15-start)*scale;
+  let best=null;
   for(let i=0;i<group.length;i++){
    const slot=group[i],top=(slot.at-start)*scale+2;
    if(end-top<height+1)continue;
    let left=slot.left,right=slot.left+slot.width;
    // Keep the text inside the application even at compressed zoom levels.
    for(let j=i+1;j<group.length&&(group[j].at-start)*scale<top+height;j++){left=Math.max(left,group[j].left);right=Math.min(right,group[j].left+group[j].width)}
-   if(right-left>=12){labels.push({left,width:right-left,top,at:slot.at});break}
+   if(right-left>=12&&(!best||right-left>best.width))best={left,width:right-left,top,at:slot.at};
   }
+  if(best)labels.push(best);
  }
  return labels;
 }

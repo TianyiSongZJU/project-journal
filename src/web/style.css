@@ -583,3 +583,17 @@ dialog #record-info{margin:0 0 0 auto;font-size:9px}
 .dt-activity-evidence-tip{display:flex;flex-direction:column;overflow:hidden;pointer-events:auto}
 .dt-activity-evidence-tip>.dt-report-header,.dt-activity-evidence-tip>footer{flex:none}
 .dt-activity-evidence-tip>.dt-evidence-body{min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--tone-surface-c4cfb8,#c4cfb8) transparent}
+
+/* A report row keeps its name, duration and percentage inside the scroll viewport. */
+.dt-range-inspector>ol{display:flex;flex-direction:column;gap:3px;flex:0 1 auto;overflow-x:hidden;padding:0 1px;scrollbar-gutter:stable}
+.dt-range-inspector>ol>li{display:grid;grid-template-columns:12px minmax(0,1fr) max-content 30px;flex:none;gap:7px;min-height:30px;box-sizing:border-box}
+.dt-range-inspector .dt-range-namebar{height:27px}
+.dt-range-inspector .dt-range-name{line-height:27px}
+.dt-range-inspector>.dt-report-meta,.dt-range-inspector>.dt-range-empty{flex:none}
+
+/* Summary insets remain symmetrical when a statistics card expands. */
+#page-review:not(.month-view) .review-analytics>.fold-panel{padding:12px 16px}
+#page-review:not(.month-view) .review-analytics>.fold-panel>summary{min-height:32px;padding:0;margin:0;box-sizing:border-box;align-items:center;line-height:22px}
+#page-review:not(.month-view) .review-analytics>.fold-panel>.fold-content{padding:10px 0 4px}
+#page-review:not(.month-view) .review-analytics>.fold-panel:not([open]){padding:12px 16px}
+#upcoming{max-height:400px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
