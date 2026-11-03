@@ -33,6 +33,12 @@ func usableHistory(h *ChangeHistory) bool {
 	return h != nil && len(h.Versions) > 0 && h.Cursor >= 0 && h.Cursor < len(h.Versions)
 }
 func changeLabel(before, after State) string {
+	oldWeekly, _ := json.Marshal(before.Weekly)
+	newWeekly, _ := json.Marshal(after.Weekly)
+	if !bytes.Equal(oldWeekly, newWeekly) {
+		return "修改周记"
+	}
+
 	if len(after.Projects) > len(before.Projects) {
 		return "新增项目"
 	}

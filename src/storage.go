@@ -27,6 +27,11 @@ type historySnapshotRef struct {
 	SnapshotHash string `json:"snapshotHash"`
 }
 
+type weeklyDocument struct {
+	Week string `json:"week"`
+	WeekJournal
+}
+
 type projectNotes struct {
 	ProjectID string            `json:"projectId"`
 	Note      string            `json:"note"`
@@ -65,6 +70,11 @@ func safeStoragePath(name string) bool {
 		return true
 	}
 	parts := strings.Split(name, "/")
+	if len(parts) == 2 && parts[0] == "周记" && strings.HasSuffix(parts[1], ".json") {
+		date := strings.TrimSuffix(parts[1], ".json")
+		day, err := time.Parse("2006-01-02", date)
+		return err == nil && validDate(date) && day.Weekday() == time.Monday
+	}
 	if len(parts) == 2 && parts[0] == "笔记" {
 		return strings.HasSuffix(parts[1], ".json") && validID.MatchString(strings.TrimSuffix(parts[1], ".json"))
 	}
@@ -151,6 +161,13 @@ func (s *Store) archivePart(b []byte) (string, error) {
 func splitState(st State) (diskState, map[string][]byte, error) {
 	d := diskState{StorageVersion: 3, Version: 2, Settings: st.Settings, Projects: []Project{}, Files: map[string]string{}}
 	parts := map[string][]byte{}
+	for date, week := range st.Weekly {
+		b, e := diskJSON(weeklyDocument{Week: date, WeekJournal: week})
+		if e != nil {
+			return d, nil, e
+		}
+		parts["周记/"+date+".json"] = b
+	}
 	notes := map[string]*projectNotes{}
 	months := map[string]*monthRecords{}
 	month := func(date string) *monthRecords {
@@ -234,6 +251,18 @@ func (s *Store) hydrateDisk(d diskState, archived bool) (State, error) {
 			return st, fmt.Errorf("%s 与数据索引不一致，可能尚未同步完成或存在冲突；已停止写入", name)
 		}
 		switch {
+		case strings.HasPrefix(name, "周记/"):
+			var week weeklyDocument
+			if e = json.Unmarshal(b, &week); e != nil {
+				return st, e
+			}
+			if name != "周记/"+week.Week+".json" {
+				return st, errors.New("周记日期索引不一致")
+			}
+			if st.Weekly == nil {
+				st.Weekly = map[string]WeekJournal{}
+			}
+			st.Weekly[week.Week] = week.WeekJournal
 		case strings.HasPrefix(name, "笔记/"):
 			var n projectNotes
 			if e = json.Unmarshal(b, &n); e != nil {

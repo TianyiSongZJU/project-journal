@@ -9,7 +9,7 @@ import (
 // Logical paths remain unchanged in manifests and immutable history snapshots.
 // Only physical directory names change, so every historical content hash stays valid.
 var storageFolders = map[string]string{
-	"笔记": "notes", "时间记录": "time", "自动记录": "activity",
+	"周记": "weekly", "笔记": "notes", "时间记录": "time", "自动记录": "activity",
 	"历史内容": "history-content", "备份": "backups",
 	"分文件迁移前": "pre-partition-migration", "自动线索旧版": "legacy-activity", "同步副本": "sync-copies",
 }

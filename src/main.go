@@ -74,7 +74,18 @@ type Settings struct {
 	ShowMonthProjects      bool                `json:"showMonthProjects,omitempty"`
 	ProjectSort            string              `json:"projectSort,omitempty"`
 }
+type WeekGoal struct {
+	ID   string `json:"id"`
+	Text string `json:"text"`
+	Done bool   `json:"done"`
+}
+type WeekJournal struct {
+	Title string     `json:"title"`
+	Goals []WeekGoal `json:"goals"`
+	Note  string     `json:"note"`
+}
 type State struct {
+	Weekly       map[string]WeekJournal `json:"weekly,omitempty"`
 	TimelineRead map[string]string      `json:"timelineRead,omitempty"`
 	TimelineDays map[string]TimelineDay `json:"timelineDays,omitempty"`
 	AutoReviewed map[string]AutoMark    `json:"autoReviewed,omitempty"`
@@ -112,6 +123,23 @@ func validDate(s string) bool {
 	return e == nil && d.Format("2006-01-02") == s && d.Year() >= 1900 && d.Year() <= 2200
 }
 func validate(s State) error {
+	for date, week := range s.Weekly {
+		day, err := time.Parse("2006-01-02", date)
+		if err != nil || !validDate(date) || day.Weekday() != time.Monday {
+			return errors.New("周记日期必须是有效的周一")
+		}
+		if len([]rune(week.Title)) > 120 || len(week.Note) > 1024*1024 || len(week.Goals) > 100 {
+			return errors.New("周记内容过长")
+		}
+		ids := map[string]bool{}
+		for _, goal := range week.Goals {
+			if !validID.MatchString(goal.ID) || ids[goal.ID] || len([]rune(goal.Text)) > 300 {
+				return errors.New("周目标内容或标识无效")
+			}
+			ids[goal.ID] = true
+		}
+	}
+
 	for date, stamp := range s.TimelineRead {
 		if !validDate(date) || len(stamp) != 64 {
 			return errors.New("历史日期已读标记无效")

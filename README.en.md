@@ -15,6 +15,7 @@ This desktop app for **macOS and Windows** is maintained by one person and is st
 - A daily timeline for allocating time in 15-minute increments. Other manually entered time is recorded separately.
 - Optional foreground activity and folder-change collection. Suggested time blocks include their evidence and device sources.
 - Annual and monthly heatmaps, time-of-day review, project/group distributions, and hours/days display in the annual review.
+- Weekly journals with a vertical week timeline, titles, independent goals and Markdown notes; autosave and history recovery.
 - Local JSON storage organized by project, month and device; history recovery, sync-copy warnings and folder relocation.
 - Restores the previous view and display preferences. macOS has a menu-bar app and background-only login startup.
 
