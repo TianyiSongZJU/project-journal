@@ -6,10 +6,12 @@ const finite=(v,min,max)=>typeof v==='number'&&Number.isFinite(v)&&v>=min&&v<=ma
 export function validViewDate(v){if(typeof v!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(v)||v<'1900-01-01'||v>'2200-12-31')return false;const d=new Date(v+'T12:00:00');return !isNaN(d)&&d.getFullYear()===Number(v.slice(0,4))&&d.getMonth()+1===Number(v.slice(5,7))&&d.getDate()===Number(v.slice(8))}
 export function sanitizeViewState(raw={},ids=[]){
  if(!raw||typeof raw!=='object'||Array.isArray(raw))return {};
- const out={page:['review','projects','auto','settings'].includes(raw.page)?raw.page:'review',mode:['month','time','weekly'].includes(raw.mode)?raw.mode:'year'};
+ const out={page:['review','projects','auto','settings'].includes(raw.page)?raw.page:'review',mode:raw.mode==='weekly'?'month':['month','time'].includes(raw.mode)?raw.mode:'year'};
+ out.weeklySelected=raw.weeklySelected===true||raw.mode==='weekly';
  if(finite(raw.viewYear,1900,2200)&&Number.isInteger(raw.viewYear))out.viewYear=raw.viewYear;
  if(typeof raw.viewMonth==='string'&&validViewDate(raw.viewMonth+'-01'))out.viewMonth=raw.viewMonth;
  for(const key of ['date','rangeStart','rangeEnd','weeklyDate'])if(validViewDate(raw[key]))out[key]=raw[key];
+ if(raw.mode==='weekly'&&out.weeklyDate)out.viewMonth=out.weeklyDate.slice(0,7);
  for(const key of ['currentProject','inspectorProject'])out[key]=ids.includes(raw[key])?raw[key]:null;
  out.inspectorTab=raw.inspectorTab==='note'?'note':'daily';out.totalUnit=raw.totalUnit==='days'?'days':'hours';out.reviewDeselected=raw.reviewDeselected===true;
  out.filterIds=Array.isArray(raw.filterIds)?[...new Set(raw.filterIds.filter(id=>ids.includes(id)))]:[];
