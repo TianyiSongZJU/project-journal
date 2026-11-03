@@ -26,3 +26,5 @@ html[data-scheme] .markdown-editor.is-source>textarea:focus{border-color:var(--t
 html[data-scheme] .project-detail-section:has(#project-note) .markdown-editor.is-source>textarea{min-height:160px;background:transparent!important;border:0!important;padding:0!important;box-shadow:none!important}
 .md-live-block.is-editing{background:transparent}
 .markdown-editor.is-source>textarea::-webkit-scrollbar-track{background:transparent}
+
+.md-live-block.is-blank,.md-live-block.is-blank+.md-live-block{margin-top:0}
