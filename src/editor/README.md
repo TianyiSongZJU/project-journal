@@ -26,3 +26,7 @@ Run `tests/markdown-live.browser.cjs` from `src` with `JOURNAL_CORE` set to a bu
 backend and `JOURNAL_PLAYWRIGHT_MODULE` to Playwright's module path. The test uses
 isolated temporary records. Set `JOURNAL_BROWSER=webkit` for the Mac browser engine
 or `JOURNAL_PLATFORM=windows` for the Windows presentation.
+
+`inline-behavior.js` provides source editing inside inline equations, focus-based
+emphasis delimiters, and stable markers for empty list items. These decorations
+are visual only and never become part of the saved Markdown.

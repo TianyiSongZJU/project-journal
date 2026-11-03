@@ -31,9 +31,9 @@ html[data-scheme] .project-detail-section:has(#project-note) .markdown-editor.is
 /* Native rich text gives every line a glyph-sized caret; never stretch a
    textarea to simulate the current paragraph. All colors follow the theme. */
 .markdown-live .milkdown{--crepe-font-default:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--crepe-font-title:var(--crepe-font-default);--crepe-font-code:ui-monospace,Menlo,monospace;--crepe-base-font-size:13px;--crepe-color-background:transparent;--crepe-color-on-background:var(--ink);--crepe-color-surface:var(--panel);--crepe-color-surface-low:var(--editor-bg);--crepe-color-on-surface:var(--ink);--crepe-color-outline:var(--muted);--crepe-color-primary:var(--green);--crepe-color-on-primary:var(--panel);--crepe-color-selected:color-mix(in srgb,var(--green) 18%,transparent);--crepe-color-hover:color-mix(in srgb,var(--green) 8%,transparent);--crepe-shadow-1:0 3px 12px #0001;--crepe-shadow-2:0 5px 20px #0002;background:transparent;font-size:13px}
-html .markdown-live .milkdown>.ProseMirror{padding:0;min-height:120px;outline:0;font:400 13px/1.5 var(--crepe-font-default);white-space:pre-wrap;overflow-wrap:anywhere;caret-color:var(--ink)}
-.markdown-live .ProseMirror :is(p,li){font-size:13px;line-height:1.5;font-weight:400}
-.markdown-live .ProseMirror p{min-height:1.5em;margin:0 0 6px}
+html .markdown-live .milkdown>.ProseMirror{padding:0;min-height:120px;outline:0;font:400 13px/1.4 var(--crepe-font-default);white-space:pre-wrap;overflow-wrap:anywhere;caret-color:var(--ink)}
+.markdown-live .ProseMirror :is(p,li){font-size:13px;line-height:1.4;font-weight:400}
+.markdown-live .ProseMirror p{min-height:1.4em;margin:0 0 3px}
 .markdown-live .ProseMirror :is(h1,h2,h3,h4,h5,h6){font-family:var(--crepe-font-default);font-weight:600;line-height:1.3;margin:8px 0}
 .markdown-live .ProseMirror h1{font-size:24px}.markdown-live .ProseMirror h2{font-size:21px}.markdown-live .ProseMirror h3{font-size:18px}
 .markdown-live .ProseMirror :is(ul,ol){padding-left:22px;margin:4px 0;list-style:none}
@@ -56,3 +56,20 @@ html .markdown-live .milkdown>.ProseMirror{padding:0;min-height:120px;outline:0;
 .markdown-live .ProseMirror li[data-item-type=task]>div{min-width:0;flex:1}
 .markdown-live .ProseMirror .journal-task-box{appearance:none;width:13px;height:13px;min-height:13px;flex:none;margin:3px 0 0;border:1.4px solid var(--muted);border-radius:3px;background:transparent}
 .markdown-live .ProseMirror .journal-task-box:checked{background:var(--green);border-color:var(--green)}
+
+/* Restore the journal's serif headings with compact, muted tonal hierarchy. */
+html .markdown-live .milkdown .ProseMirror :is(h1,h2,h3){font-family:var(--serif)!important;font-weight:600!important;line-height:1.35!important;margin:8px 0 4px!important;padding:0;letter-spacing:.015em;color:color-mix(in srgb,var(--green) 65%,var(--ink))!important}
+html .markdown-live .milkdown .ProseMirror h1{font-size:19px!important}
+html .markdown-live .milkdown .ProseMirror h2{font-size:16.5px!important;color:color-mix(in srgb,var(--green) 50%,var(--ink))!important}
+html .markdown-live .milkdown .ProseMirror h3{font-size:14.5px!important;color:color-mix(in srgb,var(--green) 35%,var(--ink))!important}
+html .markdown-live .milkdown .ProseMirror strong{font-weight:750}
+html .markdown-live .milkdown .ProseMirror em{font-style:italic}
+html .markdown-live .ProseMirror.virtual-cursor-enabled{caret-color:transparent}
+.markdown-live .ProseMirror :is(ul,ol){list-style:none!important;margin:3px 0;padding-left:20px}
+.markdown-live .ProseMirror li{position:relative;margin:1px 0}
+.markdown-live .journal-list-marker{position:absolute;left:-20px;top:0;width:17px;line-height:1.4;text-align:right;color:var(--muted);font-weight:500;user-select:none;-webkit-user-select:none}
+.markdown-live .journal-format-marker{color:var(--muted);font:400 12px/1.4 ui-monospace,Menlo,monospace;opacity:.8;user-select:none;-webkit-user-select:none}
+.markdown-live .journal-inline-math{display:inline-block;vertical-align:baseline;color:var(--green);cursor:text}
+html .markdown-live .milkdown .journal-inline-math-source{appearance:none;display:inline-block;box-sizing:content-box;width:auto;max-width:100%;min-width:3ch;min-height:0;height:18px;margin:0;padding:0 2px;border:0;border-radius:3px;background:color-mix(in srgb,var(--green) 6%,transparent);box-shadow:none;outline:none;font:400 13px/18px ui-monospace,Menlo,monospace;color:var(--ink);caret-color:var(--ink)}
+.markdown-live .ProseMirror:has(.journal-inline-math-source:focus)>.prosemirror-virtual-cursor{display:none}
+html .markdown-live .milkdown .ProseMirror p{padding:0;line-height:1.4;min-height:1.4em}
