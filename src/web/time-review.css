@@ -282,3 +282,14 @@ html.native-mac:has(#page-review.time-view:not([hidden])){border-radius:0 0 16px
  .tr-daily-bars>span:last-child{min-width:0}
  .tr-row:is(.is-hovered,:has(:focus-visible)) .tr-daily-bars,.tr-days.is-dense .tr-row:is(.is-hovered,:has(:focus-visible)) .tr-daily-bars{font-size:min(13px,calc(var(--tr-row-height,24px) - 2px))}
 }
+
+/* Match the month stepper's paper tint, unframed dates and arrow glyphs. */
+.tr-presets{height:32px;padding:2px;border-radius:8px;background:var(--tone-surface-e4e6da,#e4e6da)}
+.tr-presets button{height:28px;min-height:28px;color:var(--tone-ink-69715b,#69715b);border-radius:6px}
+.tr-presets button.active{background:var(--panel);color:var(--ink)}
+.tr-date-fields{height:32px;border:0;background:var(--tone-surface-e4e6da,#e4e6da);grid-template-columns:26px 104px 10px 104px 26px;padding:2px;gap:3px;border-radius:8px}
+.tr-date-fields :is(#tr-prev,#tr-next){height:28px;min-height:28px;width:26px;border:0;border-radius:6px;background:transparent;color:var(--tone-ink-667060,#667060);font-size:13px;line-height:1;padding:0}
+.tr-date-fields :is(#tr-prev,#tr-next):hover,.tr-controls #tr-today:hover{background:var(--tone-surface-dadecd,#dadecd)}
+.tr-date-fields :is(.tr-date-text,input){font-size:12px;font-weight:500;color:var(--ink);background:transparent}
+.tr-date-separator{color:var(--tone-ink-69715b,#69715b)}
+.tr-controls #tr-today{height:32px;min-height:32px;padding:0 10px;border:0;border-radius:8px;background:var(--tone-surface-e4e6da,#e4e6da);color:var(--tone-ink-69715b,#69715b);font-size:12px}

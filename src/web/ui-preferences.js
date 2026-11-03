@@ -1,6 +1,6 @@
 // Device-local presentation preferences. Never store editor contents or open menus here.
 const listKeys=new Set(['project-list','filter-project-list','record-project','inspector-project','dt-default-project','timeline-project','project-picker']);
-const flagKeys=new Set(['deadlineGrouped','reviewDone','projectDone','inspectorDone','foldersGrouped','foldersCompleted','highlights']);
+const flagKeys=new Set(['deadlineGrouped','reviewDone','reviewCompletedProjects','projectDone','inspectorDone','foldersGrouped','foldersCompleted','highlights']);
 const panelKeys=new Set(['year.distribution','year.deadlines','year.weekly','project.deadlines','project.records','auto.advanced','auto.history']);
 const object=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
 export function sanitizeUIPreferences(raw={},ids){

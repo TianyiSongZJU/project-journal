@@ -597,3 +597,12 @@ dialog #record-info{margin:0 0 0 auto;font-size:9px}
 #page-review:not(.month-view) .review-analytics>.fold-panel>.fold-content{padding:10px 0 4px}
 #page-review:not(.month-view) .review-analytics>.fold-panel:not([open]){padding:12px 16px}
 #upcoming{max-height:400px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+
+/* Keep just a modest indent; status labels no longer reserve a blank fixed column. */
+.review-analytics #upcoming{padding-left:8px}
+#upcoming .deadline-card>.deadline-state{min-width:0;justify-content:flex-start}
+#upcoming .deadline-card{gap:10px}
+.year-week-hover{position:fixed;z-index:1900;display:grid;place-items:center;width:26px;height:26px;min-height:26px;padding:5px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--green);box-shadow:0 2px 7px color-mix(in srgb,var(--green) 14%,transparent)}
+.year-week-hover svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.year-week-hover:hover,.year-week-hover:focus-visible{background:var(--tone-surface-dfe6d7,#dfe6d7);border-color:var(--green);outline:none}
+.year-week-hover[hidden]{display:none!important}

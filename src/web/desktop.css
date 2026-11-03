@@ -153,7 +153,7 @@
 :is(.native-windows,.native-mac) .win-time-peek strong { font:500 15px/24px var(--serif); color:var(--tone-ink-617555,#617555); }
 :is(.native-windows,.native-mac) .win-time-peek strong small { margin-left:3px; font-size:9px; font-family:inherit; }
 :is(.native-windows,.native-mac) .win-time-peek>small { display:block; padding-top:5px; margin-top:4px; border-top:1px solid var(--tone-line-e7ebe1,#e7ebe1); font-size:9px; color:var(--tone-ink-9ba38e,#9ba38e); line-height:18px; }
-:is(.native-windows,.native-mac) #windows-project-nodes { flex:none; margin:0 0 10px; padding:2px 0 4px; border:0; border-radius:7px; background:var(--tone-surface-f3f5ef,#f3f5ef); }
+:is(.native-windows,.native-mac) #windows-project-nodes { flex:none; margin:0 0 10px; padding:0; border:0; border-radius:7px; background:var(--tone-surface-f3f5ef,#f3f5ef); }
 :is(.native-windows,.native-mac) .win-node-heading { display:flex; align-items:center; gap:7px; min-height:30px; padding:0 10px; }
 :is(.native-windows,.native-mac) .win-node-title { font-size:10px; color:var(--tone-ink-6b7b5e,#6b7b5e); flex:none; }
 :is(.native-windows,.native-mac) .win-node-count { font-size:9px; color:var(--tone-ink-9ba38e,#9ba38e); white-space:nowrap; }
@@ -333,9 +333,12 @@
 }
 
 /* Center both the node heading and the rows on their actual control boxes. */
-:is(.native-windows,.native-mac) .win-node-heading{min-height:36px;box-sizing:border-box;padding:3px 10px;align-items:center;line-height:24px}
+:is(.native-windows,.native-mac) .win-node-heading{min-height:32px;height:32px;box-sizing:border-box;padding:0 10px;align-items:center;line-height:24px}
 :is(.native-windows,.native-mac) .win-node-heading :is(.win-node-title,.win-node-count){display:flex;align-items:center;line-height:24px;margin:0}
 :is(.native-windows,.native-mac) .win-node-heading button{display:inline-flex;align-items:center;justify-content:center;min-height:24px;height:24px;line-height:24px;padding-top:0;padding-bottom:0;margin-top:0;margin-bottom:0}
 :is(.native-windows,.native-mac) .inspector-project-node{align-items:center}
 :is(.native-windows,.native-mac) .inspector-project-node>button{align-items:center;height:26px;padding-top:0;padding-bottom:0}
 :is(.native-windows,.native-mac) .inspector-project-node>button strong{line-height:24px}
+
+:is(.native-windows,.native-mac) .win-node-title{font:400 10px/24px system-ui}
+:is(.native-windows,.native-mac) .win-node-heading .win-node-add{font:400 9px/24px system-ui;color:var(--tone-ink-6b7b5e,#6b7b5e)}

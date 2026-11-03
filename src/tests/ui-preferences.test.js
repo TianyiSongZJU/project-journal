@@ -31,3 +31,8 @@ test('failed preference writes can be retried before close, while queued snapsho
  current={ui:{flags:{foldersGrouped:true}}};const first=memory.flush();current={ui:{flags:{foldersGrouped:false}}};const second=memory.flush();
  assert.equal(await first,true);assert.equal(await second,true);assert.deepEqual(saved.map(x=>x.ui.flags.foldersGrouped),[false,true,false]);
 });
+
+test('completed-project deadline visibility is a device-local preference',()=>{
+ const preferences=createUIPreferences();preferences.setFlag('reviewCompletedProjects',true);
+ assert.equal(sanitizeUIPreferences(preferences.snapshot()).flags.reviewCompletedProjects,true);
+});
