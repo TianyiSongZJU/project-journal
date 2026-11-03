@@ -103,7 +103,8 @@ final class JournalLaunchSurface:NSView {
    let hue:CGFloat=["fern":148,"slate":211,"iris":282,"clay":17,"sand":41][accent] ?? 148
    let source=(max(r,g,b)+min(r,g,b))/2
    let level=dark ? (source>0.65 ? 0.12+(1-source)*0.5:0.04):source
-   let saturation:CGFloat=dark ? (accent=="fern" ? 0.045:0.025):(source>0.94 ? 0.05:0.10)
+   let spread=max(r,g,b)-min(r,g,b)
+   let saturation:CGFloat=dark ? 0.045:(spread==0 ? 0:spread/(1-abs(2*source-1)))
    let brightness=level+saturation*min(level,1-level)
    return NSColor(calibratedHue:hue/360,saturation:brightness>0 ? 2*(1-level/brightness):0,brightness:brightness,alpha:dark && a<1 ? a*0.15:a).cgColor
   }
@@ -355,10 +356,10 @@ final class JournalTitleText: NSView {
 private func journalAccentColor()->NSColor {
  let rgb:[CGFloat]
  switch UserDefaults.standard.string(forKey:"JournalAccent") ?? "fern" {
- case "slate":rgb=[82,103,119]
- case "iris":rgb=[116,101,120]
- case "clay":rgb=[137,104,93]
- case "sand":rgb=[125,111,80]
+ case "slate":rgb=[49,70,92]
+ case "iris":rgb=[79,49,92]
+ case "clay":rgb=[92,61,49]
+ case "sand":rgb=[92,78,49]
  default:rgb=[49,92,70]
  }
  return NSColor(srgbRed:rgb[0]/255,green:rgb[1]/255,blue:rgb[2]/255,alpha:1)

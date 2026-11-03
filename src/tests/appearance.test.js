@@ -28,18 +28,28 @@ test('active circle palettes keep white symbols readable',()=>{
 
 test('surface tints remain restrained and blue emphasis stays muted',()=>{
  for(const palette of Object.keys(api.palettes)){
-  const surface=api.tone('surface','#fafaf7',palette,true);assert.match(surface,palette==='fern'?/ 4% /:/ 2% /);assert(surface.startsWith('hsl('+api.palettes[palette].h+' '));
-  const line=api.tone('line','#e2e7da',palette,true);assert.match(line,palette==='fern'?/ 7% /:/ 4% /);
+  const surface=api.tone('surface','#fafaf7',palette,true);assert.match(surface,/ 4% /);assert(surface.startsWith('hsl('+api.palettes[palette].h+' '));
+  const line=api.tone('line','#e2e7da',palette,true);assert.match(line,/ 7% /);
  }
- const blue=api.tone('ink','#315c46','slate',true);assert.match(blue,/ 11% /);
+ const blue=api.tone('ink','#315c46','slate',true);assert.match(blue,/ 22% /);
 });
 test('startup artwork follows the saved palette and dark scheme',()=>{
  api.apply({scheme:'light',accent:'fern'});assert.equal(api.launchColor(220,232,211),'rgb(220 232 211 / 1)');
- api.apply({scheme:'dark',accent:'slate'});assert.match(api.launchColor(250,252,250),/^hsl\(211 3% 13% /);
+ api.apply({scheme:'dark',accent:'slate'});assert.match(api.launchColor(250,252,250),/^hsl\(211 5% 13% /);
  api.apply({scheme:'light',accent:'iris'});assert.match(api.launchColor(220,232,211),/^hsl\(282 /);
  api.apply({scheme:'system',accent:'fern'});
 });
 
-test('large non-green surfaces use less tint than borders',()=>{
- for(const accent of ['slate','iris','clay','sand']){assert.match(api.tone('surface','#e5e7dd',accent,false),/ 4% /);assert.match(api.tone('line','#e5e7dd',accent,false),/ 7% /)}
+test('light themes change hue while preserving the green reference saturation, lightness and alpha',()=>{
+ const values=value=>value.match(/^hsl\((\d+) (\d+)% (\d+)% \/ ([\d.]+)\)$/).slice(1).map(Number);
+ for(const [role,hex]of [['surface','#e5e7dd'],['surface','#dfe6d7'],['line','#99ac91'],['ink','#315c46'],['shadow','#315c4614']]){
+  const source=api.parse(hex);
+  for(const accent of ['slate','iris','clay','sand']){const [h,s,l,a]=values(api.tone(role,hex,accent,false));assert.equal(h,api.palettes[accent].h);assert(Math.abs(s/100-source.s)<=.0051);assert(Math.abs(l/100-source.l)<=.0051);assert(Math.abs(a-source.a)<=.0006)}
+ }
+ const reference=api.parse(api.palettes.fern.solid);for(const palette of Object.values(api.palettes)){const color=api.parse(palette.solid);assert(Math.abs(color.s-reference.s)<.004);assert(Math.abs(color.l-reference.l)<.004)}
+});
+test('dark themes share tonal levels across every hue and preserve status colors',()=>{
+ const levels=value=>value.slice(value.indexOf(' '));
+ for(const [role,hex]of [['surface','#fafaf7'],['line','#e2e7da'],['ink','#315c46'],['shadow','#315c4614']]){const reference=levels(api.tone(role,hex,'fern',true));for(const accent of Object.keys(api.palettes))assert.equal(levels(api.tone(role,hex,accent,true)),reference)}
+ for(const accent of ['slate','iris','clay','sand'])assert.equal(api.tone('ink','#a2553e',accent,false),api.tone('ink','#a2553e','slate',false));
 });
