@@ -18,3 +18,11 @@ html[data-scheme] .markdown-editor .markdown-live .md-paragraph-source{display:b
 .markdown-live .md-empty{color:var(--muted);opacity:.7;font:inherit}
 
 .md-live-block+.md-live-block{margin-top:8px}.markdown-body .md-task:has(>ul,>ol){flex-wrap:wrap}.markdown-body .md-task>ul,.markdown-body .md-task>ol{flex-basis:100%;margin-left:14px}
+
+/* Source and paragraph modes share one note surface; suppress native textarea
+   fills and focus shadows so WebKit cannot add a separate white rectangle. */
+html[data-scheme] .markdown-editor.is-source>textarea{appearance:none;-webkit-appearance:none;box-sizing:border-box;flex:1;min-height:140px;margin:0;padding:10px!important;border:1px solid var(--line)!important;border-radius:8px!important;background:linear-gradient(115deg,var(--tone-surface-e8eee3,#e8eee3) 0%,var(--tone-surface-f1f4ec,#f1f4ec) 45%,var(--panel) 100%)!important;box-shadow:none!important;outline:none!important;resize:none;font:400 13px/1.8 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--ink);scrollbar-color:var(--line) transparent}
+html[data-scheme] .markdown-editor.is-source>textarea:focus{border-color:var(--tone-line-99ac91,#99ac91)!important;box-shadow:0 0 0 2px var(--tone-shadow-315c4612,#315c4612)!important}
+html[data-scheme] .project-detail-section:has(#project-note) .markdown-editor.is-source>textarea{min-height:160px;background:transparent!important;border:0!important;padding:0!important;box-shadow:none!important}
+.md-live-block.is-editing{background:transparent}
+.markdown-editor.is-source>textarea::-webkit-scrollbar-track{background:transparent}
