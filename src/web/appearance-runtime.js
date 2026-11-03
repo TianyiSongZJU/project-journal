@@ -58,6 +58,8 @@
   if(!colors[key])return resolved;let color=colors[key];if(key==='sidebar'&&hex==='#e8e9e1')color=blend(color,colors.paper||defaults.paper,.25);if(key==='editor')color=blend(color,colors.panel||defaults.panel,clamp((c.l-.91)/.055));const a=resolved.startsWith('#')?parse(resolved).a:Number(resolved.match(/\/ ([\d.]+)\)/)?.[1]??1);return a===1?color:`${color}${Math.round(a*255).toString(16).padStart(2,'0')}`;
  }
  function readable(hex){const c=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4),l=c[0]*.2126+c[1]*.7152+c[2]*.0722;return 1.05/(l+.05)>=(l+.05)/.0642?'#ffffff':'#17211c'}
+ // Numeric emphasis is quieter than the theme accent; keep all other roles intact.
+ function numberInk(choice=current,dark=choice.scheme==='dark'||choice.scheme==='system'&&media?.matches){const source=choice.colors?.[choice.accent]?.[dark?'dark':'light']?.accent||manualDefaults(choice,dark).accent,c=parse(source);return colorHex(hsl(c.h,c.s*.60,dark?clamp(c.l*.88,.60,.82):c.l*.83))}
  function normalize(raw={}){raw=raw&&typeof raw==='object'?raw:{};const colors=globalThis.JournalManualColors?.sanitize(raw.colors)||{};return {scheme:['system','light','dark'].includes(raw.scheme)?raw.scheme:'system',accent:Object.hasOwn(palettes,raw.accent)?raw.accent:'fern',...((typeof raw.hue==='number'&&Number.isFinite(raw.hue)||raw.accent==='custom')?{hue:normalizeHue(raw.hue)}:{}),...(Object.keys(colors).length?{colors}:{})}}
  let current=normalize(),sheet,resolvedKey;
  const media=typeof matchMedia==='function'?matchMedia('(prefers-color-scheme: dark)'):null;
@@ -75,6 +77,7 @@
   const variables={paper:'--paper',panel:'--panel',editor:'--editor-bg',ink:'--ink',muted:'--muted',accent:'--green',button:'--accent-solid',line:'--line'};for(const [key,variable]of Object.entries(variables))if(colors[key])props.push(variable+':'+colors[key]);if(globalThis.JournalManualColors.theme(current.accent,dark)&&dark)props.push('--surface-elevated:'+blend(colors.panel,colors.editor,.5),'--surface-edge:'+colors.line);if(colors.glow)props.push('--surface-sheen:'+colors.glow+'b3');
   let rules='';if(Object.keys(colors).length)for(let i=0;i<=5;i++){props.push('--l'+i+':'+(colors['heat'+i]||(dark?hsl(p.h,.035+i*p.s*.14,.18+i*.075):tone('surface',globalThis.JournalManualColors.fields.find(field=>field.key==='heat'+i).hex,current.accent,false,current.hue))));if(colors['heat'+i])rules+=`html[data-scheme] :is(.heat-day,.month-day)[data-level="${i}"]{color:${readable(colors['heat'+i])}}`}
   if(colors.button)rules+=`html[data-scheme] button.primary{color:${readable(colors.button)}}`;
+  if(current.accent!=='fern'){props.push('--number-ink:'+numberInk(current,dark));rules+='html[data-accent]:not([data-accent=fern]) :is(.primary-stat strong,.secondary-stat strong,.selected-day-number,#weekly-workspace .weekly-summary strong,.tr-overview strong,.tr-day-tip-total strong,.tr-tip-heading strong,.tr-day-total,.tr-summary-total strong,.batch-preview-hero>b,.batch-preview-hero>strong,.group-proportion-legend strong,.auto-total-added strong,.auto-total-result strong,.dt-list-heading>strong,.dt-project-total .dt-total-delta,.dt-project-total .dt-final-total,.dt-project-group>header>strong,.dt-day-equation>strong,.dt-day-equation .dt-equation-total strong,.time-source-summary strong,.duration-timeline strong,.dt-time-tip strong,.inspector-day-total>strong,#inspector-duration .inspector-time-editor>summary strong,#record-duration .inspector-time-editor>summary strong,.win-time-breakdown strong,.win-time-peek strong,.dt-report-metrics>div>strong,.timeline-node time strong,.daily-record-row>time strong,.deadline-card time strong){color:var(--number-ink)!important}'}
   sheet.textContent=':root[data-scheme]{'+props.join(';')+'}'+rules;
   if(cache)try{localStorage.setItem('journal-appearance-v1',JSON.stringify(current))}catch{}
   try{window.journalSetAppearance?.(dark)?.catch?.(()=>{})}catch{}
@@ -82,7 +85,7 @@
   try{window.webkit?.messageHandlers?.journalNative?.postMessage({action:'appearance',scheme:current.scheme,accent:current.accent,hue:current.hue,solid:colors.button||p.solid,dark,background:bg})}catch{}
   window.dispatchEvent(new CustomEvent('journal-appearance-change',{detail:{...current,dark}}));
  }
- globalThis.JournalAppearance={palettes,parse,tone,launchColor,normalize,resolvePalette,rotateHue,manualDefaults,colorHex,apply,get:()=>structuredClone(current)};
+ globalThis.JournalAppearance={palettes,parse,tone,launchColor,normalize,resolvePalette,rotateHue,manualDefaults,numberInk,colorHex,apply,get:()=>structuredClone(current)};
  if(typeof document!=='undefined'){
   try{current=normalize({...JSON.parse(localStorage.getItem('journal-appearance-v1')||'{}'),...globalThis.journalInitialAppearance})}catch{}
   apply(current,{cache:false});media?.addEventListener('change',()=>{if(current.scheme==='system')apply(current)});

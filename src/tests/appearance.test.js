@@ -121,3 +121,13 @@ test('blue fallback control fills cannot shift into cyan and clay stays brick re
   const red=api.parse(api.colorHex(api.tone('surface',hex,'clay',false)));assert(red.h>=0&&red.h<=24,`${hex}: ${red.h}`);
  }
 });
+
+
+test('non-green numeric emphasis lowers lightness and saturation without changing theme roles',()=>{
+ for(const accent of Object.keys(api.palettes).filter(key=>key!=='fern'))for(const dark of [false,true]){
+  const choice={accent,scheme:dark?'dark':'light'},before=api.manualDefaults(choice,dark),source=api.parse(before.accent),number=api.parse(api.numberInk(choice,dark));
+  assert(number.l<source.l,accent);assert(number.s<source.s,accent);assert.deepEqual(api.manualDefaults(choice,dark),before);
+  if(dark){const linear=hex=>{const c=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);return c[0]*.2126+c[1]*.7152+c[2]*.0722};assert((linear(api.numberInk(choice,dark))+.05)/(linear(before.panel)+.05)>4.5,accent)}
+ }
+ const choice={scheme:'light',accent:'iris',colors:{iris:{light:{accent:'#876d98'}}}};assert.notEqual(api.numberInk(choice),api.numberInk({scheme:'light',accent:'iris'}));
+});
