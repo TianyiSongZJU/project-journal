@@ -683,4 +683,4 @@ dialog #record-info{margin:0 0 0 auto;font-size:9px}
 .tooltip-ddl>div>strong{line-height:18px;overflow-wrap:anywhere}
 .tooltip-ddl>span{margin:0;padding-left:4px;line-height:18px}
 .tooltip .tooltip-ddl .ddl-note{margin:2px 0 0;max-width:100%;max-height:30px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:10px;line-height:15px;overflow-wrap:anywhere}
-.tooltip .tooltip-ddl .ddl-note>:is(p,h1,h2,h3){margin:0;font:inherit;color:inherit}
+.tooltip .tooltip-ddl .ddl-note>:is(p,h1,h2,h3){display:inline;margin:0;font:inherit;color:inherit}
