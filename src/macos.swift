@@ -103,7 +103,7 @@ final class JournalLaunchSurface:NSView {
    let hue:CGFloat=["fern":148,"slate":211,"iris":282,"clay":17,"sand":41][accent] ?? 148
    let source=(max(r,g,b)+min(r,g,b))/2
    let level=dark ? (source>0.65 ? 0.12+(1-source)*0.5:0.04):source
-   let saturation:CGFloat=dark ? 0.045:(source>0.94 ? 0.10:0.18)
+   let saturation:CGFloat=dark ? (accent=="fern" ? 0.045:0.025):(source>0.94 ? 0.05:0.10)
    let brightness=level+saturation*min(level,1-level)
    return NSColor(calibratedHue:hue/360,saturation:brightness>0 ? 2*(1-level/brightness):0,brightness:brightness,alpha:dark && a<1 ? a*0.15:a).cgColor
   }

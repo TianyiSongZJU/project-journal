@@ -9,20 +9,20 @@
   const p=palettes[palette]||palettes.fern,c=parse(hex),green=c.h>=65&&c.h<=175&&c.s>.055;
   let {h,s,l,a}=c;
   // A trace of accent in paper, charcoal and edges ties the surfaces together.
-  if(role==='shadow'){if(dark){l=c.l>.7?.95:.01;a=c.l>.7?a*.08:Math.min(.6,a*1.6)}else if(green){h=40;s=.025}}
+  if(role==='shadow'){if(!dark&&palette!=='fern'&&c.l>.7)a*=.7;if(dark){l=c.l>.7?.95:.01;a=c.l>.7?a*.08:Math.min(.6,a*1.6)}else if(green){h=40;s=.025}}
   else if(dark){
-   h=p.h;s=.04;
+   h=p.h;s=palette==='fern'?.04:.02;
    if(role==='ink'){
     h=40;s=.025;
     l=c.l>.94?.94:clamp(.96-c.l*.42,.58,.90);
     if(green&&c.s>.18&&c.l<.58){h=p.h;s=p.s*.8;l=.74}
     else if(!green&&c.s>.35&&c.l<.8){h=c.h;s=Math.min(c.s,.32)}
-   }else if(role==='line'){l=clamp(.24+(.88-c.l)*.12,.24,.33);s=.065}
+   }else if(role==='line'){l=clamp(.24+(.88-c.l)*.12,.24,.33);s=palette==='fern'?.065:.04}
    else if(c.l>.72){l=.13+(c.l-.72)*.25;if(a<1){l=.85;a*=.06}}
    else{l=green?.27:clamp(.14+c.l*.2,.16,.29);if(green){h=p.h;s=p.s*.65}}
   }else if(role==='surface'||role==='line'){
    // Tint surfaces gently; edges carry a little more color than the paper.
-   if(c.l>.70||c.s<.2){h=p.h;s=Math.min(.11,p.s*.65);if(role==='line')s=Math.min(.15,p.s*.9)}
+   if(c.l>.70||c.s<.2){h=p.h;s=.035;if(role==='line')s=.07;else l=c.l+(1-c.l)*.18}
    else if(green){h=p.h;s=Math.min(p.s,c.s*.55)}
   }else if(green){
    h=p.h;s=c.s>.18?Math.min(p.s,.18):Math.min(c.s,.06);
@@ -34,7 +34,7 @@
   const p=palettes[current.accent],dark=current.scheme==='dark'||current.scheme==='system'&&media?.matches;
   if(!dark&&current.accent==='fern')return `rgb(${r} ${g} ${b} / ${a})`;
   const source=(Math.max(r,g,b)+Math.min(r,g,b))/510;
-  return hsl(p.h,dark?.045:source>.94?.10:.18,dark?(source>.65?.12+(1-source)*.5:.04):source,dark&&a<1?a*.15:a);
+  return hsl(p.h,dark?(current.accent==='fern'?.045:.025):source>.94?.05:.10,dark?(source>.65?.12+(1-source)*.5:.04):source,dark&&a<1?a*.15:a);
  }
  function normalize(raw={}){raw=raw&&typeof raw==='object'?raw:{};return {scheme:['system','light','dark'].includes(raw.scheme)?raw.scheme:'system',accent:Object.hasOwn(palettes,raw.accent)?raw.accent:'fern'}}
  let current=normalize(),sheet,resolvedKey;
@@ -46,8 +46,8 @@
   document.documentElement.dataset.scheme=dark?'dark':'light';document.documentElement.dataset.accent=current.accent;document.documentElement.style.colorScheme=dark?'dark':'light';
   if(!sheet){sheet=document.createElement('style');sheet.id='journal-theme-palette';document.head.append(sheet)}
   const props=Object.entries(globalThis.JournalThemeColors||{}).map(([key,[role,hex]])=>key+':'+tone(role,hex,current.accent,dark));
-  props.push('--accent-solid:'+p.solid,'--accent-preview:'+p.solid);
-  if(dark)props.push('--paper:'+hsl(p.h,.035,.11),'--panel:'+hsl(p.h,.04,.145),'--ink:#e2e1de','--muted:#a3a39f','--line:'+hsl(p.h,.065,.225),'--surface-elevated:'+hsl(p.h,.045,.17),'--surface-edge:'+hsl(p.h,.065,.26),'--green:'+hsl(p.h,p.s*.8,.74));
+  props.push('--accent-solid:'+p.solid,'--accent-preview:'+p.solid,'--editor-bg:'+hsl(p.h,current.accent==='fern'?(dark?.045:.15):(dark?.02:.025),dark?.18:.955),'--surface-sheen:'+(dark?'#ffffff09':current.accent==='fern'?'#ffffffb3':'#ffffff80'));
+  if(dark)props.push('--paper:'+hsl(p.h,current.accent==='fern'?.035:.02,.11),'--panel:'+hsl(p.h,current.accent==='fern'?.04:.025,.145),'--ink:#e2e1de','--muted:#a3a39f','--line:'+hsl(p.h,current.accent==='fern'?.065:.04,.225),'--surface-elevated:'+hsl(p.h,current.accent==='fern'?.045:.025,.17),'--surface-edge:'+hsl(p.h,current.accent==='fern'?.065:.04,.26),'--green:'+hsl(p.h,p.s*.8,.74));
   if(dark||current.accent!=='fern')for(let i=0;i<=5;i++)props.push('--l'+i+':'+(dark?hsl(p.h,.035+i*p.s*.14,.18+i*.075):i===0?hsl(p.h,Math.min(.10,p.s*.6),.92):hsl(p.h,p.s,.91-i*.12)));
   sheet.textContent=':root[data-scheme]{'+props.join(';')+'}';
   if(cache)try{localStorage.setItem('journal-appearance-v1',JSON.stringify(current))}catch{}

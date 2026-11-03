@@ -18,12 +18,15 @@ func (t launchTheme) color(r, g, b float64) [3]float64 {
 		hue = 148
 	}
 	source := (math.Max(r, math.Max(g, b)) + math.Min(r, math.Min(g, b))) / 510
-	l, s := source, .18
+	l, s := source, .10
 	if source > .94 {
-		s = .10
+		s = .05
 	}
 	if t.Dark {
 		s = .045
+		if t.Accent != "fern" && t.Accent != "" {
+			s = .025
+		}
 		l = .04
 		if source > .65 {
 			l = .12 + (1-source)*.5
