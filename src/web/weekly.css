@@ -8,11 +8,10 @@
 .weekly-goal{display:grid;grid-template-columns:18px minmax(0,1fr) 24px;gap:10px;align-items:center;box-sizing:border-box;min-height:43px;padding:7px 10px 7px 12px;margin-top:6px;border:1px solid color-mix(in srgb,var(--line) 70%,transparent);border-radius:8px;background:color-mix(in srgb,var(--editor-bg) 45%,var(--panel))}
 .weekly-goal [type=checkbox]{appearance:none;-webkit-appearance:none;position:relative;box-sizing:border-box;margin:0;padding:0;width:16px;height:16px;min-height:16px;border:1.5px solid var(--muted);border-radius:50%;background:transparent;cursor:pointer;box-shadow:none}.weekly-goal [type=checkbox]:checked{background:var(--accent-solid);border-color:var(--accent-solid)}.weekly-goal [type=checkbox]:checked::after{content:"";position:absolute;left:4px;top:2px;width:4px;height:7px;border:solid white;border-width:0 1.6px 1.6px 0;transform:rotate(45deg)}.weekly-goal [type=checkbox]:focus-visible{outline:2px solid var(--green);outline-offset:3px}
 .weekly-goal [type=text]{width:100%;box-sizing:border-box;padding:2px 0;border:0;border-radius:0;background:transparent;box-shadow:none;color:var(--ink);font:400 12px/1.7 system-ui}.weekly-goal [type=text]:focus{outline:none}.weekly-goal.is-done [type=text]{text-decoration:line-through;color:var(--muted)}.weekly-goal.is-done{background:var(--panel)}.weekly-goal button{display:grid;place-items:center;padding:0;width:24px;height:24px;min-height:24px;border:0;background:transparent;box-shadow:none;color:var(--muted);opacity:.4}.weekly-goal:hover button,.weekly-goal:focus-within button{opacity:1}
-.weekly-note-section{padding-top:22px}.weekly-note-section .editor-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;min-height:26px}.weekly-note-section .editor-heading strong{font:600 12px/1.5 system-ui}.weekly-note-section .markdown-editor{padding:13px 15px;border:1px solid var(--line);border-radius:10px;background:var(--editor-bg);min-height:260px;box-sizing:border-box}.weekly-note-section .markdown-editor:focus-within{border-color:color-mix(in srgb,var(--green) 40%,var(--line))}
-.weekly-note-section textarea,.weekly-note-section .markdown-preview{display:block;width:100%;box-sizing:border-box;min-height:232px;padding:0;border:0;box-shadow:none;background:transparent;font:400 13px/1.9 system-ui;color:var(--ink)}.weekly-note-section textarea{resize:vertical}.weekly-note-section textarea:focus{outline:none}.weekly-save-status{display:block;margin-top:auto;padding-top:15px;color:var(--muted);font:400 9px/1.5 system-ui;text-align:right}
+.weekly-note-section{padding-top:22px}.weekly-save-status{display:block;margin-top:auto;padding-top:15px;color:var(--muted);font:400 9px/1.5 system-ui;text-align:right}
 .weekly-stepper svg,.weekly-add-goal svg,.weekly-goal button svg{display:block;flex:none;width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 html[data-highlights="on"] #weekly-workspace{box-shadow:inset 0 1px 0 var(--surface-sheen)}
-.weekly-note-section{display:flex;flex:1;flex-direction:column}.weekly-note-section>.editor-label{display:flex;flex:1;flex-direction:column;gap:0}.weekly-note-section .markdown-editor{display:flex;flex:1;flex-direction:column}.weekly-note-section textarea,.weekly-note-section .markdown-preview{flex:1}
+.weekly-note-section{display:flex;flex:1;flex-direction:column}.weekly-note-section>.editor-label{display:flex;flex:1;flex-direction:column;gap:0}
 /* Weekly writing shares the monthly inspector; the calendar keeps its seven columns. */
 .month-rail{position:relative;min-height:100%;padding-bottom:30px;box-sizing:border-box}
 .week-journal-trigger{display:grid;place-items:center;position:absolute;bottom:5px;left:0;width:27px;height:27px;min-height:27px;padding:5px;border:0;border-radius:7px;background:transparent;color:var(--muted);box-shadow:none;opacity:0;transition:opacity .15s,background .15s}
@@ -22,8 +21,8 @@ html[data-highlights="on"] #weekly-workspace{box-shadow:inset 0 1px 0 var(--surf
 .week-journal-trigger:hover,.week-journal-trigger[aria-pressed=true]{background:var(--editor-bg);color:var(--green)}
 .week-journal-trigger:focus-visible{opacity:1;outline:2px solid var(--green);outline-offset:1px}
 .month-week{position:relative;isolation:isolate}
-.month-week.week-inspected::after{content:"";position:absolute;inset:-2px 0 -2px 38px;pointer-events:none;z-index:4;border:2px solid var(--green);border-radius:9px;box-shadow:0 0 0 2px color-mix(in srgb,var(--green) 12%,transparent);background:color-mix(in srgb,var(--green) 7%,transparent)}
-@media(max-width:800px){.month-week.week-inspected::after{left:29px}}
+.month-week.week-inspected::after{content:"";position:absolute;inset:-3px -2px -3px 36px;pointer-events:none;z-index:4;border:2px solid var(--green);border-radius:9px;box-shadow:0 0 0 2px #ffffffeb,inset 0 0 0 1px #ffffffb3,0 2px 8px color-mix(in srgb,var(--green) 20%,transparent);background:color-mix(in srgb,var(--green) 7%,transparent)}
+@media(max-width:800px){.month-week.week-inspected::after{left:27px}}
 #weekly-workspace[hidden],#month-inspector[hidden]{display:none!important}
 #weekly-workspace{overflow-y:auto;overscroll-behavior:contain}
 #weekly-workspace .weekly-page{padding:0;min-height:100%;border-radius:0;background:transparent}
@@ -35,8 +34,6 @@ html[data-highlights="on"] #weekly-workspace{box-shadow:inset 0 1px 0 var(--surf
 #weekly-workspace .weekly-page-heading{padding-bottom:10px;border-bottom:0}
 #weekly-workspace .weekly-goals-section{padding-top:6px}
 #weekly-workspace .weekly-note-section{padding-top:10px}
-#weekly-workspace .weekly-note-section .markdown-editor{min-height:220px}
-#weekly-workspace .weekly-note-section textarea,#weekly-workspace .weekly-note-section .markdown-preview{min-height:190px}
 @media(hover:none){.week-journal-trigger{opacity:1}}
 
 /* The same writing tools and surface belong to daily and weekly notes. */
@@ -53,16 +50,11 @@ html[data-highlights="on"] #weekly-workspace{box-shadow:inset 0 1px 0 var(--surf
 #weekly-workspace .weekly-goal [type=text]{font:400 11px/24px system-ui;min-height:26px;height:26px;margin:0;padding:0;border:0;vertical-align:middle}
 #weekly-workspace .weekly-goal [type=checkbox]{width:13px;height:13px;min-height:13px;border-radius:3px;border-width:1px}
 #weekly-workspace .weekly-goal [type=checkbox]:checked::after{left:3px;top:1px;width:3px;height:6px}
-#weekly-workspace .weekly-note-section .editor-heading{justify-content:flex-start;gap:2px;margin:0 0 4px;padding:0 10px;min-height:28px;color:var(--muted)}
-#weekly-workspace .weekly-note-section .editor-heading strong{font:500 11px/24px system-ui;margin-right:auto}
 #weekly-workspace .weekly-save-status{margin:0;padding:0;text-align:center}
 #weekly-workspace .weekly-clear-note{margin:0;border:0;background:transparent;box-shadow:none;color:var(--muted)}
 #weekly-workspace .weekly-clear-note:disabled{opacity:.4}
 #weekly-workspace .markdown-mode{margin:0;display:flex}
 #weekly-workspace .markdown-preview-toggle{background:transparent;color:var(--muted)}
-#weekly-workspace .weekly-note-section .markdown-editor{position:relative;padding:0;border:0;background:transparent;border-radius:8px}
-#weekly-workspace .weekly-note-section :is(textarea,.markdown-preview){min-height:190px;height:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:linear-gradient(115deg,var(--tone-surface-e8eee3,#e8eee3),var(--tone-surface-f1f4ec,#f1f4ec) 45%,var(--panel));font:400 12px/1.8 system-ui;resize:none}
-#weekly-workspace .weekly-note-section :is(textarea,.markdown-preview):focus{outline:none;border-color:color-mix(in srgb,var(--green) 35%,var(--line))}
 #weekly-workspace :is(textarea,.markdown-preview)[hidden]{display:none!important}
 .heat-grid{position:relative}
 .heat-grid.has-week-highlight::after{content:"";position:absolute;pointer-events:none;top:-3px;bottom:-3px;left:calc(var(--selected-week-column)*18px - 3px);width:20px;border:1.5px solid var(--green);border-radius:5px;background:color-mix(in srgb,var(--green) 8%,transparent);box-sizing:border-box;z-index:3}
@@ -94,3 +86,12 @@ html[data-highlights="on"] #weekly-workspace{box-shadow:inset 0 1px 0 var(--surf
 #weekly-workspace .weekly-title-row{margin-top:8px;flex-wrap:nowrap}
 #weekly-workspace .weekly-goals{padding:0 10px 4px}
 #weekly-workspace .weekly-goals:empty{padding:0}
+
+/* Reserve glow space without changing the width or alignment of the date grid. */
+#month-calendar{padding:4px;width:calc(100% + 8px);margin-left:-4px;margin-right:-4px}
+html[data-scheme=dark] .month-week.week-inspected::after{box-shadow:0 0 0 2px #ffffff38,inset 0 0 0 1px #ffffff26,0 2px 8px #00000030}
+#weekly-workspace .weekly-week-context{gap:0}
+#weekly-workspace .weekly-range{display:flex;flex-direction:column;gap:4px;font-variant-numeric:tabular-nums}
+.weekly-range-year{font:400 9px/1 system-ui;color:var(--muted);letter-spacing:.04em}
+.weekly-range-dates{display:flex;align-items:center;gap:7px;font:500 12px/1.25 system-ui;color:var(--ink)}
+.weekly-range-dates>span{font:400 10px/1 system-ui;color:var(--muted)}

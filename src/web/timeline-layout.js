@@ -58,8 +58,8 @@ export function applicationRuns(activities,start,end){
 }
 
 
-// Each connected region places its name where the whole line has the most room.
-export function applicationLabels(slots,start,scale){
+// Use the first region wide enough for the measured name; keep a widest fallback.
+export function applicationLabels(slots,start,scale,requiredWidth=24){
  const segments=[];let segment;
  for(const slot of slots){
   const previous=segment?.at(-1),overlap=previous?Math.min(previous.left+previous.width,slot.left+slot.width)-Math.max(previous.left,slot.left):0;
@@ -76,7 +76,7 @@ export function applicationLabels(slots,start,scale){
    let left=slot.left,right=slot.left+slot.width;
    // Keep the text inside the application even at compressed zoom levels.
    for(let j=i+1;j<group.length&&(group[j].at-start)*scale<top+height;j++){left=Math.max(left,group[j].left);right=Math.min(right,group[j].left+group[j].width)}
-   if(right-left>=12&&(!best||right-left>best.width))best={left,width:right-left,top,at:slot.at};
+   if(right-left>=Math.min(12,requiredWidth)){const candidate={left,width:right-left,top,at:slot.at};if(candidate.width>=requiredWidth){best=candidate;break}if(!best||candidate.width>best.width)best=candidate;}
   }
   if(best)labels.push(best);
  }

@@ -10,7 +10,7 @@ export function setupYearWeekHover({calendar,getMode,isBusy,onOpen,getTitle,week
   const rect=cell.getBoundingClientRect(),viewport=calendar.getBoundingClientRect();
   if(rect.right<viewport.left||rect.left>viewport.right)return hide();
   cancel();const week=weekStart(cell.dataset.date);button.dataset.week=week;button.title=getTitle(week);button.setAttribute('aria-label',getTitle(week));button.hidden=false;
-  button.style.left=Math.max(6,Math.min(innerWidth-32,rect.left+rect.width/2-13))+'px';button.style.top=Math.max(6,Math.min(innerHeight-32,rect.bottom+4))+'px';
+  button.style.left=Math.max(6,Math.min(innerWidth-32,rect.left+rect.width/2-13))+'px';button.style.top=Math.max(6,Math.min(innerHeight-32,(calendar.querySelector('.heat-grid')||calendar).getBoundingClientRect().bottom+6))+'px';
  }
  const defer=()=>{cancel();timer=setTimeout(()=>{if(!button.matches(':hover,:focus'))hide()},180)};
  calendar.addEventListener('pointerover',event=>{const cell=event.target.closest('[data-date]');if(cell)show(cell)});

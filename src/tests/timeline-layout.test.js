@@ -31,7 +31,7 @@ test('same application evidence uses the maximum across simultaneous devices',()
 
 test('disconnected large areas repeat application names, connected areas keep one, and narrow shapes stay readable',()=>{
  const slots=[{at:540,left:0,width:25},{at:555,left:70,width:25},{at:570,left:60,width:30},{at:600,left:0,width:20}],before=JSON.stringify(slots),labels=applicationLabels(slots,540,2);
- assert.deepEqual(labels.map(x=>x.at),[540,570,600]);assert.equal(JSON.stringify(slots),before);
+ assert.deepEqual(labels.map(x=>x.at),[540,555,600]);assert.equal(JSON.stringify(slots),before);
  assert.equal(applicationLabels([{at:0,left:0,width:40},{at:15,left:0,width:35}],0,1).length,1);
  assert.equal(applicationLabels([{at:0,left:0,width:40},{at:15,left:0,width:5},{at:30,left:0,width:40}],0,2).length,2);
  assert.equal(applicationLabels([{at:0,left:0,width:5}],0,1).length,0);
@@ -41,4 +41,11 @@ test('disconnected large areas repeat application names, connected areas keep on
 test('application names use a wider later area instead of truncating in a narrow beginning',()=>{
  const labels=applicationLabels([{at:0,left:0,width:15},{at:15,left:0,width:55},{at:30,left:0,width:50}],0,2);
  assert.equal(labels.length,1);assert.equal(labels[0].at,15);assert.equal(labels[0].width,55);
+});
+
+test('labels stop at the first area that fits the text, falling back only when none fit',()=>{
+ const slots=[{at:0,left:0,width:15},{at:15,left:0,width:30},{at:30,left:0,width:60}];
+ assert.equal(applicationLabels(slots,0,2,25)[0].at,15);
+ assert.equal(applicationLabels(slots,0,2,10)[0].at,0);
+ assert.equal(applicationLabels(slots,0,2,70)[0].at,30);
 });
