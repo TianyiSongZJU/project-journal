@@ -91,7 +91,11 @@ html[data-highlights="on"] #weekly-workspace{box-shadow:inset 0 1px 0 var(--surf
 #month-calendar{padding:4px;width:calc(100% + 8px);margin-left:-4px;margin-right:-4px}
 html[data-scheme=dark] .month-week.week-inspected::after{box-shadow:0 0 0 2px #ffffff38,inset 0 0 0 1px #ffffff26,0 2px 8px #00000030}
 #weekly-workspace .weekly-week-context{gap:0}
-#weekly-workspace .weekly-range{display:flex;flex-direction:column;gap:4px;font-variant-numeric:tabular-nums}
-.weekly-range-year{font:400 9px/1 system-ui;color:var(--muted);letter-spacing:.04em}
-.weekly-range-dates{display:flex;align-items:center;gap:7px;font:500 12px/1.25 system-ui;color:var(--ink)}
-.weekly-range-dates>span{font:400 10px/1 system-ui;color:var(--muted)}
+#weekly-workspace .weekly-range{display:grid;gap:3px;min-width:148px;font-variant-numeric:tabular-nums}
+.weekly-range time{display:flex;align-items:baseline;gap:4px;white-space:nowrap;font:500 10px/15px system-ui;color:var(--ink)}
+.weekly-range-start{justify-self:start}
+.weekly-range-end{justify-self:end}
+.weekly-range time i{font:400 9px/1 system-ui;font-style:normal;color:var(--muted);opacity:.6}
+.weekly-range time small{font:400 9px/1.4 system-ui;color:var(--muted)}
+.weekly-range-end span{color:var(--muted)}
+@media(max-width:950px){#weekly-workspace .weekly-range{min-width:124px}}
