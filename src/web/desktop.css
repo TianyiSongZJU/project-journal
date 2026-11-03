@@ -259,7 +259,7 @@
 :is(.native-windows,.native-mac) .project-detail-section>.editor-heading>.markdown-mode { margin-left:0; }
 :is(.native-windows,.native-mac) #inspector-daily-fields .win-note-clear,
 :is(.native-windows,.native-mac) .desktop-note-action,
-:is(.native-windows,.native-mac) .desktop-save-state { width:22px; }
+:is(.native-windows,.native-mac) .desktop-save-state { width:24px; }
 /* The record dialog follows the review editor's project/total row and note area. */
 :is(.native-windows,.native-mac) #record-dialog { width:560px; max-width:calc(100vw - 32px); height:min(700px,calc(100dvh - 48px)); max-height:calc(100dvh - 48px); box-sizing:border-box; padding:22px; overflow:visible; }
 :is(.native-windows,.native-mac) #record-form { display:flex; flex-direction:column; height:100%; min-height:0; }
@@ -275,7 +275,7 @@
 :is(.native-windows,.native-mac) #record-form .markdown-editor { flex:1; min-height:140px; position:relative; margin:0; }
 :is(.native-windows,.native-mac) #record-note,
 :is(.native-windows,.native-mac) #record-form .markdown-preview { flex:1; min-height:140px; height:100%; padding:10px; resize:none; border:1px solid var(--tone-line-e5e8df,#e5e8df); border-radius:8px; background:linear-gradient(115deg,var(--tone-surface-e8eee3,#e8eee3),var(--tone-surface-f1f4ec,#f1f4ec) 45%,var(--panel)); }
-:is(.native-windows,.native-mac) #record-form .win-note-clear { display:inline-flex; align-items:center; justify-content:center; width:22px; height:24px; min-height:24px; padding:0; border:0; background:transparent; box-shadow:none; color:var(--tone-ink-87957c,#87957c); }
+:is(.native-windows,.native-mac) #record-form .win-note-clear { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; min-height:24px; padding:0; border:0; background:transparent; box-shadow:none; color:var(--tone-ink-87957c,#87957c); }
 :is(.native-windows,.native-mac) #record-form .win-note-clear:disabled { opacity:.4; }
 :is(.native-windows,.native-mac) #record-form>.danger { flex:none; align-self:flex-start; margin-top:8px; min-height:24px; padding:0 2px; font-size:10px; }
 /* Floating project tags stay within their own track, including at the top edge. */
