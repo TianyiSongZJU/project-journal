@@ -342,3 +342,11 @@
 
 :is(.native-windows,.native-mac) .win-node-title{font:400 10px/24px system-ui}
 :is(.native-windows,.native-mac) .win-node-heading .win-node-add{font:400 9px/24px system-ui;color:var(--tone-ink-6b7b5e,#6b7b5e)}
+
+/* Keep priority labels centered even beside large remaining-day numerals. */
+:is(.native-windows,.native-mac) #project-deadline-panel .priority-badge{align-self:center;min-height:20px;line-height:20px}
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card[data-priority=high]:not(.is-done) .priority-badge{color:var(--green);font-weight:500}
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card[data-priority=high]:not(.is-done) .deadline-card-heading>button{font-weight:600}
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card[data-priority=low]:not(.is-done) .deadline-card-heading>button{font-weight:400;color:var(--muted)}
+:is(.native-windows,.native-mac) .inspector-project-node{padding-left:18px}
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-card[data-priority=high]:not(.is-done)>.deadline-surface{box-shadow:inset 2px 0 0 var(--green)}

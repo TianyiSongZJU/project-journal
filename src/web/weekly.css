@@ -74,7 +74,7 @@ html[data-highlights="on"] #weekly-workspace{box-shadow:inset 0 1px 0 var(--surf
 /* Week identity uses the same serif numerals and compact metadata as daily review. */
 #weekly-workspace .weekly-heading{display:flex;align-items:center;flex-wrap:wrap;gap:12px;min-height:34px}
 .weekly-date-title{display:flex;align-items:center;gap:10px;flex:1;min-width:170px}
-.weekly-week-number{font:400 34px/1 Georgia,var(--serif);color:var(--green);font-variant-numeric:tabular-nums;letter-spacing:-.04em}
+/* Week and day numerals share .selected-day-number typography. */
 .weekly-week-context{display:flex;flex-direction:column;gap:5px;min-width:0}
 .weekly-week-context>strong{font:500 12px/1 system-ui;color:var(--ink)}
 #weekly-workspace .weekly-range{font:400 9px/1.4 system-ui;color:var(--tone-ink-969b8e,#969b8e);font-variant-numeric:tabular-nums}
@@ -83,8 +83,8 @@ html[data-highlights="on"] #weekly-workspace{box-shadow:inset 0 1px 0 var(--surf
 #weekly-workspace .weekly-summary strong{font:500 23px/1.2 var(--serif);color:var(--green);font-variant-numeric:tabular-nums}
 #weekly-workspace .weekly-summary strong small{font:400 9px/1.4 system-ui;color:var(--tone-ink-8d9982,#8d9982);margin-left:4px}
 #weekly-workspace .weekly-stepper{margin-left:0;flex:none;gap:4px}
-#weekly-workspace .weekly-title-row{margin-top:8px;flex-wrap:nowrap}
-#weekly-workspace .weekly-goals{padding:0 10px 4px}
+#weekly-workspace .weekly-title-row{margin-top:16px;flex-wrap:nowrap}
+#weekly-workspace .weekly-goals{padding:0 10px 4px 18px}
 #weekly-workspace .weekly-goals:empty{padding:0}
 
 /* Reserve glow space without changing the width or alignment of the date grid. */
