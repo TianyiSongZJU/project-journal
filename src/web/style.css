@@ -664,6 +664,15 @@ dialog #record-info{margin:0 0 0 auto;font-size:9px}
 .deadline-card.deadline-item:has(.deadline-inline-note) .deadline-card-heading>button{max-width:none}
 
 .deadline-item>.deadline-surface{row-gap:2px}
-.deadline-item>.deadline-surface>.deadline-inline-note{grid-column:2;grid-row:2;margin:0}
+
 
 .deadline-item[data-days="1"]:not(.is-done) .deadline-state b{color:var(--clay)}
+
+/* Preview the note beside its title, using the available name-column width. */
+.deadline-item .deadline-card-heading{display:flex;align-items:center;gap:10px;min-width:0}
+.deadline-item .deadline-card-heading>button{flex:1;min-width:0;width:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.deadline-card.deadline-item:has(.deadline-inline-note) .deadline-card-heading>button{flex:0 1 auto;max-width:65%}
+.deadline-item .deadline-card-heading>.deadline-inline-note{flex:1;min-width:0;max-width:none;max-height:20px;margin:0;font-size:10px;line-height:20px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.deadline-item .deadline-inline-note>:is(p,h1,h2,h3,blockquote,ul,ol){display:inline;margin:0;padding:0;border:0;font:inherit}
+.deadline-item .deadline-inline-note li{display:inline}
+.deadline-item .deadline-inline-note>:is(p,ul,ol)+:is(p,ul,ol)::before{content:" · "}
