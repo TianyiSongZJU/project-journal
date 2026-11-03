@@ -676,3 +676,11 @@ dialog #record-info{margin:0 0 0 auto;font-size:9px}
 .deadline-item .deadline-inline-note>:is(p,h1,h2,h3,blockquote,ul,ol){display:inline;margin:0;padding:0;border:0;font:inherit}
 .deadline-item .deadline-inline-note li{display:inline}
 .deadline-item .deadline-inline-note>:is(p,ul,ol)+:is(p,ul,ol)::before{content:" · "}
+
+/* Date tooltips keep the deadline status on its title row and the note flush with its text. */
+.tooltip-ddl{display:grid;grid-template-columns:2px minmax(0,1fr) max-content;align-items:start;column-gap:8px;min-width:0}
+.tooltip-ddl>i{height:auto;min-height:25px;align-self:stretch;margin:2px 0}
+.tooltip-ddl>div>strong{line-height:18px;overflow-wrap:anywhere}
+.tooltip-ddl>span{margin:0;padding-left:4px;line-height:18px}
+.tooltip .tooltip-ddl .ddl-note{margin:2px 0 0;max-width:100%;max-height:30px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:10px;line-height:15px;overflow-wrap:anywhere}
+.tooltip .tooltip-ddl .ddl-note>:is(p,h1,h2,h3){margin:0;font:inherit;color:inherit}
