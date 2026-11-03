@@ -4,9 +4,10 @@ import "math"
 
 // Startup colors are resolved once, before the web page is available.
 type launchTheme struct {
-	Scheme string `json:"scheme"`
-	Accent string `json:"accent"`
-	Dark   bool   `json:"-"`
+	Scheme string   `json:"scheme"`
+	Accent string   `json:"accent"`
+	Hue    *float64 `json:"hue,omitempty"`
+	Dark   bool     `json:"-"`
 }
 
 func (t launchTheme) color(r, g, b float64) [3]float64 {
@@ -17,16 +18,17 @@ func (t launchTheme) color(r, g, b float64) [3]float64 {
 	if !ok {
 		hue = 148
 	}
+	if t.Accent == "custom" && t.Hue != nil && !math.IsNaN(*t.Hue) && !math.IsInf(*t.Hue, 0) {
+		hue = math.Round(math.Max(0, math.Min(359, *t.Hue)))
+	}
 	source := (math.Max(r, math.Max(g, b)) + math.Min(r, math.Min(g, b))) / 510
-	l, s := source, .10
-	if source > .94 {
-		s = .05
+	l, s := source, 0.0
+	spread := (math.Max(r, math.Max(g, b)) - math.Min(r, math.Min(g, b))) / 255
+	if spread > 0 {
+		s = spread / (1 - math.Abs(2*source-1))
 	}
 	if t.Dark {
 		s = .045
-		if t.Accent != "fern" && t.Accent != "" {
-			s = .025
-		}
 		l = .04
 		if source > .65 {
 			l = .12 + (1-source)*.5

@@ -100,7 +100,7 @@ final class JournalLaunchSurface:NSView {
    let dark=NSApp.effectiveAppearance.bestMatch(from:[.darkAqua,.aqua]) == .darkAqua
    let accent=UserDefaults.standard.string(forKey:"JournalAccent") ?? "fern"
    if !dark && accent=="fern"{return NSColor(calibratedRed:r,green:g,blue:b,alpha:a).cgColor}
-   let hue:CGFloat=["fern":148,"slate":211,"iris":282,"clay":17,"sand":41][accent] ?? 148
+   let hue=journalAccentHue()
    let source=(max(r,g,b)+min(r,g,b))/2
    let level=dark ? (source>0.65 ? 0.12+(1-source)*0.5:0.04):source
    let spread=max(r,g,b)-min(r,g,b)
@@ -353,16 +353,15 @@ final class JournalTitleText: NSView {
 }
 
 // Menu views use semantic colors so the system material remains readable in either appearance.
+private func journalAccentHue()->CGFloat {
+ let accent=UserDefaults.standard.string(forKey:"JournalAccent") ?? "fern"
+ if accent=="custom"{let value=UserDefaults.standard.object(forKey:"JournalCustomHue") as? Double ?? 148;return CGFloat(value.isFinite ? min(359,max(0,value.rounded())):148)}
+ return ["fern":148,"slate":211,"iris":282,"clay":17,"sand":41][accent] ?? 148
+}
 private func journalAccentColor()->NSColor {
- let rgb:[CGFloat]
- switch UserDefaults.standard.string(forKey:"JournalAccent") ?? "fern" {
- case "slate":rgb=[49,70,92]
- case "iris":rgb=[79,49,92]
- case "clay":rgb=[92,61,49]
- case "sand":rgb=[92,78,49]
- default:rgb=[49,92,70]
- }
- return NSColor(srgbRed:rgb[0]/255,green:rgb[1]/255,blue:rgb[2]/255,alpha:1)
+ if (UserDefaults.standard.string(forKey:"JournalAccent") ?? "fern")=="fern"{return NSColor(srgbRed:49/255,green:92/255,blue:70/255,alpha:1)}
+ let level:CGFloat=141/510,saturation:CGFloat=43/141,brightness=level+saturation*min(level,1-level)
+ return NSColor(calibratedHue:journalAccentHue()/360,saturation:2*(1-level/brightness),brightness:brightness,alpha:1)
 }
 private let journalMenuAccentFill = NSColor(name:nil){_ in journalAccentColor()}
 private let journalMenuGreen = NSColor(name:nil){appearance in
@@ -586,7 +585,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   })();
   """,injectionTime:.atDocumentStart,forMainFrameOnly:true))
   config.userContentController.addUserScript(WKUserScript(source:"window.journalMacHost = true",injectionTime:.atDocumentStart,forMainFrameOnly:true))
-  let initialAppearance=["scheme":UserDefaults.standard.string(forKey:"JournalColorScheme") ?? "system","accent":UserDefaults.standard.string(forKey:"JournalAccent") ?? "fern"]
+  let initialAppearance:[String:Any]=["scheme":UserDefaults.standard.string(forKey:"JournalColorScheme") ?? "system","accent":UserDefaults.standard.string(forKey:"JournalAccent") ?? "fern","hue":UserDefaults.standard.object(forKey:"JournalCustomHue") as? Double ?? 148]
   if let data=try? JSONSerialization.data(withJSONObject:initialAppearance),let json=String(data:data,encoding:.utf8){config.userContentController.addUserScript(WKUserScript(source:"window.journalInitialAppearance = "+json,injectionTime:.atDocumentStart,forMainFrameOnly:true))}
   config.userContentController.addUserScript(WKUserScript(source:"""
   document.documentElement.classList.add('native-mac');
@@ -760,7 +759,8 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
    timing.mark("pageReady",page:body["page"] as? String);openingTiming=nil;navigatePendingReminder()
   }
   else if action=="appearance",message.webView === webView {
-   guard let scheme=body["scheme"] as? String,["system","light","dark"].contains(scheme),let accent=body["accent"] as? String,["fern","slate","iris","clay","sand"].contains(accent) else{return}
+   guard let scheme=body["scheme"] as? String,["system","light","dark"].contains(scheme),let accent=body["accent"] as? String,["fern","slate","iris","clay","sand","custom"].contains(accent) else{return}
+   if let hue=body["hue"] as? Double,hue.isFinite{UserDefaults.standard.set(min(359,max(0,hue.rounded())),forKey:"JournalCustomHue")}
    UserDefaults.standard.set(scheme,forKey:"JournalColorScheme");UserDefaults.standard.set(accent,forKey:"JournalAccent");journalApplyNativeAppearance()
    menuTrackingInfo?.needsDisplay=true;menuReminderInfo?.needsDisplay=true;menuSummary?.needsDisplay=true
    // Refresh the cached title only; changing appearance must not rescan suggestions.

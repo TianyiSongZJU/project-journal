@@ -53,3 +53,21 @@ test('dark themes share tonal levels across every hue and preserve status colors
  for(const [role,hex]of [['surface','#fafaf7'],['line','#e2e7da'],['ink','#315c46'],['shadow','#315c4614']]){const reference=levels(api.tone(role,hex,'fern',true));for(const accent of Object.keys(api.palettes))assert.equal(levels(api.tone(role,hex,accent,true)),reference)}
  for(const accent of ['slate','iris','clay','sand'])assert.equal(api.tone('ink','#a2553e',accent,false),api.tone('ink','#a2553e','slate',false));
 });
+
+test('custom hue is bounded, remembered with preset switches and preserved in local view state',()=>{
+ const prefs=createUIPreferences();prefs.setAppearance({scheme:'light',accent:'custom',hue:203});
+ assert.deepEqual(prefs.appearance(),{scheme:'light',accent:'custom',hue:203});
+ assert.deepEqual(sanitizeViewState({ui:prefs.snapshot()}).ui.appearance,prefs.appearance());
+ prefs.setAppearance({...prefs.appearance(),accent:'fern'});assert.equal(prefs.appearance().hue,203);
+ for(const [input,expected]of [[0,0],[359,359],[-20,0],[900,359],[42.6,43],[NaN,148],[Infinity,148]]){
+  assert.equal(api.normalize({accent:'custom',hue:input}).hue,expected);
+  assert.equal(sanitizeUIPreferences({appearance:{accent:'custom',hue:input}}).appearance.hue,expected);
+ }
+ for(const hue of [0,60,120,180,240,300,359]){
+  assert.equal(api.resolvePalette('custom',hue).h,hue);
+  const custom=api.tone('surface','#dfe6d7','custom',false,hue),reference=api.tone('surface','#dfe6d7','slate',false);
+  assert.equal(custom.slice(custom.indexOf(' ')),reference.slice(reference.indexOf(' ')));
+  api.apply({scheme:'light',accent:'custom',hue});assert(api.launchColor(220,232,211).startsWith('hsl('+hue+' '));
+ }
+ api.apply({scheme:'system',accent:'fern'});
+});
