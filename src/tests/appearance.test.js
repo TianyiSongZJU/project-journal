@@ -82,3 +82,22 @@ test('preset themes and the same custom hue produce identical palettes',()=>{
  for(const [accent,palette]of Object.entries(api.palettes).filter(([accent])=>accent!=='custom'))for(const dark of [false,true])for(const [role,hex]of [['surface','#dfe6d7'],['ink','#315c46'],['line','#99ac91'],['ink','#a2553e']])assert.equal(api.tone(role,hex,accent,dark),api.tone(role,hex,'custom',dark,palette.h));
  const first=api.parse('#dfe6d7'),second=api.parse('#315c46');assert.notEqual(Math.round(api.rotateHue(first.h,211)),Math.round(api.rotateHue(second.h,211)));
 });
+
+test('manual colors validate known fields, preserve themes and isolate preference snapshots',()=>{
+ const colors={fern:{light:{panel:'#F1E2D3',button:'#315c46',bad:'#ffffff',ink:'red'},dark:{panel:'#20252a'}},slate:{light:{accent:'#123456'}},bad:{light:{panel:'#ffffff'}}};
+ const prefs=createUIPreferences();prefs.setAppearance({scheme:'light',accent:'fern',colors});
+ assert.deepEqual(prefs.appearance().colors,{fern:{light:{panel:'#f1e2d3',button:'#315c46'},dark:{panel:'#20252a'}},slate:{light:{accent:'#123456'}}});
+ const copy=prefs.appearance();copy.colors.fern.light.panel='#ffffff';assert.equal(prefs.appearance().colors.fern.light.panel,'#f1e2d3');
+ assert.deepEqual(sanitizeViewState({ui:prefs.snapshot()}).ui.appearance,prefs.appearance());
+ assert.deepEqual(api.normalize(prefs.appearance()),prefs.appearance());
+ assert.equal(JSON.stringify(sanitizeUIPreferences({appearance:{colors:{fern:{light:{panel:'</style>'}}}}})).includes('colors'),false);
+ for(const accent of Object.keys(api.palettes))for(const dark of [false,true]){const defaults=api.manualDefaults({accent,scheme:dark?'dark':'light'},dark);assert.equal(Object.keys(defaults).length,18);for(const color of Object.values(defaults))assert.match(color,/^#[0-9a-f]{6}$/)}
+});
+
+test('recommended paper and jade palette has editable independent light and dark values',()=>{
+ const recommended=globalThis.JournalManualColors.preset();
+ assert.deepEqual(globalThis.JournalManualColors.sanitize({custom:recommended}),{custom:recommended});
+ for(const mode of ['light','dark'])assert.equal(Object.keys(recommended[mode]).length,18);
+ assert.equal(recommended.light.panel,'#fafaf6');assert.equal(recommended.dark.panel,'#222924');
+ recommended.light.panel='#ffffff';assert.equal(globalThis.JournalManualColors.preset().light.panel,'#fafaf6');
+});

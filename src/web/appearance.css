@@ -31,3 +31,26 @@ html[data-scheme="dark"] :is(.paper-panel,.dt-surface,.dt-allocations,.tr-paper,
 .appearance-hue-hint{flex-basis:100%;font-size:10px;color:var(--muted)}
 .appearance-custom-hue{align-items:start}
 .appearance-custom-hue>label{line-height:34px}
+
+.appearance-palette-editor{margin-top:14px;color:var(--ink)}
+.appearance-palette-editor>summary{display:flex;align-items:center;gap:9px;cursor:pointer;font-size:12px;padding:9px 0;list-style:none}
+.appearance-palette-editor>summary:before{content:'›';font-size:18px;line-height:14px;transition:transform .15s}
+.appearance-palette-editor[open]>summary:before{transform:rotate(90deg)}
+.appearance-palette-editor>summary::-webkit-details-marker{display:none}
+.palette-context{font-size:10px;color:var(--muted);font-weight:400}
+.palette-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:5px 0 15px;font-size:10px;color:var(--muted)}
+.appearance-palette-editor button{font-size:10px;min-height:25px;padding:3px 7px;box-shadow:none}
+.appearance-palette-editor fieldset{margin:0 0 14px;padding:10px 12px 12px;border:1px solid var(--line);border-radius:10px;min-width:0}
+.appearance-palette-editor legend{font-size:11px;padding:0 5px;color:var(--muted)}
+.palette-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 22px}
+.palette-row{display:flex;align-items:center;gap:7px;min-width:0}
+.palette-row>label{flex:1;min-width:0;font-size:11px}
+.palette-row input[type=color]{flex:none;width:33px;height:27px;min-height:27px;padding:2px;border:1px solid var(--line);border-radius:6px;cursor:pointer;background:var(--panel)}
+.palette-row input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+.palette-row input[type=color]::-webkit-color-swatch{border:0;border-radius:3px}
+.palette-row input[type=text]{flex:none;width:76px;height:27px;min-height:27px;padding:3px 5px;font:11px ui-monospace,monospace;background:var(--panel)}
+.palette-row button{flex:none;width:25px;padding:2px;font-size:16px;line-height:20px}
+.palette-row button:disabled{opacity:.3;cursor:default}
+@media(max-width:760px){.palette-grid{grid-template-columns:1fr}.palette-toolbar{align-items:flex-start}}
+
+.palette-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}

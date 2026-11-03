@@ -365,6 +365,7 @@ private func journalRotatedHue(_ r:CGFloat,_ g:CGFloat,_ b:CGFloat,target:CGFloa
  return (hue+target-148+720).truncatingRemainder(dividingBy:360)
 }
 private func journalAccentColor()->NSColor {
+ if let hex=UserDefaults.standard.string(forKey:"JournalAccentSolid"),hex.range(of:"^#[0-9a-fA-F]{6}$",options:.regularExpression) != nil,let value=UInt32(hex.dropFirst(),radix:16){return NSColor(srgbRed:CGFloat((value>>16)&255)/255,green:CGFloat((value>>8)&255)/255,blue:CGFloat(value&255)/255,alpha:1)}
  if journalAccentHue()==148{return NSColor(srgbRed:49/255,green:92/255,blue:70/255,alpha:1)}
  let level:CGFloat=141/510,saturation:CGFloat=43/141,brightness=level+saturation*min(level,1-level)
  return NSColor(calibratedHue:journalRotatedHue(49/255,92/255,70/255,target:journalAccentHue())/360,saturation:2*(1-level/brightness),brightness:brightness,alpha:1)
@@ -765,6 +766,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
    timing.mark("pageReady",page:body["page"] as? String);openingTiming=nil;navigatePendingReminder()
   }
   else if action=="appearance",message.webView === webView {
+   if let solid=body["solid"] as? String,solid.range(of:"^#[0-9a-fA-F]{6}$",options:.regularExpression) != nil{UserDefaults.standard.set(solid,forKey:"JournalAccentSolid")}
    guard let scheme=body["scheme"] as? String,["system","light","dark"].contains(scheme),let accent=body["accent"] as? String,["fern","slate","iris","clay","sand","custom"].contains(accent) else{return}
    if let hue=body["hue"] as? Double,hue.isFinite{UserDefaults.standard.set(min(359,max(0,hue.rounded())),forKey:"JournalCustomHue")}
    UserDefaults.standard.set(scheme,forKey:"JournalColorScheme");UserDefaults.standard.set(accent,forKey:"JournalAccent");journalApplyNativeAppearance()

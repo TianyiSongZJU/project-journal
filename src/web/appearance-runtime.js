@@ -40,7 +40,19 @@
   let sourceHue=0;if(max!==min){const spread=max-min;sourceHue=(max===r/255?(g-b)/255/spread+(g<b?6:0):max===g/255?(b-r)/255/spread+2:(r-g)/255/spread+4)*60}
   return hsl(dark?p.h:rotateHue(sourceHue,p.h),dark?.045:saturation,dark?(source>.65?.12+(1-source)*.5:.04):source,dark&&a<1?a*.15:a);
  }
- function normalize(raw={}){raw=raw&&typeof raw==='object'?raw:{};return {scheme:['system','light','dark'].includes(raw.scheme)?raw.scheme:'system',accent:Object.hasOwn(palettes,raw.accent)?raw.accent:'fern',...((typeof raw.hue==='number'&&Number.isFinite(raw.hue)||raw.accent==='custom')?{hue:normalizeHue(raw.hue)}:{})}}
+
+ function colorHex(value){if(value.startsWith('#')){const v=value.slice(1);return '#'+(v.length<5?[...v.slice(0,3)].map(c=>c+c).join(''):v.slice(0,6))}const m=value.match(/^hsl\(([\d.]+) ([\d.]+)% ([\d.]+)%/);if(!m)return '#000000';const h=Number(m[1])%360,s=Number(m[2])/100,l=Number(m[3])/100,c=(1-Math.abs(2*l-1))*s,x=c*(1-Math.abs(h/60%2-1)),n=l-c/2,v=h<60?[c,x,0]:h<120?[x,c,0]:h<180?[0,c,x]:h<240?[0,x,c]:h<300?[x,0,c]:[c,0,x];return '#'+v.map(c=>Math.round((c+n)*255).toString(16).padStart(2,'0')).join('')}
+ const blend=(a,b,t)=>'#'+[1,3,5].map(i=>Math.round(parseInt(a.slice(i,i+2),16)*(1-t)+parseInt(b.slice(i,i+2),16)*t).toString(16).padStart(2,'0')).join('');
+ function manualDefaults(choice=current,dark=choice.scheme==='dark'||choice.scheme==='system'&&media?.matches){const p=resolvePalette(choice.accent,choice.hue),result={};for(const field of globalThis.JournalManualColors.fields){let value=tone(['line','focus'].includes(field.key)?'line':['ink','muted','accent'].includes(field.key)?'ink':'surface',field.hex,choice.accent,dark,choice.hue);if(field.key==='button')value=p.solid;if(field.key==='glow')value='#ffffff';if(dark){const fixed={paper:hsl(p.h,.035,.11),panel:hsl(p.h,.04,.145),ink:'#e2e1de',muted:'#a3a39f',accent:hsl(p.h,p.s*.8,.74),line:hsl(p.h,.065,.225)};if(fixed[field.key])value=fixed[field.key];if(field.key.startsWith('heat')){const i=Number(field.key.slice(4));value=hsl(p.h,.035+i*p.s*.14,.18+i*.075)}}result[field.key]=colorHex(value)}return result}
+ function recolor(role,hex,resolved,colors,defaults){const c=parse(hex),semantic=!(c.h>=65&&c.h<=175&&c.s>.055)&&c.l<.96&&(c.s>.35||c.h<=65&&c.s>.12);if(semantic)return resolved;let key;
+  if(role==='surface'){key=['#eeede9','#eeece5'].includes(hex)?'paper':['#e5e7dd','#e8e9e1'].includes(hex)?'sidebar':c.l>=.96?'panel':c.l>=.915?'editor':c.l>=.70?'selected':'button'}
+  else if(role==='ink'){if(c.l>.94)return resolved;key=c.h>=65&&c.h<=175&&c.s>.18&&c.l<.58?'accent':c.l<.38?'ink':'muted'}
+  else if(role==='line')key=c.s>.10&&c.l<.78?'focus':'line';
+  else if(role==='shadow'&&parse(colorHex(resolved)).l>.7)key='glow';
+  if(!colors[key])return resolved;let color=colors[key];if(key==='sidebar'&&hex==='#e8e9e1')color=blend(color,colors.paper||defaults.paper,.25);if(key==='editor')color=blend(color,colors.panel||defaults.panel,clamp((c.l-.91)/.055));const a=resolved.startsWith('#')?parse(resolved).a:Number(resolved.match(/\/ ([\d.]+)\)/)?.[1]??1);return a===1?color:`${color}${Math.round(a*255).toString(16).padStart(2,'0')}`;
+ }
+ function readable(hex){const c=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4),l=c[0]*.2126+c[1]*.7152+c[2]*.0722;return 1.05/(l+.05)>=(l+.05)/.05?'#ffffff':'#17211c'}
+ function normalize(raw={}){raw=raw&&typeof raw==='object'?raw:{};const colors=globalThis.JournalManualColors?.sanitize(raw.colors)||{};return {scheme:['system','light','dark'].includes(raw.scheme)?raw.scheme:'system',accent:Object.hasOwn(palettes,raw.accent)?raw.accent:'fern',...((typeof raw.hue==='number'&&Number.isFinite(raw.hue)||raw.accent==='custom')?{hue:normalizeHue(raw.hue)}:{}),...(Object.keys(colors).length?{colors}:{})}}
  let current=normalize(),sheet,resolvedKey;
  const media=typeof matchMedia==='function'?matchMedia('(prefers-color-scheme: dark)'):null;
  function apply(raw,{cache=true}={}){
@@ -49,20 +61,24 @@
   const nextKey=JSON.stringify({...current,dark});if(nextKey===resolvedKey)return;resolvedKey=nextKey;
   document.documentElement.dataset.scheme=dark?'dark':'light';document.documentElement.dataset.accent=current.accent;document.documentElement.style.colorScheme=dark?'dark':'light';
   if(!sheet){sheet=document.createElement('style');sheet.id='journal-theme-palette';document.head.append(sheet)}
-  const props=Object.entries(globalThis.JournalThemeColors||{}).map(([key,[role,hex]])=>key+':'+tone(role,hex,current.accent,dark,current.hue));
+  const colors=current.colors?.[current.accent]?.[dark?'dark':'light']||{},defaults=manualDefaults(current,dark);
+  const props=Object.entries(globalThis.JournalThemeColors||{}).map(([key,[role,hex]])=>key+':'+recolor(role,hex,tone(role,hex,current.accent,dark,current.hue),colors,defaults));
   props.push('--accent-solid:'+p.solid,'--accent-preview:'+p.solid,'--editor-bg:'+hsl(p.h,dark?.045:.15,dark?.18:.955),'--surface-sheen:'+(dark?'#ffffff09':'#ffffffb3'));
   if(dark)props.push('--paper:'+hsl(p.h,.035,.11),'--panel:'+hsl(p.h,.04,.145),'--ink:#e2e1de','--muted:#a3a39f','--line:'+hsl(p.h,.065,.225),'--surface-elevated:'+hsl(p.h,.045,.17),'--surface-edge:'+hsl(p.h,.065,.26),'--green:'+hsl(p.h,p.s*.8,.74));
   if(dark)for(let i=0;i<=5;i++)props.push('--l'+i+':'+hsl(p.h,.035+i*p.s*.14,.18+i*.075));
-  sheet.textContent=':root[data-scheme]{'+props.join(';')+'}';
+  const variables={paper:'--paper',panel:'--panel',editor:'--editor-bg',ink:'--ink',muted:'--muted',accent:'--green',button:'--accent-solid',line:'--line'};for(const [key,variable]of Object.entries(variables))if(colors[key])props.push(variable+':'+colors[key]);if(colors.glow)props.push('--surface-sheen:'+colors.glow+'b3');
+  let rules='';if(Object.keys(colors).length)for(let i=0;i<=5;i++){props.push('--l'+i+':'+(colors['heat'+i]||(dark?hsl(p.h,.035+i*p.s*.14,.18+i*.075):tone('surface',globalThis.JournalManualColors.fields.find(field=>field.key==='heat'+i).hex,current.accent,false,current.hue))));if(colors['heat'+i])rules+=`html[data-scheme] :is(.heat-day,.month-day)[data-level="${i}"]{color:${readable(colors['heat'+i])}}`}
+  if(colors.button)rules+=`html[data-scheme] button.primary{color:${readable(colors.button)}}`;
+  sheet.textContent=':root[data-scheme]{'+props.join(';')+'}'+rules;
   if(cache)try{localStorage.setItem('journal-appearance-v1',JSON.stringify(current))}catch{}
   try{window.journalSetAppearance?.(dark)?.catch?.(()=>{})}catch{}
   const bg=dark?'#202620':'#fafaf7';
-  try{window.webkit?.messageHandlers?.journalNative?.postMessage({action:'appearance',scheme:current.scheme,accent:current.accent,hue:current.hue,dark,background:bg})}catch{}
+  try{window.webkit?.messageHandlers?.journalNative?.postMessage({action:'appearance',scheme:current.scheme,accent:current.accent,hue:current.hue,solid:colors.button||p.solid,dark,background:bg})}catch{}
   window.dispatchEvent(new CustomEvent('journal-appearance-change',{detail:{...current,dark}}));
  }
- globalThis.JournalAppearance={palettes,parse,tone,launchColor,normalize,resolvePalette,rotateHue,apply,get:()=>({...current})};
+ globalThis.JournalAppearance={palettes,parse,tone,launchColor,normalize,resolvePalette,rotateHue,manualDefaults,colorHex,apply,get:()=>structuredClone(current)};
  if(typeof document!=='undefined'){
-  try{current=normalize(globalThis.journalInitialAppearance||JSON.parse(localStorage.getItem('journal-appearance-v1')||'{}'))}catch{}
+  try{current=normalize({...JSON.parse(localStorage.getItem('journal-appearance-v1')||'{}'),...globalThis.journalInitialAppearance})}catch{}
   apply(current,{cache:false});media?.addEventListener('change',()=>{if(current.scheme==='system')apply(current)});
  }
 })();
