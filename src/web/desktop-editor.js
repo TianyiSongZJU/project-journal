@@ -1,3 +1,4 @@
+import {priorityMatches} from './deadline-priority.js';
 // Reorganize existing controls in the native desktop presentation.
 // Keep IDs, event handlers, editor contents and persisted data intact.
 import {desktopIcon,renderDesktopSaveStatus} from './desktop-icons.js';
@@ -21,7 +22,7 @@ export function refineDesktopProject(project) {
     panel.querySelector('.section-heading')?.remove();
   }
   const priority=$('#project-deadline-priority')?.value||'all';
-  const info=projectNodeOverview({...project,deadlines:project.deadlines.filter(d=>priority==='all'||d.priority===priority)});
+  const info=projectNodeOverview({...project,deadlines:project.deadlines.filter(d=>priorityMatches(d,priority))});
   toggle.hidden=!info.done;
   toggle.textContent=(toggle.getAttribute('aria-pressed')==='true'?'收起已完成':'已完成')+' '+info.done;
   const meta=summary.querySelector('.fold-meta');
@@ -48,7 +49,7 @@ export function refineDesktopNodes(project) {
     const fields=$('#inspector-daily-fields');fields.insertBefore(section,fields.querySelector('.editor-label'));
   }
   section.dataset.projectId=project.id;
-  const info=projectNodeOverview({...project,deadlines:project.deadlines.filter(d=>d.priority!=='低')});
+  const info=projectNodeOverview({...project,deadlines:project.deadlines.filter(d=>d.priority!=='低'&&priorityMatches(d,$('#inspector-deadline-priority')?.value||'all'))});
   section.querySelector('.win-node-count').textContent=info.pending?info.pending+' \u4e2a\u5f85\u5b8c\u6210':info.done?'\u5168\u90e8\u5b8c\u6210':'\u672a\u8bbe\u7f6e';
   panel.hidden=!panel.querySelector('.inspector-project-node');
   const toggle=$('#inspector-show-done-deadlines');
