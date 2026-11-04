@@ -21,7 +21,7 @@ function mathView(node,view,getPos){
  }
  function begin(edge){
   if(editing||disposed)return;editing=true;dom.classList.add('is-editing');field=document.createElement('input');field.className='journal-inline-math-source';field.type='text';field.value='$'+current.attrs.value+'$';field.setAttribute('aria-label','编辑行内公式');field.spellcheck=false;dom.replaceChildren(field);
-  const size=()=>field.style.width=Math.max(4,field.value.length+1)+'ch';size();
+  const measure=document.createElement('canvas').getContext('2d');const size=()=>{measure.font=getComputedStyle(field).font;field.style.width=Math.ceil(measure.measureText(field.value||'$').width)+1+'px'};size();
   field.oninput=()=>{size();const pos=position();if(pos==null)return;const raw=field.value,value=raw.replace(/^\$/,'').replace(/\$$/,'');if(value!==current.attrs.value){let tr=view.state.tr.setNodeMarkup(pos,undefined,{...current.attrs,value});view.dispatch(tr.setSelection(NodeSelection.create(tr.doc,pos)))}};
   field.onblur=()=>finish();
   field.onkeydown=e=>{if(e.isComposing||e.shiftKey||e.metaKey||e.ctrlKey||e.altKey)return;if(e.key==='ArrowLeft'&&field.selectionStart===0&&field.selectionEnd===0){e.preventDefault();finish(-1)}else if(e.key==='ArrowRight'&&field.selectionStart===field.value.length&&field.selectionEnd===field.value.length){e.preventDefault();finish(1)}else if(e.key==='Enter'){e.preventDefault();finish(1)}};
@@ -38,12 +38,12 @@ function decorations(state,focused){
  const {$from,empty}=state.selection;
  if(focused&&empty&&$from.parent.isTextblock){
   const parent=$from.parent,base=$from.start(),caret=$from.parentOffset;
-  for(const [name,symbol] of [['strong','**'],['emphasis','*']]){
+  for(const [name,symbol] of [['strong','**'],['emphasis','*'],['inlineCode','`']]){
    const ranges=[];let start=null,end=null;
    parent.forEach((node,offset)=>{if(node.marks.some(mark=>mark.type.name===name)){if(start===null)start=offset;end=offset+node.nodeSize}else if(start!==null){ranges.push([start,end]);start=end=null}});
    if(start!==null)ranges.push([start,end]);
-   const active=state.storedMarks??$from.marks();const range=ranges.find(([from,to])=>caret>from&&caret<to||(caret===from||caret===to)&&active.some(mark=>mark.type.name===name));if(!range)continue;const [from,to]=range;
-   for(const [pos,side] of [[base+from,-1],[base+to,1]])result.push(Decoration.widget(pos,view=>{const el=document.createElement('span');el.className='journal-format-marker';el.textContent=symbol;el.setAttribute('aria-hidden','true');el.onmousedown=event=>{event.preventDefault();const tr=view.state.tr.setSelection(TextSelection.create(view.state.doc,pos));view.dispatch(tr.setStoredMarks(withoutMark({...view.state,selection:tr.selection},name)));view.focus()};return el},{key:name+':'+pos,side}));
+   const active=state.storedMarks??$from.marks();const range=ranges.find(([from,to])=>caret>from&&caret<to||(caret===from||caret===to)&&active.some(mark=>mark.type.name===name));if(!range)continue;const [from,to]=range;const text=parent.textBetween(from,to),runs=name==='inlineCode'?(text.match(/`+/g)||[]):[];const delimiter=name==='inlineCode'?'`'.repeat(Math.max(0,...runs.map(run=>run.length))+1):symbol;
+   for(const [pos,side] of [[base+from,-1],[base+to,1]])result.push(Decoration.widget(pos,view=>{const el=document.createElement('span');el.className='journal-format-marker';el.textContent=delimiter;el.setAttribute('aria-hidden','true');el.onmousedown=event=>{event.preventDefault();const tr=view.state.tr.setSelection(TextSelection.create(view.state.doc,pos));view.dispatch(tr.setStoredMarks(withoutMark({...view.state,selection:tr.selection},name)));view.focus()};return el},{key:name+':'+pos+':'+delimiter,side}));
   }
  }
  return DecorationSet.create(state.doc,result);

@@ -78,3 +78,20 @@ html .markdown-live .milkdown .ProseMirror p{padding:0;line-height:1.4;min-heigh
    metrics keep every source line glyph-sized, including CJK fallback fonts.
    Override the daily/weekly and platform-specific editor font shorthands. */
 html[data-scheme] .markdown-editor.is-source>textarea{font:400 13px/normal ui-monospace,Menlo,monospace!important;line-height:normal!important;letter-spacing:normal!important;caret-color:var(--ink)!important}
+
+/* One quote rule per nesting level; suppress Crepe's additional pseudo-rule. */
+html .markdown-live .milkdown .ProseMirror blockquote{border-left:2px solid color-mix(in srgb,var(--green) 25%,var(--line));padding:0 0 0 12px;margin:6px 0;color:var(--muted)}
+html .markdown-live .milkdown .ProseMirror blockquote::before{content:none;display:none}
+html .markdown-live .milkdown .ProseMirror :not(pre)>code{display:inline;font:400 12px/normal ui-monospace,Menlo,monospace;color:var(--ink);background:color-mix(in srgb,var(--green) 7%,transparent);padding:1px 3px;border-radius:3px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+html .markdown-live .milkdown .journal-inline-math-source{min-width:0;max-width:100%;padding:0 2px;letter-spacing:normal}
+/* Display equations follow the note surface instead of the code-block chrome. */
+html .markdown-live .milkdown .journal-block-math{position:relative;margin:8px 0;padding:8px 10px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--ink);outline:none;cursor:text}
+html .markdown-live .milkdown .journal-block-math:is(.is-editing,:focus-visible){border-color:var(--line);background:color-mix(in srgb,var(--green) 4%,transparent)}
+.markdown-live .journal-block-math-editor[hidden]{display:none!important}
+.markdown-live .journal-block-math-preview{overflow-x:auto;text-align:center}
+.markdown-live .journal-block-math-preview .katex-display{margin:4px 0}
+.markdown-live .journal-math-fence{display:block;color:var(--muted);font:400 11px/16px ui-monospace,Menlo,monospace;opacity:.7}
+html .markdown-live .milkdown .journal-block-math-source{display:block;box-sizing:border-box;appearance:none;-webkit-appearance:none;width:100%;height:20px;min-height:20px;max-height:320px;margin:2px 0;padding:0!important;border:0!important;border-radius:0;background:transparent!important;box-shadow:none!important;outline:none!important;resize:none;overflow-y:auto;font:400 13px/normal ui-monospace,Menlo,monospace!important;color:var(--ink);caret-color:var(--ink)}
+.markdown-live .journal-block-math.is-editing .journal-block-math-preview{margin-top:6px;padding-top:6px;border-top:1px solid var(--line)}
+.markdown-live .journal-math-empty{font:400 12px/20px var(--crepe-font-default);color:var(--muted)}
+.markdown-live .ProseMirror:has(.journal-block-math-source:focus)>.prosemirror-virtual-cursor{display:none}

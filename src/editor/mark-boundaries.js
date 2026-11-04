@@ -1,4 +1,4 @@
-const names=new Set(['strong','emphasis']);
+const names=new Set(['strong','emphasis','inlineCode']);
 export function markArrow(state,key){
  const {$from,empty}=state.selection;
  if(!empty||!['ArrowLeft','ArrowRight'].includes(key))return null;

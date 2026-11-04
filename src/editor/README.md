@@ -34,3 +34,19 @@ are visual only and never become part of the saved Markdown.
 Markdown snapshots are coalesced after 300 ms of idle time, with a 1.5 s maximum
 wait while typing. Explicit save, navigation, source switching, focus leaving,
 and destruction flush synchronously. Context reset cancels pending snapshots.
+
+`block-math.js` keeps the existing portable display-math schema and replaces
+only its node view. Equations render without code-editor controls, open a themed
+source field on click or keyboard entry, and keep native selection/IME handling
+while synchronizing minimal text transactions into the shared undo history.
+The nested source field opts out of automatic Markdown textarea enhancement.
+
+The browser regression also covers quote rule geometry and nesting, inline-code
+boundaries, measured inline-math source width, display-math editing/undo/exit,
+invalid formulas, ordinary code fallback, mixed table/list/quote roundtrips and
+plain-text paste. `JOURNAL_MARKDOWN_SCREENSHOTS` exports light/dark rendered and
+editing states for visual inspection. Synthetic IME tests do not replace a
+manual check of the operating system candidate window or multi-hour testing.
+
+Automatic save snapshots preserve an active equation source field; explicit
+save or mode changes finish its editing session before serializing.
