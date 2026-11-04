@@ -41,6 +41,10 @@ func (s *Store) historyGCPath() string {
 // and synchronization version folders. Never root the archive directory itself.
 // Keep the raw roots so a concurrent sync delivery can cancel sweeping.
 func (s *Store) historyArchiveRoots() (map[string][]byte, error) {
+	return s.referenceRoots(false)
+}
+
+func (s *Store) referenceRoots(includeActivity bool) (map[string][]byte, error) {
 	roots := map[string][]byte{}
 	err := filepath.WalkDir(s.dir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
@@ -48,22 +52,26 @@ func (s *Store) historyArchiveRoots() (map[string][]byte, error) {
 		}
 		if d.IsDir() {
 			switch d.Name() {
-			case "history-content", "历史内容", "activity", "自动记录", ".git":
+			case "history-content", "历史内容", ".git":
 				return filepath.SkipDir
+			case "activity", "自动记录":
+				if !includeActivity {
+					return filepath.SkipDir
+				}
 			}
 			return nil
 		}
-		if strings.HasPrefix(d.Name(), ".history-gc-") {
+		if strings.HasPrefix(d.Name(), ".history-gc-") || strings.HasPrefix(d.Name(), ".note-image-gc-") {
 			return nil
 		}
 		if strings.HasPrefix(d.Name(), ".保存事务-") {
 			return errors.New("存在尚未完成的保存事务，暂缓历史回收")
 		}
-		if !strings.Contains(strings.ToLower(d.Name()), ".json") {
-			return nil
-		}
 		if d.Type()&os.ModeSymlink != 0 {
 			return errors.New("历史引用目录包含符号链接，暂缓回收")
+		}
+		if !strings.Contains(strings.ToLower(d.Name()), ".json") {
+			return nil
 		}
 		raw, err := os.ReadFile(path)
 		if err != nil {
@@ -292,9 +300,13 @@ func (s *Store) maintainHistoryArchives() {
 	for {
 		s.mu.Lock()
 		_, err := s.collectHistoryArchives(time.Now())
+		_, imageErr := s.collectNoteImages(time.Now())
 		s.mu.Unlock()
 		if err != nil {
 			log.Printf("历史归档回收已暂缓：%v", err)
+		}
+		if imageErr != nil {
+			log.Printf("未引用图片回收已暂缓：%v", imageErr)
 		}
 		<-ticker.C
 	}

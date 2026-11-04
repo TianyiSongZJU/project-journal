@@ -485,7 +485,7 @@ func main() {
 	}
 	files, _ := fs.Sub(assets, "web")
 	static := http.FileServer(http.FS(files))
-	noteImages := noteImageHandler(store.dir)
+	noteImages := store.noteImageHandler()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("X-Content-Type-Options", "nosniff")

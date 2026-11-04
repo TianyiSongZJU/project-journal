@@ -17,10 +17,12 @@ const noteImageLimit = 12 << 20
 var noteImageName = regexp.MustCompile(`^[a-f0-9]{64}\.(png|jpg|gif|webp)$`)
 
 // Called only inside the authenticated, same-origin application handler.
-func noteImageHandler(root string) http.HandlerFunc {
+func noteImageHandler(root string) http.HandlerFunc { return (&Store{dir: root}).noteImageHandler() }
+
+func (s *Store) noteImageHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		folder := filepath.Join(root, "images")
+		folder := filepath.Join(s.dir, "images")
 		if r.URL.Path == "/api/note-images" {
 			if r.Method != "POST" {
 				w.WriteHeader(http.StatusMethodNotAllowed)
@@ -37,6 +39,8 @@ func noteImageHandler(root string) http.HandlerFunc {
 				http.Error(w, "请选择 PNG、JPEG、GIF 或 WebP 图片", 415)
 				return
 			}
+			s.mu.Lock()
+			defer s.mu.Unlock()
 			sum := sha256.Sum256(body)
 			name := hex.EncodeToString(sum[:]) + "." + ext
 			if err = os.MkdirAll(folder, 0755); err == nil {
