@@ -516,6 +516,7 @@ final class JournalMenuInfoView:NSView {
   control.isHidden=true;control.title="";control.isTransparent=true;control.isBordered=false;control.imagePosition = .imageOnly;control.contentTintColor=journalMenuGreen;addSubview(control)
   setAccessibilityElement(true);setAccessibilityRole(.staticText)
  }
+ convenience init(){self.init(frame:NSRect(x:0,y:0,width:260,height:24))}
  required init?(coder:NSCoder){fatalError("init(coder:) has not been implemented")}
  override func layout(){
   super.layout()
@@ -640,9 +641,9 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   let menu=NSMenu();menu.delegate=self;menu.minimumWidth=260
   menu.autoenablesItems=false
   let heading=NSMenuItem();let summary=JournalMenuSummaryView(frame:NSRect(x:0,y:0,width:260,height:72));heading.view=summary;menuSummary=summary;menu.addItem(heading);menu.addItem(journalMenuDivider())
-  let deadlineItem=NSMenuItem();let deadlineInfo=JournalMenuInfoView(frame:NSRect(x:0,y:0,width:260,height:28));deadlineInfo.update(title:"今日截止",detail:"读取中…",symbol:"flag",color:journalMenuMuted);deadlineItem.view=deadlineInfo;deadlineItem.isEnabled=false;menuDeadlineInfo=deadlineInfo;menu.addItem(deadlineItem)
-  let reminder=NSMenuItem(title:"待处理建议",action:nil,keyEquivalent:"");let reminderInfo=JournalMenuInfoView(frame:NSRect(x:0,y:0,width:260,height:24));reminderInfo.update(title:"待处理建议",detail:"准备中…",symbol:"clock.arrow.circlepath",color:.secondaryLabelColor);reminder.view=reminderInfo;reminder.isEnabled=false;menuReminderInfo=reminderInfo;menu.addItem(reminder);reminderItem=reminder
-  let state=NSMenuItem();let trackingInfo=JournalMenuInfoView(frame:NSRect(x:0,y:0,width:260,height:24));trackingInfo.update(title:"自动记录",detail:"读取中…",symbol:"record.circle",color:.secondaryLabelColor);state.view=trackingInfo;state.isEnabled=false;menuTrackingInfo=trackingInfo;menu.addItem(state);trackingStatusItem=state
+  let deadlineItem=NSMenuItem();let deadlineInfo=JournalMenuInfoView();deadlineInfo.update(title:"今日截止",detail:"读取中…",symbol:"flag",color:journalMenuMuted);deadlineItem.view=deadlineInfo;deadlineItem.isEnabled=false;menuDeadlineInfo=deadlineInfo;menu.addItem(deadlineItem)
+  let reminder=NSMenuItem(title:"待处理建议",action:nil,keyEquivalent:"");let reminderInfo=JournalMenuInfoView();reminderInfo.update(title:"待处理建议",detail:"准备中…",symbol:"clock.arrow.circlepath",color:.secondaryLabelColor);reminder.view=reminderInfo;reminder.isEnabled=false;menuReminderInfo=reminderInfo;menu.addItem(reminder);reminderItem=reminder
+  let state=NSMenuItem();let trackingInfo=JournalMenuInfoView();trackingInfo.update(title:"自动记录",detail:"读取中…",symbol:"record.circle",color:.secondaryLabelColor);state.view=trackingInfo;state.isEnabled=false;menuTrackingInfo=trackingInfo;menu.addItem(state);trackingStatusItem=state
   trackingInfo.makeToggle(target:self,action:#selector(toggleTracking));trackingInfo.control.isEnabled=false;trackingToggleItem=state
 
   menu.addItem(journalMenuDivider())
