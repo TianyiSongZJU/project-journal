@@ -123,3 +123,14 @@ html[data-scheme=dark] .month-week.week-inspected::after{box-shadow:0 0 0 2px #f
 .daily-task-project{align-self:start;margin-top:5.5px}
 #inspector-deadline-priority-host[hidden]{display:none}
 #month-inspector #windows-project-nodes .win-node-heading:has(#inspector-deadline-priority-host:not([hidden]))>.win-node-add{margin-left:0}
+
+/* Match the title/list insets in both dated and weekly checklists. */
+.daily-tasks-section,#weekly-workspace .weekly-goals-section{padding:11px 18px 10px}
+.daily-tasks-heading,#weekly-workspace .weekly-section-heading{min-height:24px;height:24px;padding:0;margin:0;gap:7px}
+#weekly-workspace .weekly-goals{padding:0}
+.checklist-show-done,#weekly-workspace .checklist-show-done{display:inline-flex;align-items:center;justify-content:center;text-align:center;min-height:24px;height:24px;padding:0 5px;margin-left:auto;border:0;border-radius:4px;background:transparent;box-shadow:none;color:var(--muted);font:400 9px/24px system-ui;white-space:nowrap}
+.checklist-show-done[aria-pressed=true]{color:var(--green)}
+#weekly-workspace .weekly-show-done+.weekly-add-goal{margin-left:4px}
+.deadline-priority-filter{appearance:none;-webkit-appearance:none;min-width:46px;padding:0 7px;text-align:center;text-align-last:center}
+.daily-task[hidden],.weekly-goal[hidden]{display:none!important}
+select.deadline-priority-filter{background-image:none!important;padding:0 7px!important;text-align:center;text-align-last:center}

@@ -413,6 +413,8 @@ private func journalMenuGlyphPath(_ name:String)->NSBezierPath {
  case "tray":
   p.move(to:NSPoint(x:1,y:5));p.line(to:NSPoint(x:2.2,y:7.5));p.line(to:NSPoint(x:7.8,y:7.5));p.line(to:NSPoint(x:9,y:5));p.line(to:NSPoint(x:9,y:2.5));p.line(to:NSPoint(x:1,y:2.5));p.close()
   p.move(to:NSPoint(x:1,y:5));p.line(to:NSPoint(x:3,y:5));p.line(to:NSPoint(x:3.8,y:3.8));p.line(to:NSPoint(x:6.2,y:3.8));p.line(to:NSPoint(x:7,y:5));p.line(to:NSPoint(x:9,y:5))
+ case "flag":
+  p.move(to:NSPoint(x:2,y:1));p.line(to:NSPoint(x:2,y:9));p.line(to:NSPoint(x:8,y:9));p.line(to:NSPoint(x:6.5,y:6));p.line(to:NSPoint(x:2,y:6))
  case "pause":
   for x:CGFloat in [3.2,6.8]{p.move(to:NSPoint(x:x,y:2.1));p.line(to:NSPoint(x:x,y:7.9))}
  case "play":
@@ -531,7 +533,7 @@ final class JournalMenuInfoView:NSView {
   (isEmphasized ? journalMenuAccentFill:color.withAlphaComponent(0.07)).setFill();circle.fill()
   if !control.isHidden{journalMenuGlyph(toggleSymbol,10,isEmphasized ? .white:journalMenuMuted).draw(in:NSRect(x:20,y:(bounds.height-10)/2,width:10,height:10))}
  }
- func update(title:String,detail:String,symbol:String,color:NSColor){titleLabel.stringValue=title;detailLabel.stringValue=detail;let inner=symbol=="tray" ? "tray":symbol=="exclamationmark.circle" ? "exclamationmark":"clock"
+ func update(title:String,detail:String,symbol:String,color:NSColor){titleLabel.stringValue=title;detailLabel.stringValue=detail;let inner=symbol=="flag" ? "flag":symbol=="tray" ? "tray":symbol=="exclamationmark.circle" ? "exclamationmark":"clock"
   icon.image=journalMenuGlyph(inner,10,color);icon.contentTintColor=color;control.contentTintColor=color;needsDisplay=true;setAccessibilityLabel(title+"，"+detail);needsLayout=true}
 }
 
@@ -558,6 +560,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
  var pendingReminderRange:[String:Any]?
  var dailySummaryTimer:Timer?
  var dailySummaryLoading=false
+ var menuDeadlineInfo:JournalMenuInfoView?
  var menuSummary:JournalMenuSummaryView?
  var menuReminderInfo:JournalMenuInfoView?
  var menuTrackingInfo:JournalMenuInfoView?
@@ -636,7 +639,8 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   }
   let menu=NSMenu();menu.delegate=self;menu.minimumWidth=260
   menu.autoenablesItems=false
-  let heading=NSMenuItem();let summary=JournalMenuSummaryView(frame:NSRect(x:0,y:0,width:260,height:72));heading.view=summary;menuSummary=summary;menu.addItem(heading);menu.addItem(journalMenuDivider())
+  let heading=NSMenuItem();let summary=JournalMenuSummaryView(frame:NSRect(x:0,y:0,width:260,height:72));heading.view=summary;menuSummary=summary;menu.addItem(heading)
+  let deadlineItem=NSMenuItem();let deadlineInfo=JournalMenuInfoView(frame:NSRect(x:0,y:0,width:260,height:28));deadlineInfo.update(title:"今日截止",detail:"读取中…",symbol:"flag",color:journalMenuMuted);deadlineItem.view=deadlineInfo;deadlineItem.isEnabled=false;menuDeadlineInfo=deadlineInfo;menu.addItem(deadlineItem);menu.addItem(journalMenuDivider())
   let reminder=NSMenuItem(title:"待处理建议",action:nil,keyEquivalent:"");let reminderInfo=JournalMenuInfoView(frame:NSRect(x:0,y:0,width:260,height:24));reminderInfo.update(title:"待处理建议",detail:"准备中…",symbol:"clock.arrow.circlepath",color:.secondaryLabelColor);reminder.view=reminderInfo;reminder.isEnabled=false;menuReminderInfo=reminderInfo;menu.addItem(reminder);reminderItem=reminder
   let state=NSMenuItem();let trackingInfo=JournalMenuInfoView(frame:NSRect(x:0,y:0,width:260,height:24));trackingInfo.update(title:"自动记录",detail:"读取中…",symbol:"record.circle",color:.secondaryLabelColor);state.view=trackingInfo;state.isEnabled=false;menuTrackingInfo=trackingInfo;menu.addItem(state);trackingStatusItem=state
   trackingInfo.makeToggle(target:self,action:#selector(toggleTracking));trackingInfo.control.isEnabled=false;trackingToggleItem=state
@@ -664,11 +668,13 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
    DispatchQueue.main.async{
     guard let self=self else{return};self.dailySummaryLoading=false
     guard error==nil,(response as? HTTPURLResponse)?.statusCode==200,let data=data,let value=(try? JSONSerialization.jsonObject(with:data)) as? [String:Any],let hours=value["hours"] as? Double,formatter.string(from:Date())==day else{
-     self.menuSummary?.timeLabel.font = .systemFont(ofSize:18,weight:.medium);self.menuSummary?.timeLabel.stringValue="暂时无法读取";self.menuSummary?.setDetail("请稍后重试");self.menuSummary?.setAccessibilityLabel("今日投入暂时无法读取，请稍后重试");self.statusItem?.button?.toolTip="项目手记 · 今日总投入读取失败";return
+     self.menuDeadlineInfo?.update(title:"今日截止",detail:"暂时无法读取",symbol:"flag",color:journalMenuMuted);self.menuSummary?.timeLabel.font = .systemFont(ofSize:18,weight:.medium);self.menuSummary?.timeLabel.stringValue="暂时无法读取";self.menuSummary?.setDetail("请稍后重试");self.menuSummary?.setAccessibilityLabel("今日投入暂时无法读取，请稍后重试");self.statusItem?.button?.toolTip="项目手记 · 今日总投入读取失败";return
     }
     let minutes=Int((hours*60).rounded()),h=minutes/60,m=minutes%60,missing=value["missing"] as? Int ?? 0,estimated=value["estimatedHours"] as? Double ?? 0
     self.menuSummary?.setDetail((estimated>0 ? "含估算投入":"")+(missing>0 ? (estimated>0 ? " · ":"")+"\(missing)条记录待配置":""))
     self.menuSummary?.setTime(hours:h,minutes:m)
+    let due=max(0,value["dueToday"] as? Int ?? 0)
+    self.menuDeadlineInfo?.update(title:"今日截止",detail:due>0 ? "\(due) 个待完成":"暂无",symbol:"flag",color:due>0 ? journalMenuGreen:journalMenuMuted)
    }
   }.resume()
  }
@@ -773,7 +779,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
    guard let scheme=body["scheme"] as? String,["system","light","dark"].contains(scheme),let accent=body["accent"] as? String,["fern","slate","iris","clay","sand","rose","macaron","custom"].contains(accent) else{return}
    if let hue=body["hue"] as? Double,hue.isFinite{UserDefaults.standard.set(min(359,max(0,hue.rounded())),forKey:"JournalCustomHue")}
    UserDefaults.standard.set(scheme,forKey:"JournalColorScheme");UserDefaults.standard.set(accent,forKey:"JournalAccent");journalApplyNativeAppearance()
-   menuTrackingInfo?.needsDisplay=true;menuReminderInfo?.needsDisplay=true;menuSummary?.needsDisplay=true
+   menuTrackingInfo?.needsDisplay=true;menuReminderInfo?.needsDisplay=true;menuSummary?.needsDisplay=true;menuDeadlineInfo?.needsDisplay=true
    // Refresh the cached title only; changing appearance must not rescan suggestions.
    if let count=reminderItem?.representedObject as? Int,count>0{reminderItem?.attributedTitle=journalPendingMenuTitle(count)}
   }

@@ -18,3 +18,15 @@ func TestDailyMenuHoursMatchesEntryTotals(t *testing.T) {
 		t.Fatal("a new day must start at zero")
 	}
 }
+
+func TestDailyMenuDeadlineCount(t *testing.T) {
+	st := State{Projects: []Project{{Deadlines: []Deadline{
+		{Date: "2026-11-04", Priority: "高"}, {Date: "2026-11-04", Priority: "中"}, {Date: "2026-11-04", Priority: "低"}, {Date: "2026-11-04", Priority: "高", Done: true}, {Date: "2026-11-05", Priority: "高"},
+	}}, {Completed: true, Deadlines: []Deadline{{Date: "2026-11-04", Priority: "中"}}}}}
+	if got := dailyMenuDeadlineCount(st, "2026-11-04"); got != 3 {
+		t.Fatalf("expected 3 unfinished medium/high deadlines across projects, got %d", got)
+	}
+	if got := dailyMenuDeadlineCount(st, "2026-11-06"); got != 0 {
+		t.Fatalf("expected no deadlines, got %d", got)
+	}
+}

@@ -45,7 +45,7 @@ func (a *AutoCollector) handle(w http.ResponseWriter, r *http.Request) bool {
 			return true
 		}
 		hours, estimated, missing := dailyMenuHours(st, date)
-		autoJSON(w, map[string]any{"date": date, "hours": hours, "estimatedHours": estimated, "missing": missing})
+		autoJSON(w, map[string]any{"date": date, "hours": hours, "estimatedHours": estimated, "missing": missing, "dueToday": dailyMenuDeadlineCount(st, date)})
 	case "/api/auto/status":
 		if r.Method != "GET" {
 			w.WriteHeader(405)
@@ -451,4 +451,17 @@ func dailyMenuHours(st State, date string) (total, estimated float64, missing in
 		}
 	}
 	return
+}
+
+// Only unfinished medium/high deadlines belong in the menu's daily reminder.
+func dailyMenuDeadlineCount(st State, date string) int {
+	count := 0
+	for _, p := range st.Projects {
+		for _, d := range p.Deadlines {
+			if d.Date == date && !d.Done && (d.Priority == "中" || d.Priority == "高") {
+				count++
+			}
+		}
+	}
+	return count
 }
