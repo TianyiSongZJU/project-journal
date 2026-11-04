@@ -19,16 +19,16 @@ function blockMathView(node,view,getPos){
  const dom=document.createElement('div');dom.className='journal-block-math';dom.contentEditable='false';dom.tabIndex=0;dom.setAttribute('aria-label','整行公式，点击编辑');
  const source=document.createElement('div');source.className='journal-block-math-editor';source.hidden=true;
  const opening=document.createElement('span'),closing=document.createElement('span');opening.textContent=closing.textContent='$$';opening.className=closing.className='journal-math-fence';
- const field=document.createElement('textarea');field._markdown=true;field.className='journal-block-math-source';field.setAttribute('aria-label','编辑整行公式');field.spellcheck=false;field.rows=1;
+ const field=document.createElement('textarea');field._markdown=true;field.className='journal-block-math-source';field.setAttribute('aria-label','编辑整行公式');field.spellcheck=false;field.rows=1;field.placeholder='输入公式…';
  const preview=document.createElement('div');preview.className='journal-block-math-preview';
  source.append(opening,field,closing);dom.append(source,preview);
  let current=node,editing=false,disposed=false,composing=false,startHistory=false;
  const position=()=>{try{return getPos()}catch{return null}};
- const render=()=>{preview.innerHTML=current.textContent?globalThis.katex.renderToString(current.textContent,{displayMode:true,throwOnError:false,trust:false,maxExpand:1000,maxSize:20}):'<span class="journal-math-empty">输入公式…</span>'};
+ const render=()=>{preview.hidden=editing&&!current.textContent;preview.innerHTML=current.textContent?globalThis.katex.renderToString(current.textContent,{displayMode:true,throwOnError:false,trust:false,maxExpand:1000,maxSize:20}):'<span class="journal-math-empty">输入公式…</span>'};
  const resize=()=>{field.style.height='0px';field.style.height=Math.max(20,field.scrollHeight)+'px'};
  function begin(from=field.value.length,to=from){
   if(disposed)return;
-  if(!editing){editing=true;dom.classList.add('is-editing');source.hidden=false;field.value=current.textContent;startHistory=true}
+  if(!editing){editing=true;dom.classList.add('is-editing');source.hidden=false;field.value=current.textContent;startHistory=true;render()}
   field.focus({preventScroll:true});field.setSelectionRange(Math.min(from,field.value.length),Math.min(to,field.value.length));resize();
  }
  function sync(){
