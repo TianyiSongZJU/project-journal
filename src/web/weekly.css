@@ -51,8 +51,7 @@ html[data-highlights="on"] #weekly-workspace{box-shadow:inset 0 1px 0 var(--surf
 #weekly-workspace .weekly-goal [type=checkbox]{width:13px;height:13px;min-height:13px;border-radius:3px;border-width:1px}
 #weekly-workspace .weekly-goal [type=checkbox]:checked::after{left:3px;top:1px;width:3px;height:6px}
 #weekly-workspace .weekly-save-status{margin:0;padding:0;text-align:center}
-#weekly-workspace .weekly-clear-note{margin:0;border:0;background:transparent;box-shadow:none;color:var(--muted)}
-#weekly-workspace .weekly-clear-note:disabled{opacity:.4}
+
 #weekly-workspace .markdown-mode{margin:0;display:flex}
 #weekly-workspace .markdown-preview-toggle{background:transparent;color:var(--muted)}
 #weekly-workspace :is(textarea,.markdown-preview)[hidden]{display:none!important}
@@ -101,3 +100,8 @@ html[data-scheme=dark] .month-week.week-inspected::after{box-shadow:0 0 0 2px #f
 .month-week.week-inspected::after,html[data-scheme=dark] .month-week.week-inspected::after,.heat-grid.has-week-highlight::after{box-shadow:var(--week-selection-glow)}
 .weekly-overview-item[aria-pressed=true]{box-shadow:var(--week-selection-glow)}
 #weekly-overview-list{padding:5px 0}
+
+/* Status follows the label; only actions occupy the trailing toolbar. */
+#weekly-workspace .markdown-heading>.weekly-save-status{display:inline-flex;align-items:center;justify-content:center;flex:0 0 16px;width:16px;height:16px;min-height:16px;margin:0;padding:0}
+#weekly-workspace .markdown-heading>.weekly-save-status>svg{width:12px;height:12px}
+#weekly-workspace .markdown-heading>.markdown-mode{margin-left:auto}
