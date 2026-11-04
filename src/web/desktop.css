@@ -291,12 +291,12 @@
 }
 
 /* Completed deadlines remain easy to find when scanning from the year legend. */
-:is(.native-windows,.native-mac) #page-review:not(.month-view):has(.ddl-legend-trigger:is(:hover,:focus-visible)) #year-calendar .heat-day.ddl-complete {
+:is(.native-windows,.native-mac) #page-review:not(.month-view).ddl-preview-active #year-calendar .heat-day.ddl-complete {
   outline:2px solid var(--tone-line-45693c,#45693c)!important;
   outline-offset:-1px;
   box-shadow:0 0 0 1.5px var(--tone-shadow-fff,#fff),0 0 5px var(--tone-shadow-45693c52,#45693c52)!important;
 }
-:is(.native-windows,.native-mac) #page-review:not(.month-view):has(.ddl-legend-trigger:is(:hover,:focus-visible)) #year-calendar .heat-day.ddl-complete .year-ddl-corner {
+:is(.native-windows,.native-mac) #page-review:not(.month-view).ddl-preview-active #year-calendar .heat-day.ddl-complete .year-ddl-corner {
   width:10px;
   height:10px;
   background:var(--tone-surface-315c46,#315c46);

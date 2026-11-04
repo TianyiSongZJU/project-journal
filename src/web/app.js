@@ -424,3 +424,12 @@ document.addEventListener('keydown',e=>{
  if(page==='review'){void(async()=>{if(!await leaveInspector())return;batch=false;selectedWeek=null;selected.clear();anchor=null;reviewDeselected=true;inspectedExplicit=false;if(mode==='time'){timeReviewOptions.selectedDate='';timeReview.hideTip();renderReview(false)}else{renderBatch();renderInspector(true)}})()}
  if(page==='projects'){void(async()=>{if(!await leaveDirtyNote())return;currentProject=null;sortMode=false;renderProjects()})()}
 },true);
+
+// Keep the legend preview identical in year/month views, including keyboard access.
+const deadlineLegend=$('.ddl-legend-trigger');
+let deadlineLegendHovered=false;
+function syncDeadlineLegendPreview(){ $('#page-review').classList.toggle('ddl-preview-active',deadlineLegendHovered||deadlineLegend.matches(':focus-visible')); }
+deadlineLegend.addEventListener('pointerenter',()=>{deadlineLegendHovered=true;syncDeadlineLegendPreview()});
+deadlineLegend.addEventListener('pointerleave',()=>{deadlineLegendHovered=false;syncDeadlineLegendPreview()});
+deadlineLegend.addEventListener('focus',syncDeadlineLegendPreview);
+deadlineLegend.addEventListener('blur',syncDeadlineLegendPreview);
