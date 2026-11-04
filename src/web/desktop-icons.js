@@ -5,6 +5,7 @@ const paths={
   trash:'<path d="M4 6h12M8 3h4M6 6v10a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V6"/>',
   image:'<rect x="3" y="3" width="14" height="14" rx="2"/><circle cx="7" cy="7" r="1"/><path d="m4 15 4-4 3 3 2-2 4 4"/>',
   code:'<path d="m6 6-4 4 4 4m8-8 4 4-4 4M12 3l-4 14"/>',
+  layout:'<rect x="3" y="3" width="14" height="14" rx="2"/><path d="M6 7h8M6 10h8M6 13h5"/>',
   eye:'<path d="M2 10s3-5.5 8-5.5 8 5.5 8 5.5-3 5.5-8 5.5S2 10 2 10Z"/><circle cx="10" cy="10" r="2.5"/>',
   edit:'<path d="m4 13 9-9 3 3-9 9-4 1zM11 6l3 3"/>',
   resize:'<path d="m6 16 10-10m-5 10 5-5"/>'
@@ -15,5 +16,6 @@ export function renderDesktopSaveStatus(element,text){
   if(!element)return;
   element.dataset.state=saveState(text);element.classList.add('desktop-save-state');
   element.setAttribute('role','status');element.setAttribute('aria-label',text);element.title=text;
-  element.innerHTML=desktopIcon(element.dataset.state);
+  element.innerHTML=desktopIcon(element.dataset.state).replace('viewBox="0 0 20 20"',element.dataset.state==='error'?'viewBox="1 2 18 16"':'viewBox="2 2 16 16"');
+  element._alignNoteHeader?.();
 }

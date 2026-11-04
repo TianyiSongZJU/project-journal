@@ -100,8 +100,3 @@ html[data-scheme=dark] .month-week.week-inspected::after{box-shadow:0 0 0 2px #f
 .month-week.week-inspected::after,html[data-scheme=dark] .month-week.week-inspected::after,.heat-grid.has-week-highlight::after{box-shadow:var(--week-selection-glow)}
 .weekly-overview-item[aria-pressed=true]{box-shadow:var(--week-selection-glow)}
 #weekly-overview-list{padding:5px 0}
-
-/* Status follows the label; only actions occupy the trailing toolbar. */
-#weekly-workspace .markdown-heading>.weekly-save-status{display:inline-flex;align-items:center;justify-content:center;flex:0 0 16px;width:16px;height:16px;min-height:16px;margin:0;padding:0;transform:translateY(-.5px)}
-#weekly-workspace .markdown-heading>.weekly-save-status>svg{width:12px;height:12px}
-#weekly-workspace .markdown-heading>.markdown-mode{margin-left:auto}
