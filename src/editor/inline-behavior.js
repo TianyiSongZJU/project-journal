@@ -1,3 +1,4 @@
+import {markArrow,withoutMark} from './mark-boundaries.js';
 import {nodeViewCtx,prosePluginsCtx} from '@milkdown/kit/core';
 import {Plugin,NodeSelection,TextSelection} from '@milkdown/kit/prose/state';
 import {Decoration,DecorationSet} from '@milkdown/kit/prose/view';
@@ -41,8 +42,8 @@ function decorations(state,focused){
    const ranges=[];let start=null,end=null;
    parent.forEach((node,offset)=>{if(node.marks.some(mark=>mark.type.name===name)){if(start===null)start=offset;end=offset+node.nodeSize}else if(start!==null){ranges.push([start,end]);start=end=null}});
    if(start!==null)ranges.push([start,end]);
-   const range=ranges.find(([from,to])=>caret>=from&&caret<=to);if(!range)continue;const [from,to]=range;
-   for(const [pos,side] of [[base+from,-1],[base+to,1]])result.push(Decoration.widget(pos,()=>{const el=document.createElement('span');el.className='journal-format-marker';el.textContent=symbol;el.setAttribute('aria-hidden','true');return el},{key:name+':'+pos,side}));
+   const active=state.storedMarks??$from.marks();const range=ranges.find(([from,to])=>caret>from&&caret<to||(caret===from||caret===to)&&active.some(mark=>mark.type.name===name));if(!range)continue;const [from,to]=range;
+   for(const [pos,side] of [[base+from,-1],[base+to,1]])result.push(Decoration.widget(pos,view=>{const el=document.createElement('span');el.className='journal-format-marker';el.textContent=symbol;el.setAttribute('aria-hidden','true');el.onmousedown=event=>{event.preventDefault();const tr=view.state.tr.setSelection(TextSelection.create(view.state.doc,pos));view.dispatch(tr.setStoredMarks(withoutMark({...view.state,selection:tr.selection},name)));view.focus()};return el},{key:name+':'+pos,side}));
   }
  }
  return DecorationSet.create(state.doc,result);
@@ -55,6 +56,7 @@ export function configureInlineBehavior(ctx){
  ctx.update(nodeViewCtx,views=>views.concat([['math_inline',mathView]]));
  ctx.update(prosePluginsCtx,plugins=>[new Plugin({props:{decorations:state=>decorations(state,focused),handleDOMEvents:{focus:view=>{focused=true;queueMicrotask(()=>{if(!view.isDestroyed)view.dispatch(view.state.tr)});return false},blur:view=>{focused=false;queueMicrotask(()=>{if(!view.isDestroyed)view.dispatch(view.state.tr)});return false}},handleKeyDown:(view,event)=>{
   if(event.isComposing||event.shiftKey||event.metaKey||event.ctrlKey||event.altKey||!view.state.selection.empty||!['ArrowLeft','ArrowRight'].includes(event.key))return false;
+  const marks=markArrow(view.state,event.key);if(marks!==null){view.dispatch(view.state.tr.setStoredMarks(marks));return true}
   const {$from}=view.state.selection,node=event.key==='ArrowLeft'?$from.nodeBefore:$from.nodeAfter;
   if(node?.type.name!=='math_inline')return false;
   const pos=event.key==='ArrowLeft'?$from.pos-node.nodeSize:$from.pos;view.journalMathEdge=event.key==='ArrowLeft'?'end':'start';view.dispatch(view.state.tr.setSelection(NodeSelection.create(view.state.doc,pos)));return true;
