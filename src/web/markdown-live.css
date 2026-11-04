@@ -73,3 +73,8 @@ html .markdown-live .ProseMirror.virtual-cursor-enabled{caret-color:transparent}
 html .markdown-live .milkdown .journal-inline-math-source{appearance:none;display:inline-block;box-sizing:content-box;width:auto;max-width:100%;min-width:3ch;min-height:0;height:18px;margin:0;padding:0 2px;border:0;border-radius:3px;background:color-mix(in srgb,var(--green) 6%,transparent);box-shadow:none;outline:none;font:400 13px/18px ui-monospace,Menlo,monospace;color:var(--ink);caret-color:var(--ink)}
 .markdown-live .ProseMirror:has(.journal-inline-math-source:focus)>.prosemirror-virtual-cursor{display:none}
 html .markdown-live .milkdown .ProseMirror p{padding:0;line-height:1.4;min-height:1.4em}
+
+/* WebKit sizes a textarea caret from its line box on blank lines. Normal
+   metrics keep every source line glyph-sized, including CJK fallback fonts.
+   Override the daily/weekly and platform-specific editor font shorthands. */
+html[data-scheme] .markdown-editor.is-source>textarea{font:400 13px/normal ui-monospace,Menlo,monospace!important;line-height:normal!important;letter-spacing:normal!important;caret-color:var(--ink)!important}

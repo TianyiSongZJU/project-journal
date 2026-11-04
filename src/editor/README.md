@@ -30,3 +30,7 @@ or `JOURNAL_PLATFORM=windows` for the Windows presentation.
 `inline-behavior.js` provides source editing inside inline equations, focus-based
 emphasis delimiters, and stable markers for empty list items. These decorations
 are visual only and never become part of the saved Markdown.
+
+Markdown snapshots are coalesced after 300 ms of idle time, with a 1.5 s maximum
+wait while typing. Explicit save, navigation, source switching, focus leaving,
+and destruction flush synchronously. Context reset cancels pending snapshots.
