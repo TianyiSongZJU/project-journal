@@ -16,6 +16,7 @@ export function sanitizeUIPreferences(raw={},ids){
  for(const [key,value] of Object.entries(object(raw.panels)))if(typeof value==='boolean'&&(panelKeys.has(key)||key.startsWith('folder.')&&key.length<=180&&(!ids||ids.includes(key.slice(7)))))out.panels[key]=value;
  if(raw.appearance&&typeof raw.appearance==='object')out.appearance={scheme:['system','light','dark'].includes(raw.appearance.scheme)?raw.appearance.scheme:'system',accent:['fern','slate','iris','clay','sand','rose','macaron','custom'].includes(raw.appearance.accent)?raw.appearance.accent:'fern',...((typeof raw.appearance.hue==='number'&&Number.isFinite(raw.appearance.hue)||raw.appearance.accent==='custom')?{hue:typeof raw.appearance.hue==='number'&&Number.isFinite(raw.appearance.hue)?Math.round(Math.max(0,Math.min(359,raw.appearance.hue))):148}:{})};
  if(out.appearance){const colors=globalThis.JournalManualColors.sanitize(raw.appearance.colors);if(Object.keys(colors).length)out.appearance.colors=colors}
+ const priorities=object(raw.deadlinePriorities);for(const scope of ['project','inspector'])if(['all','高','中','低'].includes(priorities[scope])){out.deadlinePriorities??={};out.deadlinePriorities[scope]=priorities[scope]}
  return out;
 }
 export function createUIPreferences(){
@@ -25,6 +26,7 @@ export function createUIPreferences(){
   restore(raw,ids){value=sanitizeUIPreferences(raw,ids)},onChange(callback){changed=callback},snapshot(){return structuredClone(value)},
   appearance(){return structuredClone(value.appearance||{scheme:'system',accent:'fern'})},
   setAppearance(next){const choice=sanitizeUIPreferences({appearance:next}).appearance;if(choice&&JSON.stringify(value.appearance)!==JSON.stringify(choice)){value.appearance=choice;changed()}},
+  deadlinePriority(scope){return value.deadlinePriorities?.[scope]||'all'},setDeadlinePriority(scope,next){if(!['project','inspector'].includes(scope)||!['all','高','中','低'].includes(next))return;value.deadlinePriorities??={};if(value.deadlinePriorities[scope]!==next){value.deadlinePriorities[scope]=next;changed()}},
   flag(key,fallback=false){return value.flags[key]??fallback},setFlag(key,next){if(flagKeys.has(key))write('flags',key,!!next)},
   panel(key,fallback=false){return value.panels[key]??fallback},setPanel(key,next){if(panelKeys.has(key)||key.startsWith('folder.'))write('panels',key,!!next)},
   list(key){const v=value.lists[key]||{};return {grouped:v.grouped??true,completed:v.completed??false,folded:new Set(v.folded||[])}},

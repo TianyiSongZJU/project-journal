@@ -357,7 +357,7 @@
 :is(.native-windows,.native-mac) #project-deadline-panel .deadline-item>.deadline-surface{row-gap:2px}
 :is(.native-windows,.native-mac) #project-deadline-panel .deadline-item .deadline-inline-note{margin:0}
 
-:is(.native-windows,.native-mac) #project-deadline-panel .deadline-item[data-days="1"]:not(.is-done) .deadline-state b{color:var(--clay)}
+:is(.native-windows,.native-mac) #project-deadline-panel .deadline-item[data-days="1"]:not(.is-done):not(.is-task) .deadline-state b{color:var(--clay)}
 
 :is(.native-windows,.native-mac) #project-deadline-panel .deadline-item:has(.deadline-inline-note) .deadline-card-heading>button{flex:0 1 auto;max-width:65%}
 :is(.native-windows,.native-mac) #project-deadline-panel .deadline-item .deadline-card-heading>.deadline-inline-note{flex:1;min-width:0;max-height:20px;margin:0;line-height:20px}

@@ -20,7 +20,8 @@ export function refineDesktopProject(project) {
     summary.append(add);
     panel.querySelector('.section-heading')?.remove();
   }
-  const info=projectNodeOverview(project);
+  const priority=$('#project-deadline-priority')?.value||'all';
+  const info=projectNodeOverview({...project,deadlines:project.deadlines.filter(d=>priority==='all'||d.priority===priority)});
   toggle.hidden=!info.done;
   toggle.textContent=(toggle.getAttribute('aria-pressed')==='true'?'收起已完成':'已完成')+' '+info.done;
   const meta=summary.querySelector('.fold-meta');
@@ -29,7 +30,7 @@ export function refineDesktopProject(project) {
   if(!empty){empty=document.createElement('p');empty.className='win-deadline-empty';panel.querySelector('.fold-content').append(empty);}
   panel.querySelector('.fold-content>.empty')?.remove();
   empty.hidden=!!panel.querySelector('.deadline-card:not([hidden])');
-  empty.textContent=project.deadlines.length?'暂无待完成节点':'还没有截止节点，为项目留一个重要日期。';
+  empty.textContent=project.deadlines.length?'当前筛选下暂无节点':'还没有截止节点，为项目留一个重要日期。';
 }
 
 export function refineDesktopNodes(project) {
@@ -41,13 +42,13 @@ export function refineDesktopNodes(project) {
     const heading=document.createElement('div');heading.className='win-node-heading';
     const title=document.createElement('span');title.className='win-node-title';title.textContent='\u9879\u76ee\u8282\u70b9';
     const count=document.createElement('small');count.className='win-node-count';
-    heading.append(title,count,$('#inspector-show-done-deadlines'),$('#inspector-add-deadline'));
+    heading.append(title,count,$('#inspector-deadline-priority-host'),$('#inspector-show-done-deadlines'),$('#inspector-add-deadline'));
     heading.querySelector('#inspector-add-deadline').classList.add('quiet','win-node-add');
     section.append(heading,panel);
     const fields=$('#inspector-daily-fields');fields.insertBefore(section,fields.querySelector('.editor-label'));
   }
   section.dataset.projectId=project.id;
-  const info=projectNodeOverview(project);
+  const info=projectNodeOverview({...project,deadlines:project.deadlines.filter(d=>d.priority!=='低')});
   section.querySelector('.win-node-count').textContent=info.pending?info.pending+' \u4e2a\u5f85\u5b8c\u6210':info.done?'\u5168\u90e8\u5b8c\u6210':'\u672a\u8bbe\u7f6e';
   panel.hidden=!panel.querySelector('.inspector-project-node');
   const toggle=$('#inspector-show-done-deadlines');

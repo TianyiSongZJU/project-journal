@@ -100,3 +100,26 @@ html[data-scheme=dark] .month-week.week-inspected::after{box-shadow:0 0 0 2px #f
 .month-week.week-inspected::after,html[data-scheme=dark] .month-week.week-inspected::after,.heat-grid.has-week-highlight::after{box-shadow:var(--week-selection-glow)}
 .weekly-overview-item[aria-pressed=true]{box-shadow:var(--week-selection-glow)}
 #weekly-overview-list{padding:5px 0}
+
+/* Dated low-priority tasks share the weekly goal checklist's quiet treatment. */
+.daily-tasks-section{flex:none;margin:0 0 12px;padding:0 10px 7px 18px;border-radius:7px;background:var(--tone-surface-f3f5ef,#f3f5ef)}
+.daily-tasks-heading{display:flex;align-items:center;gap:7px;min-height:32px;color:var(--tone-ink-6b7b5e,#6b7b5e);font:400 10px/24px system-ui}
+.daily-tasks-heading small{font:400 9px/24px system-ui;color:var(--muted)}
+.daily-task{display:grid;grid-template-columns:13px minmax(0,1fr) max-content;gap:10px;align-items:center;min-height:32px;padding:3px 0}
+.daily-task input[type=checkbox]{appearance:none;-webkit-appearance:none;position:relative;box-sizing:border-box;margin:0;padding:0;width:13px;height:13px;min-height:13px;border:1px solid var(--muted);border-radius:3px;background:transparent;cursor:pointer;box-shadow:none}
+.daily-task input:checked{background:var(--accent-solid);border-color:var(--accent-solid)}
+.daily-task input:checked::after{content:'';position:absolute;left:3px;top:1px;width:3px;height:6px;border:solid white;border-width:0 1.6px 1.6px 0;transform:rotate(45deg)}
+.daily-task input:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+.daily-task .daily-task-copy{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;min-height:26px;padding:0;border:0;background:transparent;box-shadow:none;text-align:left;color:var(--ink);font:400 11px/24px system-ui;white-space:normal;overflow-wrap:anywhere}
+.daily-task-copy small{font:400 9px/1.5 system-ui;color:var(--muted)}
+.daily-task.is-done .daily-task-copy>span{text-decoration:line-through;color:var(--muted)}
+.daily-task-project{max-width:95px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font:400 9px/1.5 system-ui}
+.deadline-priority-filter{width:auto;max-width:105px;min-height:22px;height:22px;margin:0;padding:0 16px 0 5px;border:0;border-radius:4px;background-color:transparent;color:var(--muted);font:400 9px/22px system-ui;box-shadow:none}
+#inspector-deadline-priority-host{display:flex;align-items:center;margin-left:auto}
+
+.daily-task input[type=checkbox]{align-self:start;margin-top:5.5px}
+.daily-task .daily-task-copy{display:block}
+.daily-task-copy small{margin-left:8px}
+.daily-task-project{align-self:start;margin-top:5.5px}
+#inspector-deadline-priority-host[hidden]{display:none}
+#month-inspector #windows-project-nodes .win-node-heading:has(#inspector-deadline-priority-host:not([hidden]))>.win-node-add{margin-left:0}

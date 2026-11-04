@@ -672,7 +672,7 @@ dialog #record-info{margin:0 0 0 auto;font-size:9px}
 .deadline-item>.deadline-surface{row-gap:2px}
 
 
-.deadline-item[data-days="1"]:not(.is-done) .deadline-state b{color:var(--clay)}
+.deadline-item[data-days="1"]:not(.is-done):not(.is-task) .deadline-state b{color:var(--clay)}
 
 /* Preview the note beside its title, using the available name-column width. */
 .deadline-item .deadline-card-heading{display:flex;align-items:center;gap:10px;min-width:0}
