@@ -1,0 +1,28 @@
+const {chromium,webkit}=require(process.env.JOURNAL_PLAYWRIGHT_MODULE||'playwright');
+const fs=require('fs'),os=require('os'),path=require('path'),crypto=require('crypto'),assert=require('assert/strict'),{spawn}=require('child_process');
+(async()=>{
+ const temp=fs.mkdtempSync(path.join(os.tmpdir(),'journal-rich-md-')),data=path.join(temp,'data'),local=path.join(temp,'local');fs.mkdirSync(data);fs.mkdirSync(local);
+ const server=spawn(process.env.JOURNAL_CORE,['--ui-only','--no-open','--data-dir',data,'--auto-home',local],{stdio:'ignore'});let browser;
+ try{
+  const sf=path.join(os.tmpdir(),'project-journal-'+crypto.createHash('sha256').update(data).digest('hex').slice(0,24)+'.json');for(let i=0;!fs.existsSync(sf)&&i<100;i++)await new Promise(r=>setTimeout(r,100));const session=JSON.parse(fs.readFileSync(sf));
+  browser=await (process.env.JOURNAL_BROWSER==='webkit'?webkit.launch({headless:true}):chromium.launch({channel:'msedge',headless:true}));const page=await browser.newPage({viewport:{width:1320,height:960},deviceScaleFactor:2,timezoneId:"Asia/Shanghai"}),errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='warning')console.log('BROWSER',m.text())});
+  await page.addInitScript(platform=>{window.journalMacHost=platform==='mac';window.journalWindowsHost=platform!=='mac';addEventListener('DOMContentLoaded',()=>{document.documentElement.classList.add(platform==='mac'?'native-mac':'native-windows');const link=document.createElement('link');link.rel='stylesheet';link.href=platform==='mac'?'macos.css':'windows.css';document.head.append(link)})},process.env.JOURNAL_PLATFORM||'mac');
+  await page.clock.install({time:new Date('2026-11-04T23:58:00+08:00')});
+  await page.goto(session.url+'/?token='+session.token);await page.waitForFunction(()=>window.journalViewReady);
+
+  await page.evaluate(async()=>{const d=await(await fetch('/api/state')).json();d.state.projects=[{id:'a',name:'跨天回归',color:'#7b9f9b',note:'原有笔记',deadlines:[{id:'yesterday',name:'昨天节点',date:'2026-11-04',priority:'高',done:false},{id:'today',name:'今天节点',date:'2026-11-05',priority:'中',done:false},{id:'future',name:'后续节点',date:'2026-11-06',priority:'高',done:false},{id:'done',name:'已完成',date:'2026-11-04',priority:'高',done:true}]}];d.state.entries=[];await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:d.revision,state:d.state})})});
+  await page.reload();await page.waitForFunction(()=>window.journalViewReady);await page.locator('[data-page="projects"]').first().click();await page.locator('[data-select-project="a"]').click();
+  const card=id=>page.locator('#project-deadline-panel .deadline-card').filter({has:page.locator(`[data-deadline-check="${id}"]`)}),label=id=>card(id).locator('.deadline-state').textContent();
+  assert.equal(await label('yesterday'),'今天截止');assert.equal(await label('today'),'剩余 1 天');assert.equal(await label('future'),'剩余 2 天');
+  await page.locator('#project-detail .markdown-source-toggle').click();const input=page.locator('#project-note');await input.fill('尚未保存的草稿与光标');await input.evaluate(el=>{el.setSelectionRange(3,7);window.retainedNote=el});
+  await page.clock.setSystemTime(new Date('2026-11-05T09:00:00+08:00'));await page.evaluate(()=>dispatchEvent(new Event('focus')));
+  assert.equal(await label('yesterday'),'已逾期 1 天');assert.equal(await label('today'),'今天截止');assert.equal(await label('future'),'剩余 1 天');assert.equal(await input.inputValue(),'尚未保存的草稿与光标');assert.deepEqual(await input.evaluate(el=>[el===window.retainedNote,el.selectionStart,el.selectionEnd,document.activeElement===el]),[true,3,7,true]);
+  await page.clock.setSystemTime(new Date('2026-11-08T09:00:00+08:00'));await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));assert.equal(await label('future'),'已逾期 2 天');
+  await page.clock.setSystemTime(new Date('2026-11-05T23:59:59+08:00'));await page.evaluate(()=>window.journalCheckDay());assert.equal(await label('future'),'剩余 1 天');await page.clock.fastForward(2000);assert.equal(await label('future'),'今天截止');
+  await page.evaluate(()=>window.journalFlush());await page.locator('[data-page="review"]').first().click();await page.locator('#mode-month').click();assert.equal(await page.locator('#month-calendar .today-mark').getAttribute('data-date'),'2026-11-06');
+  await page.clock.setSystemTime(new Date('2026-11-07T08:00:00+08:00'));await page.evaluate(()=>dispatchEvent(new Event('pageshow')));assert.equal(await page.locator('#month-calendar .today-mark').getAttribute('data-date'),'2026-11-07');assert.equal(await page.locator('#month-calendar .today-tag').count(),1);
+  await page.locator('#period-today').click();assert.equal(await page.locator('#inspector-date-title').getAttribute('aria-label'),'2026-11-07 周六');
+  await page.locator('#mode-time').click();await page.locator('#tr-today').click();assert.equal(await page.locator('.tr-row.is-today').getAttribute('data-tr-row'),'2026-11-07');await page.clock.setSystemTime(new Date('2026-11-08T08:00:00+08:00'));await page.evaluate(()=>window.journalCheckDay());assert.equal(await page.locator('.tr-row.is-today').count(),0);await page.locator('#tr-today').click();assert.equal(await page.locator('.tr-row.is-today').getAttribute('data-tr-row'),'2026-11-08');
+  assert.deepEqual(errors,[]);console.log('PASS midnight/focus/visibility/pageshow/native day checks; overdue/today/remaining values; preserved draft, selection and editor; today marker and navigation');
+ }finally{if(browser)await browser.close();server.kill();await new Promise(resolve=>server.once('exit',resolve))}
+})().catch(e=>{console.error(e);process.exit(1)});

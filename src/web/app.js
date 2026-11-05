@@ -1,3 +1,4 @@
+import {watchLocalDay} from './day-rollover.js';
 import {isCalendarDeadline,priorityMatches,dayTasks} from './deadline-priority.js';
 import {setupYearWeekHover} from './year-week-hover.js';
 import {finishWindowsLaunch,notifyWindowsLaunchPainted} from './windows-launch.js';
@@ -18,7 +19,7 @@ import {projectGroup,projectLabel,groupBadge,projectGroups,projectOptionHTML,mou
 import {setupAutomation} from './auto.js';
 import {appliedHours,otherEntry,writeOtherEntry,refreshTimeTotals,KINDS,dateKey,parseDate,addDays,monthKey,fmt,entryHours,summarize,level,yearDays,timelineDays,dateRange,applyBatch,monthWeeks,reorderProjects,sortProjects} from './model.js';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const now=new Date(),today=dateKey(now);let state=null,revision='',dataPath='',saving=false,conflict=false,page='review',mode='year',viewYear=now.getFullYear(),viewMonth=monthKey(now),filterIds=new Set(),selected=new Set(),anchor=null,batch=false,currentProject=null,deadlineProject=null,monthOffsets=[-6,6],scrollTimer=null,noteDirty=false,recordDirty=false,toastTimer=null;
+let now=new Date(),today=dateKey(now);let state=null,revision='',dataPath='',saving=false,conflict=false,page='review',mode='year',viewYear=now.getFullYear(),viewMonth=monthKey(now),filterIds=new Set(),selected=new Set(),anchor=null,batch=false,currentProject=null,deadlineProject=null,monthOffsets=[-6,6],scrollTimer=null,noteDirty=false,recordDirty=false,toastTimer=null;
 let automationUI=null;
 let timeReviewOptions=defaultTimeReview(today);
 let timeReview=null;
@@ -125,8 +126,9 @@ new ResizeObserver(()=>layoutGroupOverview()).observe($('#distribution'));
 function renderDistribution(list,m){const rows=state.projects.map(p=>({p,s:summarize(list.filter(e=>e.projectId===p.id),estimates())})).filter(x=>x.s.count).sort((a,b)=>b.s.total-a.s.total),grouped=paintGroupingButton('distribution-by-group');const renderRow=({p,s})=>`<div class="distribution-row" style="--project-color:${p.color}"><div class="distribution-head"><span><i class="project-dot"></i>${esc(grouped?p.name:projectLabel(p))}</span><span class="hint">${distributionTime(s.total)}${s.missing?' · '+s.missing+' 条待配置':''}</span></div><div class="allocation"><span style="width:${m.total?s.exact/m.total*100:0}%"></span><span class="estimated-segment" style="width:${m.total?s.estimated/m.total*100:0}%"></span></div></div>`;$('#distribution').innerHTML=rows.length?(grouped?groupDistributionOverview(rows,m)+analyticsSections(rows,renderRow,items=>distributionTime(items.reduce((n,x)=>n+x.s.total,0)),distributionGroups(rows)):rows.map(renderRow).join('')):'<p class="empty">这段时间还没有记录。点“记一笔”开始。</p>';layoutGroupOverview()}
 function deadlineRows(projects,includeDone){const ranks={高:0,中:1,低:2};return projects.flatMap(p=>(p.deadlines||[]).filter(d=>includeDone||!d.done).map(d=>({p,d}))).sort((a,b)=>Number(a.d.done)-Number(b.d.done)||a.d.date.localeCompare(b.d.date)||ranks[a.d.priority]-ranks[b.d.priority])}
 function deadlinePresentation(d){const days=Math.round((parseDate(d.date)-parseDate(today))/86400000);return{days,tone:d.done?'done':d.priority==='低'?'task':days<0?'overdue':days<=3?'soon':'pending',label:d.done?'已完成':days<0?'已逾期 '+Math.abs(days)+' 天':days===0?'今天截止':'剩余 '+days+' 天'}}
+function deadlineRemainingHTML(status){const parts=status.label.match(/^(.*?)(\d+)(.*)$/);return parts?`${esc(parts[1])}<b>${parts[2]}</b>${esc(parts[3])}`:esc(status.label)}
 function deadlineCard({p,d},timeline=false){
- const status=deadlinePresentation(d),parts=status.label.match(/^(.*?)(\d+)(.*)$/),remaining=parts?`${esc(parts[1])}<b>${parts[2]}</b>${esc(parts[3])}`:esc(status.label);
+ const status=deadlinePresentation(d),remaining=deadlineRemainingHTML(status);
  return `<div class="${timeline?'timeline-node':'deadline-row'} deadline-card deadline-item is-${status.tone}" data-days="${status.days}" data-priority="${d.priority==='高'?'high':d.priority==='低'?'low':'medium'}" ${timeline&&d.done&&!projectDeadlineShowDone?'hidden':''} style="--deadline-color:${esc(p.color)}"><div class="deadline-surface"><input type="checkbox" data-deadline-check="${d.id}" data-project-id="${p.id}" ${d.done?'checked':''} aria-label="${esc(d.name)}标记完成"><div class="${timeline?'timeline-content':'deadline-content'}"><div class="deadline-card-heading"><button data-edit-deadline="${d.id}" data-project-id="${p.id}" title="${esc(projectLabel(p)+' · '+d.name+' · '+d.priority+'优先级'+(d.note?'\n'+d.note:''))}" class="${d.done?'completed-text':''}">${esc(d.name)}</button>${d.note?.trim()?`<div class="deadline-inline-note markdown-body" aria-label="节点备注" title="${esc(d.note)}">${renderMarkdown(d.note)}</div>`:''}</div>${timeline?'':`<div class="deadline-meta"><span class="deadline-project" title="${esc(projectLabel(p))}">${esc(p.name)}</span></div>`}</div><strong class="deadline-state">${remaining}</strong><time datetime="${d.date}" title="截止日期：${d.date}"><strong>${Number(d.date.slice(5,7))}.${Number(d.date.slice(8))}</strong><small>${d.date.slice(0,4)}</small></time></div></div>`
 }
 function deadlineHTML(row){return deadlineCard(row)}
@@ -296,8 +298,24 @@ function renderReviewDeadlineBadge(){
  if(!state)return;const date=dateKey(new Date()),count=state.projects.reduce((n,p)=>n+(p.deadlines||[]).filter(d=>d.date===date&&!d.done&&isCalendarDeadline(d)).length,0),badge=$('#review-deadline-count'),button=$('.workspace-nav [data-page="review"]');
  badge.textContent=count>99?'99+':String(count);badge.hidden=!count;badge.setAttribute('aria-label',count+' 个当天未完成截止节点');button.setAttribute('aria-label',count?'回顾 · '+count+' 个当天未完成截止节点':'回顾');
 }
-setInterval(renderReviewDeadlineBadge,60000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderReviewDeadlineBadge()});
+function refreshLocalDay(next,previous,date){
+ today=next;now=date;if(!state)return;
+ for(const card of $$('.deadline-card')){
+  const check=card.querySelector('[data-deadline-check]'),d=project(check?.dataset.projectId)?.deadlines.find(d=>d.id===check?.dataset.deadlineCheck);if(!d)continue;
+  const status=deadlinePresentation(d);card.dataset.days=status.days;
+  for(const tone of ['done','task','overdue','soon','pending'])card.classList.toggle('is-'+tone,status.tone===tone);
+  card.querySelector('.deadline-state').innerHTML=deadlineRemainingHTML(status);
+ }
+ for(const cell of $$('.calendar-surface [data-date]')){
+  const current=cell.dataset.date===today;cell.classList.toggle('today-mark',current);
+  const label=cell.querySelector('.day-top>b');if(label){label.querySelector('.today-tag')?.remove();if(current){const tag=document.createElement('small');tag.className='today-tag';tag.textContent='今天';label.append(tag)}}
+ }
+ hideTooltip();timeReview?.setToday(today);renderReviewDeadlineBadge();renderWeeklyOverview();
+ $('#footer-date').textContent=new Intl.DateTimeFormat('zh-CN',{dateStyle:'long'}).format(date);
+ window.webkit?.messageHandlers?.journalNative?.postMessage({action:'refreshDaySummary'});
+}
+const dayClock=watchLocalDay({onChange:refreshLocalDay});
+window.journalCheckDay=dayClock.check;
 document.addEventListener('click',rememberView);document.addEventListener('change',rememberView);document.addEventListener('scroll',rememberView,{capture:true,passive:true});
 window.addEventListener('pagehide',()=>{if(!window.journalQuitting)void viewMemory.flush(true)});
 const appAliasSettings=setupAppAliasSettings({getState:()=>state,commit,toast,esc});

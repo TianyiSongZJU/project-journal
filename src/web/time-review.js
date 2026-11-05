@@ -105,7 +105,8 @@ export function createTimeReview(root,{today,onChange,onSelect,onTimeline,onScro
    if(target){b.tabIndex=-1;target.tabIndex=0;target.focus({preventScroll:true});target.scrollIntoView({block:'nearest',inline:'nearest'})}
   }});
  }
- new ResizeObserver(fit).observe(root);
+ let fitFrame=0;new ResizeObserver(()=>{cancelAnimationFrame(fitFrame);fitFrame=requestAnimationFrame(fit)}).observe(root);
  window.addEventListener('scroll',e=>{if(!tip?.contains(e.target))hideTip()},true);window.addEventListener('resize',()=>{hideTip();fit()});
- return {render,hideTip};
+ function setToday(date){today=date;hideTip();root.querySelectorAll('[data-tr-row]').forEach(row=>{const active=row.dataset.trRow===today;row.classList.toggle('is-today',active);const button=row.querySelector('[data-tr-date]');if(!button)return;button.setAttribute('aria-label','查看 '+row.dataset.trRow+(active?'，今天':'')+' 当日记录');button.querySelector('.tr-today-tag')?.remove();if(active){button.setAttribute('aria-current','date');const tag=document.createElement('span');tag.className='tr-today-tag';tag.textContent='今天';tag.setAttribute('aria-hidden','true');button.append(tag)}else button.removeAttribute('aria-current')})}
+ return {render,hideTip,setToday};
 }

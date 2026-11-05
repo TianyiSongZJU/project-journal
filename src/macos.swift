@@ -753,6 +753,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   NSApp.activate(ignoringOtherApps:true);window.makeKeyAndOrderFront(nil);window.orderFrontRegardless()
   timing.mark("windowShown")
   if existing{
+   webView.evaluateJavaScript("window.journalCheckDay?.()",completionHandler:nil)
    webView.evaluateJavaScript("""
    (()=>{const deadline=performance.now()+120000;const ready=()=>{
     if(window.journalViewReady){requestAnimationFrame(()=>requestAnimationFrame(()=>window.webkit.messageHandlers.journalNative.postMessage({action:'openReady',measurementID:'\(timing.launchID)',page:document.querySelector('main>section:not([hidden])')?.id||''})));return}
@@ -829,7 +830,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   let center=view.convert(close.bounds,from:close).midY
   for item in view.subviews {var frame=item.frame;frame.origin.y=center-frame.height/2;item.frame=frame;item.needsDisplay=true}
  }
- func windowDidBecomeKey(_ notification:Notification){alignTitlebar()}
+ func windowDidBecomeKey(_ notification:Notification){alignTitlebar();webView?.evaluateJavaScript("window.journalCheckDay?.()",completionHandler:nil)}
 
  func windowDidResize(_ notification:Notification){alignTitlebar()}
  func webView(_ webView:WKWebView,didFinish navigation:WKNavigation!){alignTitlebar();webView.evaluateJavaScript("window.journalSyncHeaderDragRegions && window.journalSyncHeaderDragRegions()",completionHandler:nil)}
