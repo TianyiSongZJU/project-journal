@@ -414,7 +414,7 @@ private func journalMenuGlyphPath(_ name:String)->NSBezierPath {
   p.move(to:NSPoint(x:1,y:5));p.line(to:NSPoint(x:2.2,y:7.5));p.line(to:NSPoint(x:7.8,y:7.5));p.line(to:NSPoint(x:9,y:5));p.line(to:NSPoint(x:9,y:2.5));p.line(to:NSPoint(x:1,y:2.5));p.close()
   p.move(to:NSPoint(x:1,y:5));p.line(to:NSPoint(x:3,y:5));p.line(to:NSPoint(x:3.8,y:3.8));p.line(to:NSPoint(x:6.2,y:3.8));p.line(to:NSPoint(x:7,y:5));p.line(to:NSPoint(x:9,y:5))
  case "flag":
-  p.move(to:NSPoint(x:4,y:1));p.line(to:NSPoint(x:2,y:6));p.line(to:NSPoint(x:2,y:9));p.line(to:NSPoint(x:8,y:9));p.line(to:NSPoint(x:6.5,y:6));p.line(to:NSPoint(x:2,y:6))
+  p.move(to:NSPoint(x:4,y:1));p.line(to:NSPoint(x:2,y:9));p.line(to:NSPoint(x:8,y:9));p.line(to:NSPoint(x:6.5,y:6));p.line(to:NSPoint(x:2.75,y:6))
  case "pause":
   for x:CGFloat in [3.2,6.8]{p.move(to:NSPoint(x:x,y:2.1));p.line(to:NSPoint(x:x,y:7.9))}
  case "play":
