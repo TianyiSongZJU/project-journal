@@ -468,3 +468,11 @@ deadlineLegend.addEventListener('focus',syncDeadlineLegendPreview);
 deadlineLegend.addEventListener('blur',syncDeadlineLegendPreview);
 
 $('#inspector-tasks-show-done').onclick=()=>{uiPreferences.setFlag('dayTasksDone',!uiPreferences.flag('dayTasksDone'));renderDayTasks()};
+
+window.journalOpenTodayDeadlines=async()=>{
+ if(!await flushDrafts())return false;
+ await setPage('review');if(page!=='review')return false;
+ dayClock.check();const date=dateKey(new Date());mode='month';filterIds.clear();batch=false;selected.clear();anchor=null;focusInspectorDate(date);
+ const due=deadlineRows(state.projects,false).find(x=>x.d.date===date&&isCalendarDeadline(x.d));if(due)inspectorProject=due.p.id;
+ viewYear=Number(date.slice(0,4));viewMonth=date.slice(0,7);renderReview(true);revealInspectorDate({fraction:2/3});return true;
+};

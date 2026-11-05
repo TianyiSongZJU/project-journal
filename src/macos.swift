@@ -414,7 +414,7 @@ private func journalMenuGlyphPath(_ name:String)->NSBezierPath {
   p.move(to:NSPoint(x:1,y:5));p.line(to:NSPoint(x:2.2,y:7.5));p.line(to:NSPoint(x:7.8,y:7.5));p.line(to:NSPoint(x:9,y:5));p.line(to:NSPoint(x:9,y:2.5));p.line(to:NSPoint(x:1,y:2.5));p.close()
   p.move(to:NSPoint(x:1,y:5));p.line(to:NSPoint(x:3,y:5));p.line(to:NSPoint(x:3.8,y:3.8));p.line(to:NSPoint(x:6.2,y:3.8));p.line(to:NSPoint(x:7,y:5));p.line(to:NSPoint(x:9,y:5))
  case "flag":
-  p.move(to:NSPoint(x:2,y:1));p.line(to:NSPoint(x:2,y:9));p.line(to:NSPoint(x:8,y:9));p.line(to:NSPoint(x:6.5,y:6));p.line(to:NSPoint(x:2,y:6))
+  p.move(to:NSPoint(x:4,y:1));p.line(to:NSPoint(x:2,y:6));p.line(to:NSPoint(x:2,y:9));p.line(to:NSPoint(x:8,y:9));p.line(to:NSPoint(x:6.5,y:6));p.line(to:NSPoint(x:2,y:6))
  case "pause":
   for x:CGFloat in [3.2,6.8]{p.move(to:NSPoint(x:x,y:2.1));p.line(to:NSPoint(x:x,y:7.9))}
  case "play":
@@ -507,6 +507,7 @@ final class JournalMenuInfoView:NSView {
  let icon=NSImageView()
  let control=NSButton()
  var isEmphasized=false
+ var actionControl:NSButton?
  var toggleSymbol="pause"
  override init(frame:NSRect){
   super.init(frame:frame)
@@ -527,6 +528,7 @@ final class JournalMenuInfoView:NSView {
   icon.frame=NSRect(x:20,y:(bounds.height-10)/2,width:10,height:10)
   control.frame=NSRect(x:15,y:(bounds.height-20)/2,width:20,height:20)
  }
+ func makeAction(target:AnyObject,action:Selector){let button=NSButton(frame:bounds);button.title="";button.isTransparent=true;button.isBordered=false;button.target=target;button.action=action;button.autoresizingMask=[.width,.height];button.isEnabled=false;button.toolTip="查看今天的截止节点";button.setAccessibilityLabel("查看今日截止");addSubview(button);actionControl=button;setAccessibilityElement(false)}
  func makeToggle(target:AnyObject,action:Selector){control.target=target;control.action=action;control.isHidden=false;icon.isHidden=true;setAccessibilityElement(false)}
  override func draw(_ dirtyRect:NSRect){
   let color=isEmphasized ? journalMenuGreen:NSColor.labelColor
@@ -534,8 +536,8 @@ final class JournalMenuInfoView:NSView {
   (isEmphasized ? journalMenuAccentFill:color.withAlphaComponent(0.07)).setFill();circle.fill()
   if !control.isHidden{journalMenuGlyph(toggleSymbol,10,isEmphasized ? .white:journalMenuMuted).draw(in:NSRect(x:20,y:(bounds.height-10)/2,width:10,height:10))}
  }
- func update(title:String,detail:String,symbol:String,color:NSColor){titleLabel.stringValue=title;detailLabel.stringValue=detail;let inner=symbol=="flag" ? "flag":symbol=="tray" ? "tray":symbol=="exclamationmark.circle" ? "exclamationmark":"clock"
-  icon.image=journalMenuGlyph(inner,10,color);icon.contentTintColor=color;control.contentTintColor=color;needsDisplay=true;setAccessibilityLabel(title+"，"+detail);needsLayout=true}
+ func update(title:String,detail:String,symbol:String,color:NSColor,emphasized:Bool=false){isEmphasized=emphasized;titleLabel.stringValue=title;detailLabel.stringValue=detail;let inner=symbol=="flag" ? "flag":symbol=="tray" ? "tray":symbol=="exclamationmark.circle" ? "exclamationmark":"clock"
+  let glyphColor=emphasized ? NSColor.white:color;icon.image=journalMenuGlyph(inner,10,glyphColor);icon.contentTintColor=glyphColor;control.contentTintColor=color;needsDisplay=true;setAccessibilityLabel(title+"，"+detail);actionControl?.setAccessibilityLabel("查看"+title+"，"+detail);needsLayout=true}
 }
 
 final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate, WKScriptMessageHandler, NSMenuDelegate {
@@ -561,6 +563,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
  var pendingReminderRange:[String:Any]?
  var dailySummaryTimer:Timer?
  var dailySummaryLoading=false
+ var pendingTodayDeadlines=false
  var menuDeadlineInfo:JournalMenuInfoView?
  var menuSummary:JournalMenuSummaryView?
  var menuReminderInfo:JournalMenuInfoView?
@@ -641,7 +644,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   let menu=NSMenu();menu.delegate=self;menu.minimumWidth=260
   menu.autoenablesItems=false
   let heading=NSMenuItem();let summary=JournalMenuSummaryView(frame:NSRect(x:0,y:0,width:260,height:72));heading.view=summary;menuSummary=summary;menu.addItem(heading);menu.addItem(journalMenuDivider())
-  let deadlineItem=NSMenuItem();let deadlineInfo=JournalMenuInfoView();deadlineInfo.update(title:"今日截止",detail:"读取中…",symbol:"flag",color:journalMenuMuted);deadlineItem.view=deadlineInfo;deadlineItem.isEnabled=false;menuDeadlineInfo=deadlineInfo;menu.addItem(deadlineItem)
+  let deadlineItem=NSMenuItem();let deadlineInfo=JournalMenuInfoView();deadlineInfo.update(title:"今日截止",detail:"读取中…",symbol:"flag",color:journalMenuMuted);deadlineInfo.makeAction(target:self,action:#selector(openTodayDeadlines));deadlineItem.view=deadlineInfo;deadlineItem.isEnabled=true;menuDeadlineInfo=deadlineInfo;menu.addItem(deadlineItem)
   let reminder=NSMenuItem(title:"待处理建议",action:nil,keyEquivalent:"");let reminderInfo=JournalMenuInfoView();reminderInfo.update(title:"待处理建议",detail:"准备中…",symbol:"clock.arrow.circlepath",color:.secondaryLabelColor);reminder.view=reminderInfo;reminder.isEnabled=false;menuReminderInfo=reminderInfo;menu.addItem(reminder);reminderItem=reminder
   let state=NSMenuItem();let trackingInfo=JournalMenuInfoView();trackingInfo.update(title:"自动记录",detail:"读取中…",symbol:"record.circle",color:.secondaryLabelColor);state.view=trackingInfo;state.isEnabled=false;menuTrackingInfo=trackingInfo;menu.addItem(state);trackingStatusItem=state
   trackingInfo.makeToggle(target:self,action:#selector(toggleTracking));trackingInfo.control.isEnabled=false;trackingToggleItem=state
@@ -669,13 +672,14 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
    DispatchQueue.main.async{
     guard let self=self else{return};self.dailySummaryLoading=false
     guard error==nil,(response as? HTTPURLResponse)?.statusCode==200,let data=data,let value=(try? JSONSerialization.jsonObject(with:data)) as? [String:Any],let hours=value["hours"] as? Double,formatter.string(from:Date())==day else{
-     self.menuDeadlineInfo?.update(title:"今日截止",detail:"暂时无法读取",symbol:"flag",color:journalMenuMuted);self.menuSummary?.timeLabel.font = .systemFont(ofSize:18,weight:.medium);self.menuSummary?.timeLabel.stringValue="暂时无法读取";self.menuSummary?.setDetail("请稍后重试");self.menuSummary?.setAccessibilityLabel("今日投入暂时无法读取，请稍后重试");self.statusItem?.button?.toolTip="项目手记 · 今日总投入读取失败";return
+     self.menuDeadlineInfo?.actionControl?.isEnabled=false;self.menuDeadlineInfo?.update(title:"今日截止",detail:"暂时无法读取",symbol:"flag",color:journalMenuMuted);self.menuSummary?.timeLabel.font = .systemFont(ofSize:18,weight:.medium);self.menuSummary?.timeLabel.stringValue="暂时无法读取";self.menuSummary?.setDetail("请稍后重试");self.menuSummary?.setAccessibilityLabel("今日投入暂时无法读取，请稍后重试");self.statusItem?.button?.toolTip="项目手记 · 今日总投入读取失败";return
     }
     let minutes=Int((hours*60).rounded()),h=minutes/60,m=minutes%60,missing=value["missing"] as? Int ?? 0,estimated=value["estimatedHours"] as? Double ?? 0
     self.menuSummary?.setDetail((estimated>0 ? "含估算投入":"")+(missing>0 ? (estimated>0 ? " · ":"")+"\(missing)条记录待配置":""))
     self.menuSummary?.setTime(hours:h,minutes:m)
     let due=max(0,value["dueToday"] as? Int ?? 0)
-    self.menuDeadlineInfo?.update(title:"今日截止",detail:due>0 ? "\(due) 个待完成":"暂无",symbol:"flag",color:due>0 ? journalMenuGreen:journalMenuMuted)
+    self.menuDeadlineInfo?.actionControl?.isEnabled=due>0
+    self.menuDeadlineInfo?.update(title:"今日截止",detail:due>0 ? "\(due) 个待完成":"暂无",symbol:"flag",color:due>0 ? journalMenuGreen:journalMenuMuted,emphasized:due>0)
    }
   }.resume()
  }
@@ -739,6 +743,8 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
 
  func menuWillOpen(_ menu:NSMenu){observer?.reload();refreshDaySummary()}
 
+ @objc func openTodayDeadlines(){statusItem?.menu?.cancelTracking();pendingTodayDeadlines=true;showJournal(source:"todayDeadlines");routeTodayDeadlinesIfReady()}
+ func routeTodayDeadlinesIfReady(){guard pendingTodayDeadlines,let view=webView else{return};view.evaluateJavaScript("(()=>{if(!window.journalViewReady||!window.journalOpenTodayDeadlines)return false;void window.journalOpenTodayDeadlines();return true})()") {[weak self] result,error in if error==nil,result as? Bool == true{self?.pendingTodayDeadlines=false}}}
  @objc func openJournal(){showJournal(source:"statusBar")}
  func showJournal(source:String){
   let existing=window != nil
@@ -767,6 +773,7 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
  func flushWindow(_ completion:@escaping(Bool)->Void){guard let view=webView else{completion(true);return};view.callAsyncJavaScript("return window.journalFlush ? await window.journalFlush() : true;",arguments:[:],in:nil,in:.page){result in if case .success(let value)=result{completion(value as?Bool == true)}else{completion(false)}}}
  func userContentController(_ userContentController:WKUserContentController,didReceive message:WKScriptMessage){guard let body=message.body as?[String:Any],let action=body["action"]as?String else{return};let id=body["id"]as?String ?? "";func reply(_ result:[String:Any]){self.webView?.callAsyncJavaScript("window.journalNativeReply && window.journalNativeReply(id,result)",arguments:["id":id,"result":result],in:nil,in:.page,completionHandler:nil)}
   if action=="startupReady",message.webView === webView{
+   routeTodayDeadlinesIfReady()
    let timing=openingTiming ?? startupTiming
    let complete:()->Void={timing?.mark("pageReady",page:body["page"] as? String,pageMS:body["pageMs"] as? Double)}
    if let surface=launchSurface{launchSurface=nil;surface.finish(complete)}else{complete()}
