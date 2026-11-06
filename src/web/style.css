@@ -690,3 +690,11 @@ dialog #record-info{margin:0 0 0 auto;font-size:9px}
 .tooltip-ddl>span{margin:0;padding-left:4px;line-height:18px}
 .tooltip .tooltip-ddl .ddl-note{margin:2px 0 0;max-width:100%;max-height:30px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:10px;line-height:15px;overflow-wrap:anywhere}
 .tooltip .tooltip-ddl .ddl-note>:is(p,h1,h2,h3){display:inline;margin:0;font:inherit;color:inherit}
+
+/* Group selection and disclosure are separate controls in review filters. */
+#filter-project-list .selectable-group{justify-content:flex-start;padding:3px 0;gap:2px}
+#filter-project-list .project-group-fold{display:grid;place-items:center;flex:none;width:22px;height:28px;min-height:28px;padding:0;border:0;box-shadow:none;background:transparent;color:inherit;font:inherit}
+#filter-project-list .project-group-select{display:flex;align-items:center;gap:8px;min-height:28px;min-width:0;flex:1;padding:0 6px 0 0;cursor:pointer;font:inherit;color:inherit}
+#filter-project-list .project-group-select>input{margin:0;width:13px;height:13px;flex:none;cursor:pointer;accent-color:var(--green)}
+#filter-project-list .project-group-select>span{flex:1;min-width:0}
+#filter-project-list .project-group-select>small{margin-left:auto;font-size:9px;color:var(--muted)}

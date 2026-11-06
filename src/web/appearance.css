@@ -54,3 +54,9 @@ html[data-scheme="dark"] :is(.paper-panel,.dt-surface,.dt-allocations,.tr-paper,
 @media(max-width:760px){.palette-grid{grid-template-columns:1fr}.palette-toolbar{align-items:flex-start}}
 
 .palette-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+
+/* Keep selection handles legible against dark project fills. */
+html[data-scheme="dark"] .dt-allocation .dt-resize::after{background:color-mix(in srgb,var(--ink) 85%,var(--green));box-shadow:0 0 0 1px #0004}
+html[data-scheme="dark"] .dt-allocation:is(:hover,.focused) .dt-resize::after,html[data-scheme="dark"] .dt-resize:focus-visible::after{background:var(--ink)}
+html[data-scheme="dark"] .dt-drag-tip{background:var(--surface-elevated);border-color:var(--surface-edge);color:var(--ink);box-shadow:0 6px 24px #0005,inset 0 1px 0 #ffffff05}
+html[data-scheme="dark"] .dt-drag-tip>strong span{color:var(--muted)}
