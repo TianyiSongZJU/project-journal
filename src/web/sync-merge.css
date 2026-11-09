@@ -1,0 +1,30 @@
+#sync-merge-dialog{box-sizing:border-box;width:min(840px,calc(100vw - 32px));max-width:none;max-height:calc(100vh - 38px);padding:20px;border-radius:14px;overflow:auto}
+#sync-merge-dialog .dialog-heading{margin:0 0 10px}
+.merge-source{margin:5px 0 0;overflow-wrap:anywhere}
+.merge-help{margin:0 0 12px;line-height:1.6}
+.merge-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+.merge-toolbar label{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:11px}
+.merge-toolbar select{height:27px;min-height:27px;font-size:11px}
+.merge-count{font-size:11px;color:var(--muted)}
+.merge-list{display:grid;gap:7px;max-height:53vh;overflow:auto;padding:1px 3px 3px 1px}
+.merge-item{min-width:0;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.merge-item-heading{display:flex;align-items:center;gap:8px;min-width:0}
+.merge-item-heading strong{flex:1;min-width:0;overflow-wrap:anywhere;font-size:12px}
+.merge-item-heading small,.merge-effect{flex:none;font-size:10px;color:var(--muted)}
+.merge-effect{padding:2px 5px;border-radius:4px;background:color-mix(in srgb,var(--muted) 12%,transparent)}
+.merge-effect[data-effect=add]{color:var(--green);background:color-mix(in srgb,var(--green) 12%,transparent)}
+.merge-effect[data-effect=change]{color:var(--clay);background:color-mix(in srgb,var(--clay) 12%,transparent)}
+.merge-item summary{cursor:pointer;color:var(--green);font-size:10px;padding:6px 0 0}
+.merge-detail{margin-top:8px}
+.merge-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.merge-detail>.merge-columns{color:var(--muted);font-size:10px;margin-bottom:5px}
+.merge-field{margin-bottom:7px}
+.merge-field>span{display:block;font-size:10px;color:var(--muted);margin:0 0 3px}
+.merge-value{min-width:0;max-height:180px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;padding:6px 8px;line-height:1.55;font-size:11px;border-radius:5px;background:color-mix(in srgb,var(--muted) 8%,transparent)}
+.merge-value em{font-style:normal;color:var(--muted)}
+.merge-field.is-changed .merge-value:first-child{background:color-mix(in srgb,var(--clay) 10%,transparent)}
+.merge-field.is-changed .merge-value:last-child{background:color-mix(in srgb,var(--green) 10%,transparent)}
+.merge-value mark{color:inherit;background:color-mix(in srgb,var(--clay) 24%,transparent);box-decoration-break:clone}
+.merge-value:last-child mark{background:color-mix(in srgb,var(--green) 24%,transparent)}
+.merge-notice,.merge-error{line-height:1.55;margin:6px 0 0}
+.merge-error{color:var(--clay)}

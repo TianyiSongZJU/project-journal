@@ -633,6 +633,46 @@ func main() {
 			}
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			w.Write(b)
+		case "/api/sync-merge":
+			switch r.Method {
+			case http.MethodGet:
+				preview, e := store.previewMerge(r.URL.Query().Get("name"))
+				if e != nil {
+					fail(w, e.Error(), 400)
+					return
+				}
+				w.Header().Set("Cache-Control", "no-store")
+				raw, e := json.Marshal(preview)
+				if e != nil || len(raw) > 16<<20 {
+					fail(w, "对比内容过大，请先导出副本", 400)
+					return
+				}
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				w.Write(raw)
+			case http.MethodPost:
+				var req struct {
+					Name           string   `json:"name"`
+					Revision       string   `json:"revision"`
+					SourceRevision string   `json:"sourceRevision"`
+					Items          []string `json:"items"`
+				}
+				if e := json.NewDecoder(http.MaxBytesReader(w, r.Body, 512<<10)).Decode(&req); e != nil || len(req.Items) > 5000 {
+					fail(w, "合并请求无效或选中项过多", 400)
+					return
+				}
+				rev, e := store.mergeCopy(req.Name, req.Revision, req.SourceRevision, req.Items)
+				if e != nil {
+					code := 400
+					if errors.Is(e, errConflict) {
+						code = 409
+					}
+					fail(w, e.Error(), code)
+					return
+				}
+				jsonOut(w, map[string]string{"revision": rev})
+			default:
+				w.WriteHeader(405)
+			}
 		case "/api/resolve-copy":
 			if r.Method != "POST" {
 				w.WriteHeader(405)

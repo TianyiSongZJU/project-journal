@@ -1,3 +1,4 @@
+import {setupSyncMerge} from './sync-merge.js';
 import {watchLocalDay} from './day-rollover.js';
 import {isCalendarDeadline,priorityMatches,dayTasks} from './deadline-priority.js';
 import {setupYearWeekHover} from './year-week-hover.js';
@@ -175,12 +176,14 @@ async function closeRecord(){if(await flushDrafts()){$('#record-dialog').close()
 function renderSettings(){appearanceUI.apply();applySurfaceHighlights();appAliasSettings.render();const f=$('#estimate-form');['tiny','short','medium','long','extended'].forEach((name,i)=>f.elements[name].value=estimates()[KINDS[i]]??'');$('#data-location').textContent='数据位置：'+dataPath}
 function renderAll(){renderReviewDeadlineBadge();renderHistory();if(page==='review')renderReview(false);else{renderFilters();renderStats();}if(page==='projects'&&!noteDirty)renderProjects();renderSettings();if($('#day-dialog').open)renderDayDialog();$('#footer-date').textContent=new Intl.DateTimeFormat('zh-CN',{dateStyle:'long'}).format(new Date())}
 
+const openSyncMerge=setupSyncMerge({prepare:()=>flushDrafts(),afterApply:()=>load(),toast});
 function renderSyncCopies(){
  const banner=$('#sync-warning');banner.hidden=!syncCopies.length;
  banner.replaceChildren();
  if(syncCopies.length){const text=document.createElement('span');text.textContent=`检测到 ${syncCopies.length} 个同步副本，尚未合并`;const b=document.createElement('button');b.textContent='查看副本';b.onclick=()=>setPage('settings');banner.append(text,b)}
  $('#sync-copy-panel').hidden=!syncCopies.length;
- $('#sync-copy-list').innerHTML=syncCopies.map((c,i)=>`<div class="sync-copy-row"><strong>${esc(c.name)}</strong><small>${esc(c.modified)} · ${c.valid?c.projects+' 个项目 · '+c.entries+' 条记录':c.kind==='partition'?'分文件同步冲突，请先导出副本核对':'格式无效或尚未同步完整，请先导出检查'}</small><div class="button-row"><button data-copy-export="${i}">导出副本</button><button data-copy-resolve="${i}" data-adopt="false">保留当前并归档</button>${c.valid?`<button data-copy-resolve="${i}" data-adopt="true">采用此副本</button>`:''}</div></div>`).join('');
+ $('#sync-copy-list').innerHTML=syncCopies.map((c,i)=>`<div class="sync-copy-row"><strong>${esc(c.name)}</strong><small>${esc(c.modified)} · ${c.valid?c.projects+' 个项目 · '+c.entries+' 条记录':c.kind==='partition'?'分文件同步冲突，请先导出副本核对':'格式无效或尚未同步完整，请先导出检查'}</small><div class="button-row"><button data-copy-export="${i}">导出副本</button><button data-copy-resolve="${i}" data-adopt="false">保留当前并归档</button>${c.valid?`<button class="primary" data-copy-merge="${i}">对比并合并</button><button data-copy-resolve="${i}" data-adopt="true">整份替换</button>`:''}</div></div>`).join('');
+ $$('[data-copy-merge]').forEach(b=>b.onclick=()=>openSyncMerge(syncCopies[Number(b.dataset.copyMerge)]));
  $$('[data-copy-export]').forEach(b=>b.onclick=async()=>{try{const c=syncCopies[Number(b.dataset.copyExport)],res=await fetch('/api/sync-copy?name='+encodeURIComponent(c.name));if(!res.ok)throw Error('无法读取副本');const blob=await res.blob(),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=c.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}catch(e){toast(e.message,true)}});
  $$('[data-copy-resolve]').forEach(b=>b.onclick=async()=>{const c=syncCopies[Number(b.dataset.copyResolve)],adopt=b.dataset.adopt==='true';if(!await confirmAction(adopt?'采用同步副本':'保留当前版本',adopt?`将用“${c.name}”替换当前主数据。主数据先自动备份，此副本原文也会归档，其他副本不受影响。`:`当前主数据保持不变，“${c.name}”将完整保存在“备份/同步副本”中。`))return;try{const res=await fetch('/api/resolve-copy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:c.name,sourceRevision:c.revision,revision,adopt})});const data=await res.json();if(!res.ok)throw Error(data.error||'处理失败');await load();toast(adopt?'已采用副本，旧主数据已备份':'副本已完整归档')}catch(e){toast(e.message,true)}});
 }
