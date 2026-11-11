@@ -81,6 +81,19 @@ The Mac universal build has been built and signature-verified locally. The Windo
 
 Monitoring is optional. Access to window titles depends on OS permissions, including macOS Accessibility permissions. File watching records metadata without reading document contents. The app does not record screenshots, keystroke contents, audio or video. Once an idle period exceeds the configured threshold, that idle time is deducted retrospectively. Computer activity may still differ from actual work.
 
+### Background resource use
+
+Two background components were measured on macOS in October 2026 using temporary folders.
+
+| Test | Duration | Total CPU time | Peak resident memory |
+| --- | ---: | ---: | ---: |
+| Native file watcher with one file change | 75.02 s | User and system time both reported as 0.00 s at 0.01 s resolution | About 11.3 MB |
+| Collection service idle after binding a folder | 45 s | 0.013398 s | About 13.5 MB |
+
+During the idle test, the service performed no further scans, file checks, or writes after initialization. A separate comparison ran for about 3 minutes per setting on AC power, with permission to access window titles. With foreground activity enabled, the two components' combined average CPU use rose from 0.0028% to 0.0281% of one core. The sum of their individual peak resident memory readings rose from 29.3 MiB to 31.5 MiB. [Foreground activity measurements](src/tests/measurements/foreground-2026-10-23.json)
+
+These measurements cover the macOS collection components. Main-window resource use and whole-device battery life require separate measurements.
+
 ## Your data
 
 The app stores records in a sibling data/ folder. Keep the entire folder, including .english-layout, notes/, time/, activity/, history-content/ and backups/. Older installations may use a legacy layout. Do not manually rename files referenced by old indexes.
