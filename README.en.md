@@ -11,12 +11,12 @@ This desktop app for **macOS and Windows** is maintained by one person and is st
 
 ## What it does
 
-- Projects and groups, Markdown project notes, daily entries, deadlines and completed-project archives.
+- Projects and groups, live Markdown project notes with images and formulas, daily entries, deadlines and completed-project archives.
 - A daily timeline for allocating time in 15-minute increments. Other manually entered time is recorded separately.
 - Optional foreground activity and folder-change collection. Suggested time blocks include their evidence and device sources.
 - Annual and monthly heatmaps, time-of-day review, project/group distributions, and hours/days display in the annual review.
 - Weekly journals with a vertical week timeline, titles, independent goals and Markdown notes; autosave and history recovery.
-- Local JSON storage organized by project, month and device; history recovery, sync-copy warnings and folder relocation.
+- Local JSON storage organized by project, month and device; history recovery, side-by-side sync-copy comparison and selective merging, and folder relocation.
 - Restores the previous view and display preferences. macOS has a menu-bar app and background-only login startup.
 
 **Activity clues do not measure work time.** Suggestions help you recall your day and require review and confirmation before they count toward project time. If evidence from multiple devices points to different projects, you need to decide where the time belongs.
@@ -34,7 +34,7 @@ All screenshots use reproducible, fictional sample data. They contain no real us
 Compare confirmed time blocks across dates in 15-minute increments.
 
 - Show a fixed span of 7, 14 or 30 days. Changing either date adjusts the other to preserve that span. Arrows and scrolling move the window one day at a time; 今天 (Today) sets the end date to today.
-- Use the default 08:00–24:00 axis or switch to a full day. Filter projects, enable project colors, and optionally distinguish weekend rows.
+- Use the default 08:00–24:00 axis or switch to a full day. Filter projects individually or by group, enable project colors, and optionally distinguish weekend rows.
 - Hover over a row to highlight the day and see the time spent on each project and its share of the total. Click to open daily notes while keeping the full time axis visible. Today has its own marker.
 - Compare daily average time in the bottom chart. Each bar represents a 15-minute interval, and the scale adjusts to the highest average. Enable project colors to stack the bars by project. Hover over a project name in the legend to highlight it; the bars then show only that project’s time.
 
@@ -74,9 +74,9 @@ The Mac universal build has been built and signature-verified locally. The Windo
 ## First steps
 
 1. In 项目 (Projects), create a project and write its goal or next steps.
-2. Use 记一笔 (New entry) to record progress and time. A note without time is fine.
+2. Choose a project and click 记录 (Record), or select a date in 回顾 (Review) to enter a daily record. A note without time is fine.
 3. Optionally enable foreground activity or bind a project folder under 记录 → 记录设置 (Record → Settings).
-4. In 记录 (Record), select or adopt suggested time blocks, assign projects, review, then choose 计入项目 (Apply).
+4. In 记录 (Record), select or adopt suggested time blocks, assign projects and review. Assigned blocks count toward project time when saved. Hover over a block to see its duration.
 5. Use 回顾 (Review) to explore annual/monthly work and deadlines, or compare work hours across dates in 时段 (Time of day).
 
 Monitoring is optional. Access to window titles depends on OS permissions, including macOS Accessibility permissions. File watching records metadata without reading document contents. The app does not record screenshots, keystroke contents, audio or video. Once an idle period exceeds the configured threshold, that idle time is deducted retrospectively. Computer activity may still differ from actual work.
@@ -88,6 +88,10 @@ The app stores records in a sibling data/ folder. Keep the entire folder, includ
 To share records between Mac and Windows, sync **all of data/** with your own sync tool. The app has no built-in cloud service. Source documents are stored separately, so bind their local folder on each device. Keep local preferences, monitoring settings and absolute folder paths specific to each device.
 
 Finish saving and syncing on one device before editing on the next. The app checks revisions, warns about conflict copies and merges activity clues. Editing on multiple devices at once through a file-sync service can still cause conflicts. Keep independent backups. Local files are not encrypted. When updating, preserve your data and device settings and replace only the application files.
+
+For a readable, complete conflict copy, go to 设置 → 同步副本 → 对比并合并 (Settings → Sync copies → Compare and merge). Review the differences side by side, then choose which items to apply. Items start unchecked. Records found only in the current version and the original copy are kept. If either version changes during review, compare them again before applying. Individual conflicting partition files can still be exported for inspection; settings, activity clues and history are outside the comparison.
+
+![Side-by-side sync-copy comparison with fictional sample records](docs/images/sync-merge.png)
 
 More details: [data and privacy](docs/privacy.md) (Chinese).
 
