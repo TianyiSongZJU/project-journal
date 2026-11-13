@@ -186,9 +186,9 @@
 :is(.native-windows,.native-mac) #inspector-daily-fields .win-note-clear,:is(.native-windows,.native-mac) #inspector-daily-fields .markdown-preview-toggle { display:inline-flex; align-items:center; justify-content:center; flex:none; height:24px; min-height:24px; box-sizing:border-box; margin:0; padding:0 2px; border:0; border-radius:4px; background:transparent; box-shadow:none; font-family:inherit; font-size:10px; line-height:24px; color:var(--tone-ink-87957c,#87957c); }
 :is(.native-windows,.native-mac) #inspector-daily-fields .win-note-clear:hover:not(:disabled) { color:var(--tone-ink-9b6951,#9b6951); background:var(--tone-surface-f1ece3,#f1ece3); }
 :is(.native-windows,.native-mac) #inspector-daily-fields .win-note-clear:disabled { opacity:.4; cursor:default; }
-:is(.native-windows,.native-mac) .month-inspector { --win-note-inset:clamp(16px,2vw,22px); padding-left:var(--win-note-inset); padding-right:var(--win-note-inset); padding-bottom:var(--win-note-inset); }
+:is(.native-windows,.native-mac) .month-inspector { --note-panel-inset:clamp(16px,2vw,22px); padding-inline:var(--note-panel-inset); }
 :is(.native-windows,.native-mac) #month-inspector { display:flex; flex-direction:column; }
-:is(.native-windows,.native-mac) #inspector-content { flex:1; min-height:0; }
+:is(.native-windows,.native-mac) #inspector-content { flex:1 0 auto; min-height:0; }
 :is(.native-windows,.native-mac) #inspector-daily-fields:not([hidden]),:is(.native-windows,.native-mac) #inspector-project-fields:not([hidden]) { display:flex; flex-direction:column; flex:1; min-height:0; }
 :is(.native-windows,.native-mac) #inspector-daily-fields>.editor-label,:is(.native-windows,.native-mac) #inspector-project-fields>.editor-label { display:flex; flex-direction:column; flex:1; min-height:0; margin-bottom:0; }
 :is(.native-windows,.native-mac) #inspector-note,:is(.native-windows,.native-mac) #inspector-project-note { flex:1; min-height:140px; resize:none; }
@@ -252,8 +252,8 @@
 :is(.native-windows,.native-mac) .desktop-note-action,
 :is(.native-windows,.native-mac) .desktop-save-state { width:24px; }
 /* The record dialog follows the review editor's project/total row and note area. */
-:is(.native-windows,.native-mac) #record-dialog { width:560px; max-width:calc(100vw - 32px); height:min(700px,calc(100dvh - 48px)); max-height:calc(100dvh - 48px); box-sizing:border-box; padding:22px; overflow:visible; }
-:is(.native-windows,.native-mac) #record-form { display:flex; flex-direction:column; height:100%; min-height:0; }
+:is(.native-windows,.native-mac) #record-dialog { width:560px; max-width:calc(100vw - 32px); height:min(700px,calc(100dvh - 48px)); max-height:calc(100dvh - 48px); box-sizing:border-box; padding:22px; overflow:auto; }
+:is(.native-windows,.native-mac) #record-form { display:flex; flex-direction:column; min-height:100%; }
 :is(.native-windows,.native-mac) #record-form>.dialog-heading { gap:12px; flex:none; margin-bottom:14px; }
 :is(.native-windows,.native-mac) #record-form .auto-save-hint { display:none; }
 :is(.native-windows,.native-mac) #record-date { margin-left:auto; width:136px; height:30px; min-height:30px; padding:3px 6px; font-family:inherit; font-size:11px; border:0; background:var(--tone-surface-f1f4ed,#f1f4ed); }

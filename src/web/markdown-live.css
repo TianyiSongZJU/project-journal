@@ -115,15 +115,23 @@ html .note-header .desktop-save-state[data-state=error]{color:var(--clay)}
 html .desktop-save-state>svg{overflow:hidden}
 html .note-header .markdown-mode>button>svg{width:16px;height:16px}
 
+/* Leave the same room at the bottom and sides of scrollable note panels. */
+html :is(#month-inspector,#weekly-workspace):has(.has-note-height){
+ padding-block-end:var(--note-panel-inset,24px);
+ scroll-padding-block-end:var(--note-panel-inset,24px);
+}
+html:not(.native-windows,.native-mac) #month-inspector{--note-panel-inset:24px}
+@media(max-width:850px){html:not(.native-windows,.native-mac) #month-inspector{--note-panel-inset:16px}}
+
 /* The scroll area and resize grip are shared by source and live modes. */
 html[data-scheme] .markdown-editor.has-note-height{--note-scroll-inset:3px;flex:none!important}
-html[data-scheme] .markdown-editor.has-note-height>:is(.markdown-live,textarea){box-sizing:border-box;flex:0 0 auto;height:var(--note-height);min-height:0!important;overflow:auto;scrollbar-gutter:stable}
+html[data-scheme] .markdown-editor.has-note-height>:is(.markdown-live,textarea){box-sizing:border-box;flex:none!important;height:var(--note-height)!important;min-height:0!important;overflow:auto;scrollbar-gutter:stable}
 html[data-scheme] .markdown-editor.has-note-height>.markdown-live{overflow-x:hidden;overscroll-behavior-inline:none;padding-bottom:16px}
 .markdown-editor.has-note-height .markdown-live .milkdown>.ProseMirror{overflow-x:clip;overflow-clip-margin:2px}
-html[data-scheme] .project-detail-section:has(#project-note)>.markdown-editor.has-note-height{padding-inline:0 var(--note-scroll-inset)}
+html[data-scheme] .project-detail-section:has(#project-note)>.markdown-editor.has-note-height{--note-frame-block-padding:11px;padding-block:var(--note-frame-block-padding);padding-inline:0 var(--note-scroll-inset)}
 html[data-scheme] .project-detail-section:has(#project-note) .markdown-editor.has-note-height>.markdown-live{padding-inline:14px 11px}
 html[data-scheme] .project-detail-section:has(#project-note) .markdown-editor.has-note-height>textarea{padding-inline:14px 11px!important;padding-bottom:16px!important}
-.note-height-grip{position:absolute;z-index:1;right:3px;bottom:3px;width:20px;height:20px;display:grid;place-items:center;color:var(--muted);cursor:ns-resize;touch-action:none;border-radius:5px}
+.note-height-grip{position:absolute;z-index:1;inset-inline-end:3px;inset-block-start:calc(var(--note-height) + 2 * var(--note-frame-block-padding,0px) - 23px);width:20px;height:20px;display:grid;place-items:center;color:var(--muted);cursor:ns-resize;touch-action:none;border-radius:5px}
 .note-height-grip>svg{width:16px;height:16px;display:block;opacity:.75}
 .note-height-grip:is(:hover,:active,:focus-visible){color:var(--green);background:var(--editor-bg)}
 .note-height-grip:focus-visible{outline:1px solid var(--green);outline-offset:-2px}

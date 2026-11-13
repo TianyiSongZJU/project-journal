@@ -25,7 +25,7 @@ html[data-highlights="on"] #weekly-workspace{box-shadow:inset 0 1px 0 var(--surf
 @media(max-width:800px){.month-week.week-inspected::after{left:27px}}
 #weekly-workspace[hidden],#month-inspector[hidden]{display:none!important}
 #weekly-workspace{overflow-y:auto;overscroll-behavior:contain}
-#weekly-workspace .weekly-page{padding:0;min-height:100%;border-radius:0;background:transparent}
+#weekly-workspace .weekly-page{padding:0;flex-shrink:0;min-height:100%;border-radius:0;background:transparent}
 #weekly-workspace .weekly-period-row{flex-wrap:wrap;gap:7px}
 #weekly-workspace .weekly-title-row{gap:12px;flex-wrap:wrap;margin-top:12px}
 #weekly-workspace .weekly-title-label{flex:1 1 160px}
@@ -37,9 +37,9 @@ html[data-highlights="on"] #weekly-workspace{box-shadow:inset 0 1px 0 var(--surf
 @media(hover:none){.week-journal-trigger{opacity:1}}
 
 /* The same writing tools and surface belong to daily and weekly notes. */
-#weekly-workspace{padding:var(--weekly-top-inset,17px) 22px 20px;background:var(--panel);border:0;border-radius:16px;min-width:0}
+#weekly-workspace{--note-panel-inset:22px;padding:var(--weekly-top-inset,17px) var(--note-panel-inset);background:var(--panel);border:0;border-radius:16px;min-width:0}
 #page-review:not(.month-view) #weekly-workspace{min-height:540px;display:flex;flex-direction:column}
-#page-review:not(.month-view) #weekly-workspace .weekly-page{flex:1}
+#page-review:not(.month-view) #weekly-workspace .weekly-page{flex:1 0 auto}
 #weekly-workspace .weekly-goals-section{flex:none;padding:0;border-radius:7px;background:var(--tone-surface-f3f5ef,#f3f5ef)}
 #weekly-workspace .weekly-section-heading{min-height:32px;height:32px;padding:0 10px;margin:0;align-items:center;gap:7px}
 #weekly-workspace .weekly-section-heading h2{display:flex;align-items:center;margin:0;font:400 10px/24px system-ui;color:var(--tone-ink-6b7b5e,#6b7b5e)}
