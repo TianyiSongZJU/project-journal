@@ -206,7 +206,7 @@ func classifyFileBursts(evidence map[string]AutoEvidence, c AutoConfig) map[stri
 	groups := map[string][]observation{}
 	result := make(map[string]AutoEvidence, len(evidence))
 	for id, e := range evidence {
-		if e.Kind == "file" {
+		if e.Kind == "file" && e.Source != journalNoteSource {
 			e.Touches = append([]AutoFileTouch(nil), e.Touches...)
 			for i, t := range e.Touches {
 				e.Touches[i].Bulk = false

@@ -43,7 +43,7 @@ export function refineDesktopNodes(project) {
     const heading=document.createElement('div');heading.className='win-node-heading';
     const title=document.createElement('span');title.className='win-node-title';title.textContent='\u9879\u76ee\u8282\u70b9';
     const count=document.createElement('small');count.className='win-node-count';
-    heading.append(title,count,$('#inspector-deadline-priority-host'),$('#inspector-show-done-deadlines'),$('#inspector-add-deadline'));
+    heading.append(title,count,panel.querySelector('.inspector-node-actions'));
     heading.querySelector('#inspector-add-deadline').classList.add('quiet','win-node-add');
     section.append(heading,panel);
     const fields=$('#inspector-daily-fields');fields.insertBefore(section,fields.querySelector('.editor-label'));
@@ -103,18 +103,6 @@ function fitNotePane(){
 export function refineDesktopNotes(){
   if(!noteLayoutListening){window.addEventListener('resize',fitNotePane);noteLayoutListening=true;}
   requestAnimationFrame(fitNotePane);
-  for(const id of ['inspector-note','inspector-project-note','record-note','weekly-note']){
-    const input=$('#'+id),editor=input?.closest('.markdown-editor');
-    if(!editor||editor.querySelector('.desktop-note-resize'))continue;
-    const grip=document.createElement('div');grip.className='desktop-note-resize';grip.tabIndex=0;grip.setAttribute('role','separator');grip.setAttribute('aria-orientation','horizontal');grip.setAttribute('aria-label','调整笔记高度');grip.title='拖动调整高度，双击恢复填满';grip.innerHTML=desktopIcon('resize');editor.append(grip);
-    const setHeight=height=>{editor.style.flex='0 0 auto';editor.style.height=Math.max(140,Math.min(4096,height))+'px';};
-    const reset=()=>{editor.style.removeProperty('height');editor.style.removeProperty('flex');fitNotePane();};
-    let drag=null;
-    grip.onpointerdown=event=>{if(event.button!==0)return;event.preventDefault();event.stopPropagation();drag={y:event.clientY,height:editor.getBoundingClientRect().height};grip.setPointerCapture(event.pointerId);};
-    grip.onpointermove=event=>{if(drag)setHeight(drag.height+event.clientY-drag.y);};
-    grip.onpointerup=grip.onpointercancel=()=>{drag=null;};grip.ondblclick=reset;
-    grip.onkeydown=event=>{if(['ArrowUp','ArrowDown','Home'].includes(event.key)){event.preventDefault();if(event.key==='Home')reset();else setHeight(editor.getBoundingClientRect().height+(event.key==='ArrowUp'?-24:24));}};
-  }
 }
 
 export function refineDesktopTime(container,context,row=$('.inspector-project-row')) {

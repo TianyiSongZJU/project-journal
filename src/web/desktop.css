@@ -6,7 +6,6 @@
 :is(.native-windows,.native-mac) .dt-axis-caption strong { line-height:20px; }
 :is(.native-windows,.native-mac) .dt-surface { overflow:visible; border-radius:14px; }
 :is(.native-windows,.native-mac) .dt-surface .dt-toolbar { border-radius:14px 14px 0 0; }
-:is(.native-windows,.native-mac) .dt-axis-caption .dt-legend-file { display:none; }
 .dt-client-picker { position:relative; font-family:inherit; color:var(--muted); }
 .dt-client-picker>summary { display:flex; align-items:center; gap:6px; height:24px; min-height:24px; padding:0 5px; margin:0; border-radius:4px; list-style:none; cursor:pointer; font-family:inherit; font-size:10px; font-weight:500; line-height:20px; color:var(--tone-ink-617555,#617555); }
 .dt-client-picker>summary::-webkit-details-marker { display:none; }
@@ -70,7 +69,6 @@
 :is(.native-windows,.native-mac) .dt-axis-caption { height:32px; }
 :is(.native-windows,.native-mac) .dt-axis-caption>div:first-of-type { display:block; position:relative; margin-right:7px; min-width:0; }
 :is(.native-windows,.native-mac) .dt-axis-caption .dt-client-picker { display:inline-block; vertical-align:middle; }
-:is(.native-windows,.native-mac) .dt-axis-caption .dt-caption-files { position:absolute; left:calc(var(--dt-activity-width) + 12px); top:0; display:flex; align-items:center; height:24px; font-size:9px; color:var(--tone-ink-9a8b69,#9a8b69); white-space:nowrap; }
 :is(.native-windows,.native-mac) .dt-axis-caption .dt-client-menu .dt-client-layout { display:block; width:100%; margin-top:9px; padding:4px 6px; height:30px; line-height:22px; text-align:left; border-top:1px solid var(--tone-line-e4e7dc,#e4e7dc); border-radius:0; }
 :is(.native-windows,.native-mac) .dt-client-heading-group { margin-left:5px; }
 
@@ -157,9 +155,9 @@
 :is(.native-windows,.native-mac) .win-node-heading { display:flex; align-items:center; gap:7px; min-height:30px; padding:0 10px; }
 :is(.native-windows,.native-mac) .win-node-title { font-size:10px; color:var(--tone-ink-6b7b5e,#6b7b5e); flex:none; }
 :is(.native-windows,.native-mac) .win-node-count { font-size:9px; color:var(--tone-ink-9ba38e,#9ba38e); white-space:nowrap; }
-:is(.native-windows,.native-mac) #windows-project-nodes #inspector-show-done-deadlines { margin-left:auto; font-family:inherit; font-size:9px; min-height:24px; padding:0 3px; }
-:is(.native-windows,.native-mac) #windows-project-nodes .win-node-add { margin-left:auto; white-space:nowrap; flex:none; font-size:9px; }
-:is(.native-windows,.native-mac) #windows-project-nodes #inspector-show-done-deadlines:not([hidden])+.win-node-add { margin-left:0; }
+:is(.native-windows,.native-mac) .win-node-heading .inspector-node-actions { margin-inline-start:auto; gap:7px; white-space:nowrap; }
+:is(.native-windows,.native-mac) #windows-project-nodes #inspector-show-done-deadlines { font-family:inherit; font-size:9px; min-height:24px; padding:0 3px; }
+:is(.native-windows,.native-mac) #windows-project-nodes .win-node-add { white-space:nowrap; flex:none; font-size:9px; }
 :is(.native-windows,.native-mac) #inspector-project-ddl-panel { border:0; margin:0; padding:0; }
 :is(.native-windows,.native-mac) #inspector-project-ddl-panel .inspector-context-heading { display:none; }
 :is(.native-windows,.native-mac) #inspector-project-deadlines { max-height:100px; gap:0; }
@@ -207,14 +205,7 @@
 :is(.native-windows,.native-mac) .desktop-note-action svg { width:15px; height:15px; flex:none; }
 :is(.native-windows,.native-mac) .desktop-save-state { color:var(--tone-ink-8b9d80,#8b9d80); }
 :is(.native-windows,.native-mac) .desktop-save-state[data-state="error"] { color:var(--tone-ink-ab735c,#ab735c); }
-:is(.native-windows,.native-mac) .desktop-save-state[data-state="saving"] svg { animation:desktop-saving 1.5s linear infinite; }
-@keyframes desktop-saving { to { transform:rotate(360deg); } }
-@media(prefers-reduced-motion:reduce) { :is(.native-windows,.native-mac) .desktop-save-state[data-state="saving"] svg { animation:none; } }
 :is(.native-windows,.native-mac) .month-inspector .markdown-editor { position:relative; min-height:140px; }
-:is(.native-windows,.native-mac) .desktop-note-resize { position:absolute; bottom:1px; right:1px; width:20px; height:20px; display:grid; place-items:center; color:var(--tone-ink-a3ad97,#a3ad97); cursor:ns-resize; touch-action:none; border-radius:0 0 6px 0; }
-:is(.native-windows,.native-mac) .desktop-note-resize svg { width:15px; height:15px; }
-:is(.native-windows,.native-mac) .desktop-note-resize:hover { color:var(--green); }
-:is(.native-windows,.native-mac) .desktop-note-resize:focus-visible { outline:1px solid var(--green); outline-offset:-2px; }
 /* The current-time guide crosses evidence, clock and recorded intervals. */
 :is(.native-windows,.native-mac) .dt-grid>.dt-now { left:0; right:0; height:0; min-height:0; z-index:25; pointer-events:none; border-color:var(--tone-line-bd6c5e,#bd6c5e); box-shadow:0 0 4px var(--tone-shadow-c8736266,#c8736266),0 0 9px var(--tone-shadow-c873622e,#c873622e); }
 :is(.native-windows,.native-mac) .dt-grid>.dt-now span { position:sticky; left:0; right:auto; top:auto; float:left; transform:translateY(-100%); box-sizing:border-box; width:38px; padding:2px 4px; text-align:center; font-size:10px; line-height:14px; background:transparent; color:var(--tone-ink-af6154,#af6154); border-radius:3px; font-variant-numeric:tabular-nums; }
@@ -279,7 +270,7 @@
 :is(.native-windows,.native-mac) #record-form .win-note-clear:disabled { opacity:.4; }
 :is(.native-windows,.native-mac) #record-form>.danger { flex:none; align-self:flex-start; margin-top:8px; min-height:24px; padding:0 2px; font-size:10px; }
 /* Floating project tags stay within their own track, including at the top edge. */
-:is(.native-windows,.native-mac) .dt-file-project .dt-file-project-name { position:absolute; margin-left:7px; width:calc(100% - 10px); max-width:none; }
+:is(.native-windows,.native-mac) .dt-file-project .dt-file-project-name { position:absolute; left:0; margin-left:7px; width:max-content; min-width:48px; max-width:var(--file-label-max-width,none); }
 /* Today's identity and the selected-day outline are independent cues. */
 :is(.native-windows,.native-mac) :is(.heat-day,.month-day).today-mark:is(.inspected,.selected) { outline:2px solid var(--tone-line-a46d4d,#a46d4d)!important; outline-offset:-2px; }
 @media(max-width:850px) {

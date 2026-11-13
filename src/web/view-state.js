@@ -24,7 +24,7 @@ export function sanitizeViewState(raw={},ids=[]){
  if(finite(t.scrollMinute,0,1440))out.timeline.scrollMinute=t.scrollMinute;
  if(typeof t.compare==='boolean')out.timeline.compare=t.compare;
  if(Array.isArray(t.hiddenClients))out.timeline.hiddenClients=[...new Set(t.hiddenClients.filter(x=>typeof x==='string'&&x.length<=200))].slice(0,100);
- for(const key of ['fullDay','showSuggestions'])if(typeof t[key]==='boolean')out.timeline[key]=t[key];
+ for(const key of ['fullDay','showSuggestions','showNoteChanges'])if(typeof t[key]==='boolean')out.timeline[key]=t[key];
  if(ids.includes(t.defaultProject))out.timeline.defaultProject=t.defaultProject;
  return out;
 }

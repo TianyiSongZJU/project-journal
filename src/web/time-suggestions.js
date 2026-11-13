@@ -1,6 +1,12 @@
 export function dedupeFileChanges(files){const fileChanges=new Map();for(const f of files){const identity=(f.relativePath||f.path||f.name||'').replaceAll('\\','/').normalize('NFC'),key=f.projectId+'/'+identity+'/'+(f.stamp||Math.floor(f.at*60));let prev=fileChanges.get(key);if(prev){prev.at=Math.min(prev.at,f.at);prev.devices=[...new Set([...prev.devices,...(f.devices||[f.device||'本机'])])];prev.bulk=prev.bulk&&f.bulk}else fileChanges.set(key,{...f,devices:[...(f.devices||[f.device||'本机'])]})}
 return [...fileChanges.values()] }
 // At most 96 local quarter-hour buckets. Raw observations are never copied to storage.
+// Notes corroborate ordinary files, but cannot create a competing project claim.
+function preferOrdinaryFiles(files){
+ const projects=new Set(files.filter(file=>!file.note).map(file=>file.projectId));
+ return projects.size?files.filter(file=>!file.note||projects.has(file.projectId)):files;
+}
+
 export function suggestTimeSlots({activities=[],files=[],projectIds=[],gapMinutes=15,rules={}}){
  const known=new Set(projectIds),slots=Array.from({length:96},(_,i)=>({start:i*15,end:(i+1)*15,active:0,projects:new Map(),files:[],nearFiles:[]}));
  // Accumulate within each device, then use the maximum across devices for one project.
@@ -17,11 +23,12 @@ export function suggestTimeSlots({activities=[],files=[],projectIds=[],gapMinute
  const candidates=slots.map(s=>{if(s.crossConflict)return {...s,projectId:'',projectIds:[...s.projects.keys()],confidence:'conflict',reasons:['多台设备在同一时间指向不同项目，请手动判断'],observedMinutes:Math.min(15,s.active/60)};const ranked=[...s.projects].sort((a,b)=>b[1].seconds-a[1].seconds),first=ranked[0],second=ranked[1],conflict=!!second&&(second[1].seconds>=120||second[1].seconds>=s.active*.25);if(conflict)return null;
   if(first&&first[1].seconds>=300&&first[1].seconds>=s.active*.6){const [projectId,p]=first,document=(p.basis.document||0)>=p.seconds*.5,filename=(p.basis.filename||0)>=p.seconds*.5;return {...s,projectId,confidence:document?'strong':'medium',reasons:[document?'前台文档位于项目资料夹':filename?'前台标题匹配项目文件名':p.basis.folder?'前台标题匹配项目资料夹':'前台活动已匹配此项目'],observedMinutes:Math.min(15,s.active/60)}}
   // File saves support a span only if they recur; one save or a burst never buys time.
-  const relevant=s.active>=120?s.nearFiles:s.files,ids=[...new Set(relevant.map(f=>f.projectId))];if(ids.length!==1||s.projects.size>1||first&&first[0]!==ids[0])return null;const fs=relevant.filter(f=>Math.abs(f.at-(s.start+7.5))<=22.5),times=[...new Set(fs.map(f=>f.at))].sort((a,b)=>a-b);if(times.length<2||times.at(-1)-times[0]<3)return null;
+  const relevant=preferOrdinaryFiles(s.active>=120?s.nearFiles:s.files),ids=[...new Set(relevant.map(f=>f.projectId))];if(ids.length!==1||s.projects.size>1||first&&first[0]!==ids[0])return null;const fs=relevant.filter(f=>Math.abs(f.at-(s.start+7.5))<=22.5),times=[...new Set(fs.map(f=>f.at))].sort((a,b)=>a-b);if(times.length<2||times.at(-1)-times[0]<3)return null;
   if(s.active<120&&(times[0]<s.start||times.at(-1)>=s.end))return null;
-  return {...s,projectId:ids[0],confidence:'low',reasons:[s.active>=120?'活跃区间附近有同项目的连续文件修改':'同项目文件多次修改，仅提示修改跨度'],observedMinutes:Math.min(15,s.active/60)};
+  const note=fs.some(f=>f.note),document=fs.some(f=>!f.note),evidence=note?(document?'文件和手记':'手记'):'文件';
+  return {...s,files:s.files.filter(f=>f.projectId===ids[0]),projectId:ids[0],confidence:'low',reasons:[s.active>=120?`活跃区间附近有同项目的连续${evidence}修改`:`同项目${evidence}多次修改，仅提示修改跨度`],observedMinutes:Math.min(15,s.active/60)};
  });
- if(rules.gap!==false&&gapMinutes>=15)for(let i=1;i<95;i++){if(candidates[i]||slots[i].active<120)continue;const a=candidates[i-1],b=candidates[i+1];if(!a||!b||!a.projectId||a.projectId!==b.projectId||a.confidence==='low'||b.confidence==='low')continue;if([...slots[i].projects.keys()].some(id=>id!==a.projectId)||slots[i].files.some(f=>f.projectId!==a.projectId))continue;candidates[i]={...slots[i],projectId:a.projectId,confidence:'low',reasons:['前后均为同一项目，中间有前台活跃；短间隔关联'],observedMinutes:Math.min(15,slots[i].active/60)}}
+ if(rules.gap!==false&&gapMinutes>=15)for(let i=1;i<95;i++){if(candidates[i]||slots[i].active<120)continue;const a=candidates[i-1],b=candidates[i+1];if(!a||!b||!a.projectId||a.projectId!==b.projectId||a.confidence==='low'||b.confidence==='low')continue;if([...slots[i].projects.keys()].some(id=>id!==a.projectId)||preferOrdinaryFiles(slots[i].files).some(f=>f.projectId!==a.projectId))continue;candidates[i]={...slots[i],files:slots[i].files.filter(f=>f.projectId===a.projectId),projectId:a.projectId,confidence:'low',reasons:['前后均为同一项目，中间有前台活跃；短间隔关联'],observedMinutes:Math.min(15,slots[i].active/60)}}
  return candidates.filter(Boolean).map(({start,end,projectId,projectIds,confidence,reasons,observedMinutes,devices,files:slotFiles})=>({start,end,projectId,projectIds,confidence,reasons,observedMinutes,devices:[...new Set([...(devices||[]),...(slotFiles||[]).flatMap(f=>f.devices||[])])]}));
 }
 export function availableSuggestions(slots,blocks,{start=0,end=1440,nowEnd=1440}={}){const out=[];for(const s of slots){if(s.start<start||s.end>end||s.end>nowEnd||blocks.some(b=>b.start<s.end&&b.end>s.start))continue;const prev=out.at(-1);if(prev&&prev.end===s.start&&prev.projectId===s.projectId&&(prev.confidence==='conflict')===(s.confidence==='conflict')){prev.end=s.end;if(prev.confidence!==s.confidence)prev.confidence='mixed';prev.observedMinutes+=s.observedMinutes;prev.reasons=[...new Set([...prev.reasons,...s.reasons])];prev.devices=[...new Set([...(prev.devices||[]),...(s.devices||[])])];prev.projectIds=[...new Set([...(prev.projectIds||[]),...(s.projectIds||[])])]}else out.push({...s,reasons:[...s.reasons]})}return out.map(s=>({...s,id:`${s.start}-${s.end}-${s.projectId}-${s.confidence}`}))}

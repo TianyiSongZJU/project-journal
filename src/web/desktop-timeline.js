@@ -14,23 +14,21 @@ export function activityClients(activities) {
   return [...clients.values()].sort((a,b) => a.name.localeCompare(b.name,'zh-CN') || a.id.localeCompare(b.id));
 }
 
-const labelWidth = text => [...text].reduce((width,char)=>width+(/[\u2e80-\uffff]/.test(char)?10:5.5),0);
-function activityDemand(activities,start,end) {
-  const slots=activitySlots(activities.map(item=>({...item,app:windowsAppName(item.app)})),start,end);
-  if(!slots.length) return 132;
-  return Math.min(360,Math.max(132,...slots.map(slot=>slot.apps.filter((app,index)=>!index||app.percent>=12).slice(0,4).reduce((width,app)=>width+Math.min(124,Math.max(64,labelWidth(app.app)+24)),0))));
-}
+const fileTrackMin=52;
+const fileTrackPreferred=72;
+const labelRow=20;
 
-// Size from visible content, rather than stretching application shapes into spare space.
-export function timelineWidths({width,activities=[],fileLabels=[],compare=false,start=0,end=1440}) {
-  const clients=activityClients(activities), gap=12;
-  const activityMin=compare?Math.max(1,clients.length)*160:120;
-  const activityPreferred=compare?clients.reduce((sum,client)=>sum+Math.max(160,activityDemand(client.activities,start,end)),0)||160:activityDemand(activities,start,end);
-  const filesMin=fileLabels.length?Math.max(80,fileLabels.length*52):0;
-  const filesPreferred=fileLabels.reduce((sum,label)=>sum+Math.min(120,Math.max(80,labelWidth(label)+24)),0);
-  const minimum=activityMin+filesMin+gap, available=Math.max(width,minimum);
-  const activityWidth=Math.min(activityPreferred,Math.max(activityMin,available-filesPreferred-gap));
-  const filesWidth=Math.min(filesPreferred,Math.max(filesMin,available-activityWidth-gap));
+export function timelineWidths({width,activities=[],fileCount=0,compare=false}) {
+  const columns=compare?Math.max(1,activityClients(activities).length):1;
+  const activityMin=compare?columns*160:220;
+  const activityMax=compare?columns*220:320;
+  const gap=12;
+  const filesMin=fileCount*fileTrackMin;
+  const filesPreferred=fileCount*fileTrackPreferred;
+  const minimum=activityMin+filesMin+gap;
+  const available=Math.max(width,minimum);
+  const filesWidth=Math.min(filesPreferred,available-activityMin-gap);
+  const activityWidth=Math.min(activityMax,available-filesWidth-gap);
   return {activityWidth,filesWidth,minimum,gap};
 }
 
@@ -110,22 +108,28 @@ export function setupClientTimeline({esc,initialView={},onViewChange}) {
     // Keep the split stable while scrolling vertically; recalculate on date/filter/size changes.
     const tracks=[...root.querySelectorAll('.dt-file-project')];
     const guide=root.querySelector('.dt-guides');
-    const widths=timelineWidths({width:guide.clientWidth,activities:guides.activities.filter(includes),fileLabels:tracks.map(track=>track.querySelector('.dt-file-project-name').textContent),compare,start:Number(grid.dataset.start),end:Number(grid.dataset.end)});
-    if(widths.minimum>guide.clientWidth) grid.style.minWidth=(grid.clientWidth+widths.minimum-guide.clientWidth)+'px';
-    const {activityWidth,filesWidth}=widths;
+    const guideWidth=guide.clientWidth;
+    const labels=tracks.map(track=>track.querySelector('.dt-file-project-name'));
+    const {activityWidth,filesWidth,minimum,gap}=timelineWidths({
+      width:guideWidth,activities:guides.activities.filter(includes),fileCount:tracks.length,compare
+    });
+    if(minimum>guideWidth) grid.style.minWidth=(grid.clientWidth+minimum-guideWidth)+'px';
     const captionGuide=root.querySelector('.dt-axis-caption>div');
-    const fileCaption=document.createElement('span');fileCaption.className='dt-caption-files';fileCaption.textContent='文件修改';
-    captionGuide.append(fileCaption);
     for(const el of [guide,headings.querySelector('.dt-client-heading-guide'),captionGuide]) {
       el.style.setProperty('--dt-activity-width',activityWidth+'px');
     }
-    tracks.forEach((track,index)=>{
-      track.style.left=(activityWidth+12+index*filesWidth/tracks.length)+'px';
-      track.style.width=filesWidth/tracks.length+'px';
-
-    });
+    if(tracks.length){
+      const trackWidth=filesWidth/tracks.length;
+      const guideEnd=Math.max(guideWidth,minimum);
+      tracks.forEach((track,index)=>{
+        const offset=index*trackWidth;
+        const left=activityWidth+gap+offset-3;
+        track.style.left=left+'px';
+        track.style.width=trackWidth+'px';
+        labels[index].style.setProperty('--file-label-max-width',Math.min(240,guideEnd-left-8)+'px');
+      });
+    }
     headings.querySelector('.dt-client-file-heading').hidden=!tracks.length;
-    fileCaption.hidden=!tracks.length||activityWidth+60>captionGuide.clientWidth;
     const scrollStyle=getComputedStyle(scroller);
     headings.style.paddingLeft=scrollStyle.paddingLeft;
     headings.style.paddingRight=scrollStyle.paddingRight;
@@ -134,18 +138,37 @@ export function setupClientTimeline({esc,initialView={},onViewChange}) {
     scroller.scrollLeft=horizontal;
     const sync=()=>{
       horizontal=scroller.scrollLeft;headings.scrollLeft=horizontal;
-      // Float along the original stem without leaving its actual revision extent.
       const viewport=scroller.getBoundingClientRect();
-      tracks.forEach(track=>{
-        const label=track.querySelector('.dt-file-project-name'),host=track.getBoundingClientRect(),height=label.getBoundingClientRect().height;
-        const minimum=Math.max(0,viewport.top+6-host.top),maximum=Math.min(host.height-height,viewport.bottom-6-host.top-height);
-        const blocked=[...track.querySelectorAll('.dt-node-metrics')].map(metrics=>{const r=metrics.getBoundingClientRect();return {start:r.top-host.top-height-2,end:r.bottom-host.top+2};}).sort((a,b)=>a.start-b.start);
-        const gaps=[];let start=minimum;
-        for(const block of blocked){if(block.end<=start)continue;if(block.start>start)gaps.push([start,Math.min(maximum,block.start)]);start=Math.max(start,block.end);if(start>maximum)break;}
-        if(start<=maximum)gaps.push([start,maximum]);
-        const desired=minimum+parseFloat(track.style.getPropertyValue('--file-label-offset')||0),candidates=gaps.filter(([a,b])=>a<=b).map(([a,b])=>Math.min(b,Math.max(a,desired)));
-        label.style.visibility=candidates.length?'visible':'hidden';
-        if(candidates.length){const top=candidates.sort((a,b)=>Math.abs(a-desired)-Math.abs(b-desired))[0];label.style.top=top+'px';}
+      const counters=[...guide.querySelectorAll('.dt-git-node')].map(node=>node.getBoundingClientRect())
+        .filter(rect=>rect.bottom>viewport.top&&rect.top<viewport.bottom);
+      const placed=[];
+      const geometry=tracks.map((track,index)=>({host:track.getBoundingClientRect(),label:labels[index].getBoundingClientRect()}));
+      geometry.forEach(({host,label},index)=>{
+        const minimum=Math.max(host.top,viewport.top+6);
+        const maximum=Math.min(host.bottom,viewport.bottom-6)-label.height;
+        const desired=minimum+index*labelRow;
+        const blocked=[...counters,...placed]
+          .filter(rect=>rect.left<label.right+2&&rect.right>label.left-2)
+          .map(rect=>({start:rect.top-label.height-2,end:rect.bottom+2}))
+          .sort((a,b)=>a.start-b.start);
+        let start=minimum,top;
+        function consider(end){
+          if(start>end)return;
+          const candidate=Math.min(end,Math.max(start,desired));
+          if(top===undefined||Math.abs(candidate-desired)<Math.abs(top-desired))top=candidate;
+        }
+        for(const block of blocked){
+          if(block.end<=start)continue;
+          consider(Math.min(maximum,block.start));
+          start=Math.max(start,block.end);
+          if(start>maximum)break;
+        }
+        consider(maximum);
+        labels[index].style.visibility=top===undefined?'hidden':'visible';
+        if(top!==undefined){
+          labels[index].style.top=(top-host.top)+'px';
+          placed.push({left:label.left,right:label.right,top,bottom:top+label.height});
+        }
       });
     };
     scroller.addEventListener('scroll',sync,{passive:true});

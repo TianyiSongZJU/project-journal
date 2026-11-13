@@ -4,6 +4,13 @@ const listKeys=new Set(['project-list','filter-project-list','record-project','i
 const flagKeys=new Set(['deadlineGrouped','reviewDone','reviewCompletedProjects','projectDone','inspectorDone','foldersGrouped','foldersCompleted','highlights','dayTasksDone','weeklyGoalsDone']);
 const panelKeys=new Set(['year.distribution','year.deadlines','year.weekly','project.deadlines','project.records','auto.advanced','auto.history']);
 const object=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
+export const noteHeightRange={min:160,max:1200};
+function validNoteHeight(key,height,ids){
+ const scope=key.split(':',1)[0],project=key.slice(scope.length+1);
+ const validKey=key==='weekly-note'||key==='record-note'||key==='inspector-note'||
+  ['project-note','inspector-project-note'].includes(scope)&&!!project&&project.length<=160&&(!ids||ids.includes(project));
+ return validKey&&Number.isInteger(height)&&height>=noteHeightRange.min&&height<=noteHeightRange.max;
+}
 export function sanitizeUIPreferences(raw={},ids){
  raw=object(raw);const out={lists:{},flags:{},panels:{}};
  for(const [key,value] of Object.entries(object(raw.lists))){
@@ -17,6 +24,7 @@ export function sanitizeUIPreferences(raw={},ids){
  if(raw.appearance&&typeof raw.appearance==='object')out.appearance={scheme:['system','light','dark'].includes(raw.appearance.scheme)?raw.appearance.scheme:'system',accent:['fern','slate','iris','clay','sand','rose','macaron','custom'].includes(raw.appearance.accent)?raw.appearance.accent:'fern',...((typeof raw.appearance.hue==='number'&&Number.isFinite(raw.appearance.hue)||raw.appearance.accent==='custom')?{hue:typeof raw.appearance.hue==='number'&&Number.isFinite(raw.appearance.hue)?Math.round(Math.max(0,Math.min(359,raw.appearance.hue))):148}:{})};
  if(out.appearance){const colors=globalThis.JournalManualColors.sanitize(raw.appearance.colors);if(Object.keys(colors).length)out.appearance.colors=colors}
  const priorities=object(raw.deadlinePriorities);for(const scope of ['project','inspector'])if(['all','高','中','低'].includes(priorities[scope])){out.deadlinePriorities??={};out.deadlinePriorities[scope]=priorities[scope]}
+ for(const [key,height] of Object.entries(object(raw.noteHeights)))if(validNoteHeight(key,height,ids)){out.noteHeights??={};out.noteHeights[key]=height}
  return out;
 }
 export function createUIPreferences(){
@@ -27,6 +35,7 @@ export function createUIPreferences(){
   appearance(){return structuredClone(value.appearance||{scheme:'system',accent:'fern'})},
   setAppearance(next){const choice=sanitizeUIPreferences({appearance:next}).appearance;if(choice&&JSON.stringify(value.appearance)!==JSON.stringify(choice)){value.appearance=choice;changed()}},
   deadlinePriority(scope){return value.deadlinePriorities?.[scope]||'all'},setDeadlinePriority(scope,next){if(!['project','inspector'].includes(scope)||!['all','高','中','低'].includes(next))return;value.deadlinePriorities??={};if(value.deadlinePriorities[scope]!==next){value.deadlinePriorities[scope]=next;changed()}},
+  noteHeight(key){return value.noteHeights?.[key]},setNoteHeight(key,height){if(validNoteHeight(key,height)){value.noteHeights??={};write('noteHeights',key,height)}},
   flag(key,fallback=false){return value.flags[key]??fallback},setFlag(key,next){if(flagKeys.has(key))write('flags',key,!!next)},
   panel(key,fallback=false){return value.panels[key]??fallback},setPanel(key,next){if(panelKeys.has(key)||key.startsWith('folder.'))write('panels',key,!!next)},
   list(key){const v=value.lists[key]||{};return {grouped:v.grouped??true,completed:v.completed??false,folded:new Set(v.folded||[])}},

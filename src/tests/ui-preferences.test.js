@@ -36,3 +36,20 @@ test('completed-project deadline visibility is a device-local preference',()=>{
  const preferences=createUIPreferences();preferences.setFlag('reviewCompletedProjects',true);
  assert.equal(sanitizeUIPreferences(preferences.snapshot()).flags.reviewCompletedProjects,true);
 });
+
+test('note heights stay separate by project and surface and survive view-state restore',()=>{
+ const first=createUIPreferences();
+ first.setNoteHeight('project-note:a',320);
+ first.setNoteHeight('project-note:b',270);
+ first.setNoteHeight('inspector-project-note:a',400);
+ first.setNoteHeight('weekly-note',240);
+ first.setNoteHeight('record-note',10);
+ const raw=first.snapshot();
+ raw.noteHeights['unrelated:a']=400;
+ raw.noteHeights['inspector-note']='260';
+ const view=sanitizeViewState({ui:raw},['a']);
+ const restored=createUIPreferences();
+ restored.restore(view.ui,['a']);
+ assert.deepEqual(restored.snapshot().noteHeights,{'project-note:a':320,'inspector-project-note:a':400,'weekly-note':240});
+ assert.equal(first.noteHeight('project-note:b'),270);
+});

@@ -25,7 +25,6 @@ html .markdown-mode>button>svg{display:block;flex:none;width:16px;height:16px}
 html[data-scheme] .markdown-editor.is-source>textarea{appearance:none;-webkit-appearance:none;box-sizing:border-box;flex:1;min-height:140px;margin:0;padding:10px!important;border:1px solid var(--line)!important;border-radius:8px!important;background:linear-gradient(115deg,var(--tone-surface-e8eee3,#e8eee3) 0%,var(--tone-surface-f1f4ec,#f1f4ec) 45%,var(--panel) 100%)!important;box-shadow:none!important;outline:none!important;resize:none;font:400 13px/1.5 ui-monospace,Menlo,monospace;color:var(--ink);scrollbar-color:var(--line) transparent}
 html[data-scheme] .markdown-editor.is-source>textarea:focus{border-color:var(--tone-line-99ac91,#99ac91)!important;box-shadow:0 0 0 2px var(--tone-shadow-315c4612,#315c4612)!important}
 html[data-scheme] .project-detail-section:has(#project-note) .markdown-editor.is-source>textarea{min-height:160px;background:transparent!important;border:0!important;padding:0!important;box-shadow:none!important}
-.markdown-editor.is-source>textarea::-webkit-scrollbar-track{background:transparent}
 
 
 /* Native rich text gives every line a glyph-sized caret; never stretch a
@@ -36,7 +35,6 @@ html .markdown-live .milkdown>.ProseMirror{padding:0;min-height:120px;outline:0;
 .markdown-live .ProseMirror p{min-height:1.4em;margin:0 0 3px}
 .markdown-live .ProseMirror :is(h1,h2,h3,h4,h5,h6){font-family:var(--crepe-font-default);font-weight:600;line-height:1.3;margin:8px 0}
 .markdown-live .ProseMirror h1{font-size:24px}.markdown-live .ProseMirror h2{font-size:21px}.markdown-live .ProseMirror h3{font-size:18px}
-.markdown-live .ProseMirror :is(ul,ol){padding-left:22px;margin:4px 0;list-style:none}
 .markdown-live .ProseMirror blockquote{border-left:2px solid var(--line);padding-left:12px;color:var(--muted);margin:6px 0}
 .markdown-live .milkdown span[data-type=math_inline]{padding:0 2px;vertical-align:baseline}
 .markdown-live .milkdown .milkdown-latex-inline-edit .ProseMirror{font:13px/1.5 var(--crepe-font-code);min-height:20px;padding:2px}
@@ -47,10 +45,6 @@ html .markdown-live .milkdown>.ProseMirror{padding:0;min-height:120px;outline:0;
 .markdown-live .milkdown .cm-editor{background:transparent;color:var(--ink)}
 .markdown-live .milkdown .cm-gutters{background:transparent;color:var(--muted);border:0}
 .markdown-live .milkdown .cm-cursor{border-left-width:1px;border-color:var(--ink)}
-.markdown-live .ProseMirror-focused{--prosemirror-virtual-cursor-color:var(--ink)}
-.markdown-live .ProseMirror .prosemirror-virtual-cursor{border-left-width:1px}
-.markdown-live .ProseMirror ul{list-style:disc}.markdown-live .ProseMirror ol{list-style:decimal}
-.markdown-live .ProseMirror li{padding-left:2px;margin:2px 0}
 .markdown-live .ProseMirror li>p{margin:0}
 .markdown-live .ProseMirror li[data-item-type=task]{list-style:none;position:relative;display:flex;gap:7px;align-items:flex-start}
 .markdown-live .ProseMirror li[data-item-type=task]>div{min-width:0;flex:1}
@@ -64,14 +58,26 @@ html .markdown-live .milkdown .ProseMirror h2{font-size:16.5px!important;color:c
 html .markdown-live .milkdown .ProseMirror h3{font-size:14.5px!important;color:color-mix(in srgb,var(--green) 35%,var(--ink))!important}
 html .markdown-live .milkdown .ProseMirror strong{font-weight:750}
 html .markdown-live .milkdown .ProseMirror em{font-style:italic}
-html .markdown-live .ProseMirror.virtual-cursor-enabled{caret-color:transparent}
-.markdown-live .ProseMirror :is(ul,ol){list-style:none!important;margin:3px 0;padding-left:20px}
-.markdown-live .ProseMirror li{position:relative;margin:1px 0}
-.markdown-live .journal-list-marker{position:absolute;left:-20px;top:0;width:17px;line-height:1.4;text-align:right;color:var(--muted);font-weight:500;user-select:none;-webkit-user-select:none}
+html .markdown-live .ProseMirror.journal-painted-caret{caret-color:transparent}
+.journal-note-caret{position:absolute;z-index:1;width:1px;background:var(--ink);pointer-events:none}
+.journal-note-caret[hidden]{display:none}
+.journal-note-caret.is-blinking{animation:journal-caret-blink 1s step-end infinite .55s}
+@keyframes journal-caret-blink{50%{opacity:0}}
+@media(prefers-reduced-motion:reduce){.journal-note-caret.is-blinking{animation:none}}
 .markdown-live .journal-format-marker{color:var(--muted);font:400 12px/1.4 ui-monospace,Menlo,monospace;opacity:.8;user-select:none;-webkit-user-select:none}
+/* Reveal formatting at the caret without giving the list text a new width. */
+.markdown-live .journal-list-format-marker{
+ position:relative;display:inline-block;width:0;height:0;vertical-align:baseline;
+ opacity:1;pointer-events:none;
+}
+.markdown-live .journal-list-format-marker>span{
+ position:absolute;z-index:1;left:0;bottom:11px;transform:translateX(-50%);
+ padding:0 2px;border-radius:2px;background:var(--panel);color:var(--muted);
+ font:500 8px/9px ui-monospace,Menlo,monospace;white-space:nowrap;pointer-events:auto;cursor:text;
+}
+
 .markdown-live .journal-inline-math{display:inline-block;vertical-align:baseline;color:var(--green);cursor:text}
 html .markdown-live .milkdown .journal-inline-math-source{appearance:none;display:inline-block;box-sizing:content-box;width:auto;max-width:100%;min-width:3ch;min-height:0;height:18px;margin:0;padding:0 2px;border:0;border-radius:3px;background:color-mix(in srgb,var(--green) 6%,transparent);box-shadow:none;outline:none;font:400 13px/18px ui-monospace,Menlo,monospace;color:var(--ink);caret-color:var(--ink)}
-.markdown-live .ProseMirror:has(.journal-inline-math-source:focus)>.prosemirror-virtual-cursor{display:none}
 html .markdown-live .milkdown .ProseMirror p{padding:0;line-height:1.4;min-height:1.4em}
 
 /* WebKit sizes a textarea caret from its line box on blank lines. Normal
@@ -94,7 +100,6 @@ html .markdown-live .milkdown .journal-block-math:is(.is-editing,:focus-visible)
 html .markdown-live .milkdown .journal-block-math-source{display:block;box-sizing:border-box;appearance:none;-webkit-appearance:none;width:100%;flex:none;height:24px;min-height:24px;max-height:320px;margin:2px 0;padding:2px 0!important;border:0!important;border-radius:0;background:transparent!important;box-shadow:none!important;outline:none!important;resize:none;overflow-y:auto;font:400 13px/normal ui-monospace,Menlo,monospace!important;color:var(--ink);caret-color:var(--ink)}
 .markdown-live .journal-block-math.is-editing .journal-block-math-preview{margin-top:6px;padding-top:6px;border-top:1px solid var(--line)}
 .markdown-live .journal-math-empty{font:400 12px/20px var(--crepe-font-default);color:var(--muted)}
-.markdown-live .ProseMirror:has(.journal-block-math-source:focus)>.prosemirror-virtual-cursor{display:none}
 
 /* Shared note heading: title/status on the left, actions on the right.
    Baseline and ink metrics are supplied by note-header.js for all surfaces. */
@@ -107,7 +112,140 @@ html .note-header>.markdown-mode{margin-left:auto!important;align-items:center;g
 html .note-obsolete-action{display:none!important}
 html .note-header .markdown-mode>.markdown-source-toggle[aria-pressed=true]{background:var(--green);color:var(--panel);box-shadow:0 0 0 1px var(--green)}
 html .note-header .desktop-save-state[data-state=error]{color:var(--clay)}
-html .note-header .desktop-save-state[data-state=saving]>svg{animation:note-header-saving 1.5s linear infinite}
-@keyframes note-header-saving{to{transform:rotate(360deg)}}
-@media(prefers-reduced-motion:reduce){html .note-header .desktop-save-state[data-state=saving]>svg{animation:none}}
+html .desktop-save-state>svg{overflow:hidden}
 html .note-header .markdown-mode>button>svg{width:16px;height:16px}
+
+/* The scroll area and resize grip are shared by source and live modes. */
+html[data-scheme] .markdown-editor.has-note-height{--note-scroll-inset:3px;flex:none!important}
+html[data-scheme] .markdown-editor.has-note-height>:is(.markdown-live,textarea){box-sizing:border-box;flex:0 0 auto;height:var(--note-height);min-height:0!important;overflow:auto;scrollbar-gutter:stable}
+html[data-scheme] .markdown-editor.has-note-height>.markdown-live{overflow-x:hidden;overscroll-behavior-inline:none;padding-bottom:16px}
+.markdown-editor.has-note-height .markdown-live .milkdown>.ProseMirror{overflow-x:clip;overflow-clip-margin:2px}
+html[data-scheme] .project-detail-section:has(#project-note)>.markdown-editor.has-note-height{padding-inline:0 var(--note-scroll-inset)}
+html[data-scheme] .project-detail-section:has(#project-note) .markdown-editor.has-note-height>.markdown-live{padding-inline:14px 11px}
+html[data-scheme] .project-detail-section:has(#project-note) .markdown-editor.has-note-height>textarea{padding-inline:14px 11px!important;padding-bottom:16px!important}
+.note-height-grip{position:absolute;z-index:1;right:3px;bottom:3px;width:20px;height:20px;display:grid;place-items:center;color:var(--muted);cursor:ns-resize;touch-action:none;border-radius:5px}
+.note-height-grip>svg{width:16px;height:16px;display:block;opacity:.75}
+.note-height-grip:is(:hover,:active,:focus-visible){color:var(--green);background:var(--editor-bg)}
+.note-height-grip:focus-visible{outline:1px solid var(--green);outline-offset:-2px}
+.note-paste-menu[hidden]{display:none}
+.note-paste-menu{position:absolute;top:6px;right:10px;z-index:3;display:flex;gap:4px;padding:4px;border:1px solid var(--line);border-radius:8px;background:var(--panel);box-shadow:0 3px 10px #0002}
+.note-paste-menu>button{min-height:26px;padding:3px 8px;color:var(--ink);font-size:11px}
+
+.markdown-live .ProseMirror .journal-list-folded{display:none!important}
+
+
+/* Match the marker box in every state and keep it inside the list gutter. */
+html .markdown-live .milkdown .ProseMirror :is(ul,ol){list-style:none;margin:3px 0;padding-inline-start:24px}
+.markdown-live .ProseMirror li{position:relative;margin:1px 0;padding-inline-start:2px}
+html .markdown-live .milkdown .journal-list-marker{
+ position:absolute;inset-inline-start:-23px;inset-block-start:0;
+ display:flex;align-items:center;justify-content:flex-end;box-sizing:border-box;
+ width:20px;min-width:0;height:1.4em;min-height:0;margin:0;padding:0 2px;
+ appearance:none;border:0;border-radius:4px;background:transparent;box-shadow:none;
+ color:var(--muted);font:500 13px/1.4 var(--crepe-font-default);white-space:nowrap;user-select:none;-webkit-user-select:none;
+}
+html .markdown-live .milkdown .journal-list-toggle{cursor:pointer}
+html .markdown-live .milkdown .journal-list-toggle:focus-visible{outline:1px solid var(--green);outline-offset:-2px}
+html .markdown-live .milkdown ol>li .journal-list-marker:not(.journal-list-bullet){
+ color:color-mix(in srgb,var(--ink) 85%,var(--muted));font-family:"Times New Roman",var(--serif);
+ font-weight:400;font-variant-numeric:lining-nums tabular-nums;
+}
+html .markdown-live .milkdown ol>li .journal-list-toggle:not(.journal-list-bullet)[aria-expanded=false]{
+ color:var(--green);
+ text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--green) 32%,transparent);
+ text-decoration-thickness:1px;text-underline-offset:3px;
+}
+html .markdown-live .milkdown .journal-list-bullet,
+html .markdown-live .milkdown .journal-list-bullet[aria-expanded=false]{color:transparent;text-shadow:none;background:transparent;box-shadow:none}
+.journal-list-bullet::after{
+ content:'';position:absolute;right:4px;top:50%;width:4px;height:4px;border-radius:50%;
+ background:var(--muted);transform:translateY(-50%);
+}
+.journal-list-bullet[aria-expanded=false]::after{
+ background:color-mix(in srgb,var(--green) 86%,#000);
+ box-shadow:0 0 1px 1px #fff8,0 0 4px 1px color-mix(in srgb,var(--green) 24%,transparent);
+}
+
+/* Use a narrow theme-colored thumb without the system track or corner. */
+html[data-scheme] :is(.markdown-live,.markdown-editor.is-source>textarea,.journal-table-scroll){
+ --note-scroll-thumb:color-mix(in srgb,var(--muted) 36%,transparent);
+ scrollbar-color:var(--note-scroll-thumb) transparent;scrollbar-width:thin;
+}
+@supports selector(::-webkit-scrollbar){
+ html[data-scheme] :is(.markdown-live,.markdown-editor.is-source>textarea,.journal-table-scroll){scrollbar-width:auto;scrollbar-color:auto}
+ :is(.markdown-live,.markdown-editor.is-source>textarea,.journal-table-scroll)::-webkit-scrollbar{width:6px;height:6px}
+ :is(.markdown-live,.markdown-editor.is-source>textarea,.journal-table-scroll)::-webkit-scrollbar-track,
+ :is(.markdown-live,.markdown-editor.is-source>textarea,.journal-table-scroll)::-webkit-scrollbar-corner{background:transparent}
+ :is(.markdown-live,.markdown-editor.is-source>textarea,.journal-table-scroll)::-webkit-scrollbar-thumb{
+  background:var(--note-scroll-thumb);border:1px solid transparent;border-radius:6px;background-clip:padding-box;
+ }
+ /* The sidebar note owns its border, so put the same inset inside its scrollbar gutter. */
+ #month-inspector .markdown-editor.has-note-height>:is(.markdown-live,textarea)::-webkit-scrollbar{
+  width:calc(6px + var(--note-scroll-inset));
+ }
+ #month-inspector .markdown-editor.has-note-height>:is(.markdown-live,textarea)::-webkit-scrollbar-thumb{
+  border-right-width:calc(1px + var(--note-scroll-inset));
+ }
+ :is(.markdown-live,.markdown-editor.is-source>textarea,.journal-table-scroll)::-webkit-scrollbar-thumb:hover{
+  background-color:color-mix(in srgb,var(--green) 49%,transparent);
+ }
+}
+
+.markdown-live .journal-table-scroll{max-inline-size:100%;margin:9px 0 11px;margin-inline-end:5px;overflow-x:auto;overscroll-behavior-inline:contain}
+.markdown-live .journal-table-scroll table{
+ width:100%;border:1px solid var(--line);border-radius:8px;border-collapse:separate;border-spacing:0;
+ background:color-mix(in srgb,var(--panel) 70%,transparent);font:inherit;
+}
+.markdown-live .journal-table-scroll :is(th,td){
+ min-inline-size:6ch;padding:6px 10px;vertical-align:top;text-align:start;line-height:1.4;
+ border-inline-end:1px solid color-mix(in srgb,var(--line) 62%,transparent);
+}
+.markdown-live .journal-table-scroll :is(th,td):last-child{border-inline-end:0}
+.markdown-live .journal-table-scroll{--table-header-fill:color-mix(in srgb,var(--green) 9%,var(--panel))}
+.markdown-live .journal-table-scroll th{background:var(--table-header-fill);color:var(--ink);font-weight:650}
+.markdown-live .journal-table-scroll th:first-child{border-start-start-radius:7px}
+.markdown-live .journal-table-scroll th:last-child{border-start-end-radius:7px}
+.markdown-live .journal-table-scroll td{border-block-start:1px solid var(--line)}
+.markdown-live .journal-table-scroll tr:nth-child(odd) td{background:color-mix(in srgb,var(--green) 3%,transparent)}
+.markdown-live .journal-table-scroll :is(th,td)>p{margin:0}
+
+
+.note-table-popup[hidden]{display:none}
+.note-table-popup{
+ position:fixed;z-index:45;display:grid;min-width:130px;max-height:calc(100vh - 12px);overflow:auto;
+ padding:4px;border:1px solid var(--line);border-radius:9px;background:var(--panel);box-shadow:0 5px 16px #0003;
+}
+.note-table-popup>button,.note-table-view-actions>button{min-height:24px;padding:3px 9px;text-align:start;background:transparent;border:0;box-shadow:none;font-size:11px}
+:is(.note-table-popup,.note-table-view-actions)>button:is(:hover,:focus-visible):not(:disabled){background:var(--editor-bg);color:var(--green)}
+.note-table-popup>button:nth-of-type(5){border-top:1px solid var(--line);border-radius:0}
+.note-table-view-actions{display:grid;gap:2px;margin-bottom:3px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.note-table-view-actions>button{border-radius:5px;background:color-mix(in srgb,var(--green) 5%,var(--panel));color:var(--green)}
+.note-table-view-actions>button:is(:hover,:focus-visible):not(:disabled){background:color-mix(in srgb,var(--green) 16%,var(--panel))}
+.note-table-view-actions>button:focus-visible{outline:1px solid var(--green);outline-offset:-1px}
+.note-table-popup>form{display:grid;grid-template-columns:1fr 49px;gap:6px 9px;align-items:center;padding:5px;font-size:11px}
+.note-table-popup>form>button{grid-column:1/-1;min-height:24px;margin-top:2px}
+.note-table-popup input{width:100%;min-height:23px;padding:2px 4px;font:inherit}
+
+.markdown-live .journal-table-scroll{position:relative}
+.markdown-live .journal-table-scroll table:has(col[style*="width"]){table-layout:fixed}
+.markdown-live .journal-table-scroll :is(th,td){position:relative;overflow-wrap:anywhere}
+.markdown-live .journal-table-col-resize{cursor:col-resize}
+.markdown-live .journal-table-row-resize{cursor:row-resize}
+.markdown-live .journal-table-folded tr:not([data-is-header]){display:none}
+.markdown-live .journal-table-scroll.journal-table-folded table{border-bottom:0;border-radius:8px 8px 0 0}
+.markdown-live .journal-table-expand{display:none}
+html .markdown-live .journal-table-folded>.journal-table-expand{
+ display:grid;place-items:center;position:relative;width:var(--journal-table-width,100%);height:19px;min-height:19px;
+ padding:0;border:0;border-radius:0 0 7px 7px;box-shadow:none;
+ background:
+  linear-gradient(var(--line),transparent) left/1px 100% no-repeat,
+  linear-gradient(var(--line),transparent) right/1px 100% no-repeat,
+  linear-gradient(var(--table-header-fill),transparent);
+ color:var(--muted);
+}
+.markdown-live .journal-table-expand::after{
+ content:'';width:5px;height:5px;border:solid currentColor;border-width:0 1px 1px 0;transform:translateY(-2px) rotate(45deg);
+}
+
+
+.markdown-live .journal-table-scroll table:has(col[style*="width"]) :is(th,td){min-inline-size:0}

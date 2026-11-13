@@ -773,10 +773,15 @@ func (a *AutoCollector) ingestActivity(v AutoActivity) {
 		return
 	}
 	app := strings.TrimSpace(prev.App)
-	if app == "" || strings.Contains(strings.ToLower(app), "项目手记") || app == "Finder" || strings.EqualFold(app, "explorer.exe") {
+	if app == "" || app == "Finder" || strings.EqualFold(app, "explorer.exe") {
 		return
 	}
-	pid, basis := a.matchActivityEvidence(*prev, c)
+	var pid, basis string
+	if strings.Contains(app, "项目手记") || strings.EqualFold(app, "ProjectJournal") || strings.EqualFold(app, "ProjectJournal.exe") {
+		app = "项目手记"
+	} else {
+		pid, basis = a.matchActivityEvidence(*prev, c)
+	}
 	end := start.Add(time.Duration(elapsed * float64(time.Second)))
 	for start.Before(end) {
 		local := start.In(time.Local)

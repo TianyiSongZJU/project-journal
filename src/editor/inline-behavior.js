@@ -1,3 +1,4 @@
+import {addListDecorations,listFolding} from './list-folding.js';
 import {markArrow,withoutMark} from './mark-boundaries.js';
 import {nodeViewCtx,prosePluginsCtx} from '@milkdown/kit/core';
 import {Plugin,NodeSelection,TextSelection} from '@milkdown/kit/prose/state';
@@ -31,19 +32,38 @@ function mathView(node,view,getPos){
  render();return {dom,selectNode(){const edge=view.journalMathEdge;delete view.journalMathEdge;begin(edge)},deselectNode(){finish()},update(next){if(next.type!==current.type)return false;current=next;if(!editing)render();return true},stopEvent:event=>editing&&event.target===field,ignoreMutation:()=>true,destroy(){disposed=true;if(field)field.onblur=null}};
 }
 
+function formatMarker(view,pos,name,delimiter,inList){
+ const marker=document.createElement('span');
+ marker.className=inList?'journal-format-marker journal-list-format-marker':'journal-format-marker';
+ marker.setAttribute('aria-hidden','true');
+ const label=inList?marker.appendChild(document.createElement('span')):marker;
+ label.textContent=delimiter;
+ marker.onmousedown=event=>{
+  event.preventDefault();
+  const tr=view.state.tr.setSelection(TextSelection.create(view.state.doc,pos));
+  view.dispatch(tr.setStoredMarks(withoutMark({...view.state,selection:tr.selection},name)));
+  view.focus();
+ };
+ return marker;
+}
+
 function decorations(state,focused){
  const result=[];
- // Explicit marker widgets also render on an otherwise empty first list item.
- state.doc.descendants((node,pos)=>{if(!['bullet_list','ordered_list'].includes(node.type.name))return;node.forEach((item,offset,index)=>{if(item.attrs.checked!=null)return;const at=pos+1+offset,marker=node.type.name==='ordered_list'?(node.attrs.order+index)+'.':'•';result.push(Decoration.widget(at+1,view=>{const el=document.createElement('span');el.className='journal-list-marker';el.textContent=marker;el.setAttribute('aria-hidden','true');el.onmousedown=event=>{event.preventDefault();view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc,at+2)));view.focus()};return el},{key:'list:'+at+':'+marker,side:-1}))})});
+ addListDecorations(state,result);
  const {$from,empty}=state.selection;
  if(focused&&empty&&$from.parent.isTextblock){
   const parent=$from.parent,base=$from.start(),caret=$from.parentOffset;
+  let inList=false;
+  for(let depth=$from.depth-1;depth>0;depth--)if($from.node(depth).type.name==='list_item'){inList=true;break}
   for(const [name,symbol] of [['strong','**'],['emphasis','*'],['inlineCode','`']]){
    const ranges=[];let start=null,end=null;
    parent.forEach((node,offset)=>{if(node.marks.some(mark=>mark.type.name===name)){if(start===null)start=offset;end=offset+node.nodeSize}else if(start!==null){ranges.push([start,end]);start=end=null}});
    if(start!==null)ranges.push([start,end]);
    const active=state.storedMarks??$from.marks();const range=ranges.find(([from,to])=>caret>from&&caret<to||(caret===from||caret===to)&&active.some(mark=>mark.type.name===name));if(!range)continue;const [from,to]=range;const text=parent.textBetween(from,to),runs=name==='inlineCode'?(text.match(/`+/g)||[]):[];const delimiter=name==='inlineCode'?'`'.repeat(Math.max(0,...runs.map(run=>run.length))+1):symbol;
-   for(const [pos,side] of [[base+from,-1],[base+to,1]])result.push(Decoration.widget(pos,view=>{const el=document.createElement('span');el.className='journal-format-marker';el.textContent=delimiter;el.setAttribute('aria-hidden','true');el.onmousedown=event=>{event.preventDefault();const tr=view.state.tr.setSelection(TextSelection.create(view.state.doc,pos));view.dispatch(tr.setStoredMarks(withoutMark({...view.state,selection:tr.selection},name)));view.focus()};return el},{key:name+':'+pos+':'+delimiter,side}));
+   for(const [pos,side] of [[base+from,-1],[base+to,1]]){
+    result.push(Decoration.widget(pos,view=>formatMarker(view,pos,name,delimiter,inList),
+     {key:name+':'+pos+':'+delimiter+':'+inList,side}));
+   }
   }
  }
  return DecorationSet.create(state.doc,result);
@@ -54,7 +74,7 @@ export function configureInlineBehavior(ctx){
  // The source editor lives inside the equation itself; suppress the old popup.
  ctx.set('INLINE_LATEX_TOOLTIP_SPEC',{});
  ctx.update(nodeViewCtx,views=>views.concat([['math_inline',mathView]]));
- ctx.update(prosePluginsCtx,plugins=>[new Plugin({props:{decorations:state=>decorations(state,focused),handleDOMEvents:{focus:view=>{focused=true;queueMicrotask(()=>{if(!view.isDestroyed)view.dispatch(view.state.tr)});return false},blur:view=>{focused=false;queueMicrotask(()=>{if(!view.isDestroyed)view.dispatch(view.state.tr)});return false}},handleKeyDown:(view,event)=>{
+ ctx.update(prosePluginsCtx,plugins=>[listFolding,new Plugin({props:{decorations:state=>decorations(state,focused),handleDOMEvents:{focus:view=>{focused=true;queueMicrotask(()=>{if(!view.isDestroyed)view.dispatch(view.state.tr)});return false},blur:view=>{focused=false;queueMicrotask(()=>{if(!view.isDestroyed)view.dispatch(view.state.tr)});return false}},handleKeyDown:(view,event)=>{
   if(event.isComposing||event.shiftKey||event.metaKey||event.ctrlKey||event.altKey||!view.state.selection.empty||!['ArrowLeft','ArrowRight'].includes(event.key))return false;
   const marks=markArrow(view.state,event.key);if(marks!==null){view.dispatch(view.state.tr.setStoredMarks(marks));return true}
   const {$from}=view.state.selection,node=event.key==='ArrowLeft'?$from.nodeBefore:$from.nodeAfter;

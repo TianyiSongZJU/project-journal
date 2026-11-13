@@ -817,8 +817,9 @@ final class JournalApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNav
   dragArea.frame=NSRect(x:0,y:frameView.bounds.maxY-58,width:frameView.bounds.width,height:58)
   // Treat the controls and title as one group: a shared title-row center
   // with the web navigation and actions.
+  let controlInset: CGFloat = 20
   let controlHalfHeight=(window.standardWindowButton(.closeButton)?.frame.height ?? 14)/2
-  let anchor=NSPoint(x:20,y:frameView.bounds.maxY-25-controlHalfHeight)
+  let anchor=NSPoint(x:controlInset,y:frameView.bounds.maxY-controlInset-controlHalfHeight)
   for type in [NSWindow.ButtonType.closeButton,.miniaturizeButton,.zoomButton]{
    if let button=window.standardWindowButton(type),let parent=button.superview {
     let point=parent.convert(anchor,from:frameView),offset:CGFloat=type == .closeButton ? 0 : type == .miniaturizeButton ? 23 : 46

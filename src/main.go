@@ -306,6 +306,9 @@ func (s *Store) saveLocked(st State, base string) (string, error) {
 	return s.saveWithHistoryLocked(st, base, nil)
 }
 func (s *Store) saveWithHistoryLocked(st State, base string, history *ChangeHistory) (string, error) {
+	return s.saveStateLocked(st, base, history, nil)
+}
+func (s *Store) saveStateLocked(st State, base string, history *ChangeHistory, saved func(State)) (string, error) {
 	if e := validate(st); e != nil {
 		return "", e
 	}
@@ -338,6 +341,9 @@ func (s *Store) saveWithHistoryLocked(st State, base string, history *ChangeHist
 		for _, p := range backups[:len(backups)-60] {
 			os.Remove(p)
 		}
+	}
+	if saved != nil {
+		saved(previous)
 	}
 	return nextRev, nil
 }
@@ -534,7 +540,10 @@ func main() {
 				}
 				jsonOut(w, Envelope{Revision: rev, State: st, DataPath: store.dir, SyncCopies: store.syncCopies()})
 			case "PUT":
-				var req Envelope
+				var req struct {
+					Envelope
+					NoteEdit *NoteEdit `json:"noteEdit,omitempty"`
+				}
 				dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, 32<<20))
 				dec.DisallowUnknownFields()
 				if e := dec.Decode(&req); e != nil {
@@ -546,7 +555,14 @@ func main() {
 					fail(w, "提交包含多余数据", 400)
 					return
 				}
-				rev, e := store.save(req.State, req.Revision)
+				var rev string
+				var changed bool
+				var e error
+				if req.NoteEdit == nil {
+					rev, e = store.save(req.State, req.Revision)
+				} else {
+					rev, changed, e = store.saveNoteEdit(req.State, req.Revision, *req.NoteEdit)
+				}
 				if e != nil {
 					code := 400
 					if errors.Is(e, errConflict) {
@@ -554,6 +570,9 @@ func main() {
 					}
 					fail(w, e.Error(), code)
 					return
+				}
+				if changed {
+					collector.ingestNoteEdit(*req.NoteEdit, time.Now())
 				}
 				store.mu.Lock()
 				saved, _, _ := store.read()

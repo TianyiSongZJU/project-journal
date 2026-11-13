@@ -20,3 +20,21 @@ test('cross-device contradictory projects are visible but cannot be adopted auto
 test('synchronized copies of the same file version cannot invent repeated saves',()=>{const duplicate=[f(541,'a',{relativePath:'报告.docx',stamp:'same',device:'Mac'}),f(550,'a',{relativePath:'报告.docx',stamp:'same',device:'Windows'})];assert.deepEqual(infer([],duplicate),[]);assert.equal(infer([],[...duplicate,f(551,'a',{relativePath:'报告.docx',stamp:'new',device:'Mac'})])[0].confidence,'low')});
 
 test('file dedup normalizes Windows paths and retains both source devices',()=>{const out=dedupeFileChanges([{at:541,projectId:'a',relativePath:'web/app.js',stamp:'v1',device:'Mac'},{at:550,projectId:'a',relativePath:'web\\app.js',stamp:'v1',device:'Windows'}]);assert.equal(out.length,1);assert.equal(out[0].at,541);assert.deepEqual(out[0].devices,['Mac','Windows'])});
+
+test('ordinary file evidence wins over conflicting notes and keeps same-project notes',()=>{
+ const note=(at,pid,device)=>f(at,pid,{note:true,path:'总体笔记.md',device});
+ const files=[f(541,'b',{device:'电脑'}),f(550,'b',{device:'电脑'}),note(543,'a','手机'),note(548,'a','手机')];
+ const [winner]=infer([],files);
+ assert.equal(winner.projectId,'b');
+ assert.deepEqual(winner.devices,['电脑']);
+ assert.equal(infer([a(540,'')],files)[0].projectId,'b');
+ assert.equal(infer([],files.slice(2))[0].projectId,'a');
+ assert.match(infer([],[files[0],note(548,'b')])[0].reasons[0],/文件和手记/);
+ assert.deepEqual(infer([],[files[0],...files.slice(2)]),[]);
+ assert.deepEqual(infer([],[...files,f(545,'a')]),[]);
+});
+test('a conflicting note does not block a short gap backed by a matching ordinary file',()=>{
+ const activity=[a(540),a(555,''),a(570)];
+ assert.equal(infer(activity,[f(557),f(558,'b',{note:true,path:'总体笔记.md'})]).find(s=>s.start===555)?.projectId,'a');
+ assert.equal(infer(activity,[f(557,'b'),f(558,'a',{note:true,path:'总体笔记.md'})]).find(s=>s.start===555),undefined);
+});
