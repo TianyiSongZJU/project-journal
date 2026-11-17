@@ -49,30 +49,74 @@ function inCustomRange(date){return(!$('#range-start').value||date>=$('#range-st
 function filteredEntries(){return state.entries.filter(e=>(!filterIds.size||filterIds.has(e.projectId))&&inCustomRange(e.date))}
 function entryLabel(e){return e.kind==='none'?'仅备注':e.kind==='hours'?`${fmt(e.hours)} 小时`:e.kind}
 function renderStats(){
- const list=scopeEntries(),m=summarize(list,estimates()),hasRough=Object.values(m.rough).some(Boolean),wasOpen=$('#stats details')?.open,projectToggle=$('#month-project-names');
- projectToggle?.remove();
+ const list=scopeEntries(),m=summarize(list,estimates()),hasRough=Object.values(m.rough).some(Boolean),wasOpen=$('#stats details')?.open,monthControls=$('#month-display-controls');
+ monthControls.remove();
  $('#stats').innerHTML=`<div class="primary-stat"><span class="stat-label">总投入</span><button type="button" id="total-unit-toggle" class="total-unit-toggle" aria-label="总投入，点击切换小时或天" title="点击切换小时／天；1 天 = 24 小时"><strong>${fmt(totalUnit==='days'?m.total/24:m.total)}<small>${totalUnit==='days'?'天':'小时'}</small></strong></button>${hasRough?'<span class="estimate-tag">含估算</span>':''}${m.missing?`<span class="estimate-tag pending">${m.missing} 条待配置</span>`:''}</div><div class="secondary-stat"><span>记录</span><strong>${m.days}</strong><span>天</span></div><button id="batch-toggle" class="quiet multi-select-toggle" aria-pressed="${batch}">${batch?'退出多选':'多选'}</button><details class="stats-details" ${wasOpen?'open':''}><summary>明细</summary><div class="stats-popover"><div><span>精确记录</span><strong>${fmt(m.exact)} 小时</strong></div><div><span>概括记录</span><strong>${KINDS.map(k=>k+' '+m.rough[k]).join(' · ')}</strong></div><div><span>已配置估算</span><strong>${fmt(m.estimated)} 小时</strong></div>${m.missing?`<p>${m.missing} 条概括记录尚未设置对应小时。</p>`:''}</div></details>`;
  const totalToggle=$('#total-unit-toggle');totalToggle.onclick=()=>{totalUnit=totalUnit==='hours'?'days':'hours';totalToggle.querySelector('strong').innerHTML=fmt(totalUnit==='days'?m.total/24:m.total)+'<small>'+(totalUnit==='days'?'天':'小时')+'</small>';totalToggle.setAttribute('aria-label','总投入 '+fmt(totalUnit==='days'?m.total/24:m.total)+(totalUnit==='days'?' 天':' 小时')+'，点击切换为'+(totalUnit==='days'?'小时':'天'));if(mode==='year'){if(groupTip)groupTip.hidden=true;renderDistribution(list,m)}};
- $('#batch-toggle').before(projectToggle);
+ $('#batch-toggle').before(monthControls);
  renderScopedDistribution();renderUpcoming();
 }
 function renderScopedDistribution(){const week=mode==='month'&&selectedWeek&&!batch?selectedWeek:'',end=week?addDays(week,6):'',list=week?filteredEntries().filter(e=>e.date>=week&&e.date<=end):scopeEntries(),summary=summarize(list,estimates()),panel=$('#distribution-panel'),period=$('#distribution-period');panel.dataset.week=week;panel.querySelector('summary>span').textContent=week?'所选周分布':'项目时间分布';$('#distribution-scope').textContent=week?week+' — '+end:mode==='year'?`${viewYear} 年`:viewMonth;$('#distribution-count').textContent=`${new Set(list.map(e=>e.projectId)).size} 个项目`;period.hidden=!week;if(week)period.innerHTML=`<span>统计范围</span><time datetime="${week}">${week.replaceAll('-','.')}</time><span>—</span><time datetime="${end}">${end.replaceAll('-','.')}</time>${$('#range-start').value||$('#range-end').value?'<small>已应用日期筛选</small>':''}`;renderDistribution(list,summary)}
 function dayInfo(date){const entries=calendarEntriesMap.get(date)||[],m=summarize(entries,estimates());return{entries,m,caption:[m.exact?fmt(m.exact)+'h':'',...KINDS.filter(k=>m.rough[k]).map(k=>k+(m.rough[k]>1?'×'+m.rough[k]:''))].filter(Boolean).join(' · ')}}
 function dayDeadlines(date){return calendarDeadlinesMap.get(date)||[]}
-function dayButton(date,small=false){
- const {m,caption}=dayInfo(date),ddls=dayDeadlines(date),pending=ddls.filter(x=>!x.d.done),lead=pending[0]||ddls[0];
+function dayButton(date,small=false,display=null,limits=null){
+ const {entries,m,caption}=dayInfo(date),ddls=display&&!display.deadlines?[]:dayDeadlines(date),pending=ddls.filter(x=>!x.d.done);
  const classes=[small?'heat-day':'month-day',selected.has(date)?'selected':'',m.missing&&m.total===0?'unconfigured':'',!inCustomRange(date)?'outside-range':'',date===today?'today-mark':'',ddls.length?'has-ddl':'',ddls.length&&!pending.length?'ddl-complete':''].filter(Boolean).join(' ');
  const weekday=['周日','周一','周二','周三','周四','周五','周六'][parseDate(date).getDay()];
  const label=`${date} ${weekday} ${caption||'暂无记录'}${ddls.length?'，'+ddls.length+' 个截止节点':''}${m.missing?'，包含待配置的概括记录':''}`;
  const bars=ddls.map(({p,d})=>`<i style="--ddl-project-color:${esc(p.color)}" class="ddl-pin ${d.done?'done':'priority-'+({'高':'high','中':'medium','低':'low'}[d.priority])}" aria-hidden="true"></i>`).join('');
  const pin=ddls.length?'<span class="year-ddl-corner" aria-hidden="true"></span>':'';
- const names='';
- const content=small?pin:`<span class="day-top"><b><span class=day-number>${Number(date.slice(-2))}</span>${date===today?'<small class="today-tag">今天</small>':''}</b>${names}<em>${esc(caption)}</em></span>`;
+ const content=small?pin:`<span class="day-top"><b><span class=day-number>${Number(date.slice(-2))}</span>${date===today?'<small class="today-tag">今天</small>':''}</b><em>${esc(caption)}</em></span>`;
  const button=`<button type="button" class="${classes}" data-date="${date}" data-year="${date.slice(0,4)}" data-level="${level(m.total,estimates())}" aria-label="${esc(label)}" aria-pressed="${selected.has(date)}">${content}</button>`;
  if(small)return button;
- const split=state.settings.showMonthProjects,rows=split?`<div class="month-project-rows">${dayInfo(date).entries.map(e=>`<button type="button" data-project-date="${date}" data-day-project="${e.projectId}" style="--project-color:${esc(project(e.projectId)?.color)};--entry-color:var(--l${level(entryHours(e,estimates())||0,estimates())});--entry-ink:${level(entryHours(e,estimates())||0,estimates())>=4?'#fff':'#344332'}" title="${esc(projectLabel(project(e.projectId)))} · ${esc(entryLabel(e))}${e.note?' · '+esc(e.note):''}"><span>${esc(project(e.projectId)?.name)}</span><small>${esc(e.kind==='hours'?fmt(e.hours)+'h':e.kind==='none'?'备注':e.kind)}</small></button>`).join('')}</div>`:'';
- return `<div class="month-day-wrap ${split?'split-day':''} ${!dayInfo(date).entries.length?'empty-day':''} ${ddls.length?'with-ddl':''}" style="--ddl-count:${ddls.length}">${button}${rows}${ddls.length?`<button type="button" class="day-ddl-button" data-open-day-ddl="${date}" aria-label="查看 ${date} 的 ${ddls.length} 个截止节点">${bars}</button>`:''}</div>`;
+ if(display?.projects&&!display.deadlines){
+  const rows=entries.map(e=>`<button type="button" data-project-date="${date}" data-day-project="${esc(e.projectId)}" style="--project-color:${esc(project(e.projectId)?.color||'var(--muted)')}"><span>${esc(project(e.projectId)?.name||'项目')}</span><small>${esc(monthEntryTime(e))}</small></button>`).join('');
+  return `<div class="month-day-wrap split-day${rows?'':' empty-day'}">${button}${rows?`<div class="month-project-rows">${rows}</div>`:''}</div>`;
+ }
+ if(display){
+  return `<div class="month-day-wrap month-detail-day" style="--day-heat:var(--l${level(m.total,estimates())})">${button}${monthDayDetails(date,ddls,display.projects?entries:[],limits)}</div>`;
+ }
+ return `<div class="month-day-wrap ${ddls.length?'with-ddl':''}" style="--ddl-count:${ddls.length}">${button}${ddls.length?`<button type="button" class="day-ddl-button" data-open-day-ddl="${date}" aria-label="查看 ${date} 的 ${ddls.length} 个截止节点">${bars}</button>`:''}</div>`;
 }
+
+const expandedMonthGroups=new Set();
+function monthDisplay(){
+ const legacy=uiPreferences.flag('monthDetails');
+ return {
+  deadlines:uiPreferences.flag('monthDeadlines',legacy),
+  projects:uiPreferences.flag('monthProjects',legacy||!!state.settings.showMonthProjects)
+ };
+}
+function monthEntryTime(entry){
+ return entry.kind==='hours'?fmt(entry.hours)+'h':entry.kind==='none'?'备注':entry.kind;
+}
+function monthDayDetails(date,deadlines,entries,limits){
+ if(!deadlines.length&&!entries.length)return '';
+ const rows=deadlines.map(({p,d})=>`<button type="button" class="month-detail-row month-detail-ddl ${d.done?'is-done':''}" data-open-day-ddl="${date}" data-month-deadline="${esc(d.id)}" data-deadline-project="${esc(p.id)}"><i aria-hidden="true">${d.done?'✓':''}</i><span>${esc(d.name)}</span></button>`);
+ const work=entries.map(e=>{
+  const p=project(e.projectId),name=p?.name||'项目';
+  const note=monthNoteExcerpt(e.note);
+  return `<button type="button" class="month-detail-row month-detail-work" data-project-date="${date}" data-day-project="${esc(e.projectId)}" style="--project-color:${esc(p?.color||'var(--muted)')}"><i aria-hidden="true"></i><span>${esc(note||name)}</span><small>${esc(monthEntryTime(e))}</small></button>`;
+ });
+ const showHeadings=rows.length>0&&work.length>0;
+ return `<div class="month-detail-list">${monthDetailGroup(date,'deadlines','截止节点',rows,limits?.deadlines??rows.length,showHeadings)}${monthDetailGroup(date,'projects','当日投入',work,limits?.projects??work.length,showHeadings)}</div>`;
+}
+
+function monthDetailGroup(date,type,label,rows,limit,showHeading){
+ if(!rows.length)return '';
+ const id=`month-detail-${type}-${date}`, extra=rows.length-limit;
+ const expanded=extra>0&&expandedMonthGroups.has(id);
+ return `<div class="month-detail-group month-detail-${type}" aria-label="${label}">${showHeading||extra>0?`<div class="month-detail-heading${showHeading?'':' inline-only'}">${label}</div>`:''}${rows.slice(0,limit).join('')}${extra>0?`<div class="month-detail-extra" id="${id}" ${expanded?'':'hidden'}>${rows.slice(limit).join('')}</div><button type="button" class="month-detail-more" aria-expanded="${expanded}" aria-controls="${id}" aria-label="${date} ${label}，${expanded?'收起':'展开'} ${extra} 项额外详情"><span class="month-detail-count">+${extra}</span></button>`:''}</div>`;
+}
+
+function monthNoteExcerpt(note=''){
+ return note.replace(/^```[^\n]*\n[\s\S]*?^```[^\n]*/gm,'')
+  .split('\n').map(line=>line.replace(/!\[[^\]]*\]\([^)]*\)/g,'')
+   .replace(/\[([^\]]+)\]\([^)]*\)/g,'$1')
+   .replace(/^\s*(?:(?:#{1,6}|>|[-+*]|\d+\.)\s+)+/,'').replace(/^\[[ xX]\]\s+/,'')
+   .replace(/[*_`~]/g,'').trim()).find(line=>line&&!/^[-=| ]+$/.test(line))?.slice(0,100)||'';
+}
+
 function renderDayDialog(){
  if(!dayDialogDate)return;
  $('#day-dialog-title').textContent=`${dayDialogDate.slice(5).replace('-','月')}日`;
@@ -104,7 +148,37 @@ function renderYear(jump=true){
  yearRebuilding=false;
 }
 function rebuildDayIndex(){calendarEntriesMap=new Map();calendarDeadlinesMap=new Map();for(const e of filteredEntries()){if(!calendarEntriesMap.has(e.date))calendarEntriesMap.set(e.date,[]);calendarEntriesMap.get(e.date).push(e)}for(const item of deadlineRows(state.projects.filter(p=>!filterIds.size||filterIds.has(p.id)),true)){if(!isCalendarDeadline(item.d)||!inCustomRange(item.d.date))continue;if(!calendarDeadlinesMap.has(item.d.date))calendarDeadlinesMap.set(item.d.date,[]);calendarDeadlinesMap.get(item.d.date).push(item)}}
-function monthHTML(days){const first=days.find(d=>d.endsWith('-01')),key=(first||days[3]).slice(0,7),week=days[0],journal=state.weekly?.[week],has=!!(journal?.title?.trim()||journal?.note?.trim()||journal?.goals?.length),active=selectedWeek===week;return `<div class="month-week ${active?'week-inspected':''}" data-week-start="${week}" data-month="${key}" style="--week-projects:${Math.max(...days.map(d=>dayInfo(d).entries.length))}"><div class="month-rail">${first?`<strong>${Number(first.slice(5,7))}月</strong><small>${first.slice(0,4)}</small>`:''}<button type="button" class="week-journal-trigger ${has?'has-content':''}" data-open-week="${week}" aria-label="${esc(journal?.title?.trim()||'写周记')}" aria-pressed="${active}" title="${esc(journal?.title?.trim()||'写周记')}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 3.5h8l2 2V16.5H5zM8 8h4M8 11h4M8 14h2"/></svg></button></div>${days.map(d=>dayButton(d)).join('')}</div>`}
+// Match the fixed line heights and gaps used by the calendar detail groups.
+function monthDetailHeight(totals,visible,inline){
+ const both=totals.deadlines>0&&totals.projects>0;
+ let height=35+(both?9:0);
+ for(const field of ['deadlines','projects']){
+  const count=visible[field], more=count<totals[field];
+  if(!count)continue;
+  height+=19*count-2;
+  if(both||more&&inline)height+=16;
+  if(more&&!inline)height+=14;
+ }
+ return height;
+}
+function monthWeekLimits(days,display,width){
+ if(!display?.deadlines||!display.projects)return [];
+ const inline=width-8>=68;
+ const totals=days.map(date=>({deadlines:dayDeadlines(date).length,projects:calendarEntriesMap.get(date)?.length||0}));
+ const limits=totals.map(({deadlines,projects})=>({deadlines:Math.min(deadlines,3),projects:Math.min(projects,2)}));
+ const budget=Math.max(width,...totals.map((counts,index)=>monthDetailHeight(counts,limits[index],inline)));
+ return limits.map((visible,index)=>{
+  const counts=totals[index];
+  for(const field of ['deadlines','projects']){
+   if(visible[field]===counts[field])continue;
+   const full={...visible,[field]:counts[field]};
+   if(monthDetailHeight(counts,full,inline)<=budget)visible[field]=counts[field];
+   else visible[field]=Math.min(counts[field]-1,visible[field]+Math.floor((budget-monthDetailHeight(counts,visible,inline))/19));
+  }
+  return visible;
+ });
+}
+function monthHTML(days,display,width){const limits=monthWeekLimits(days,display,width);const first=days.find(d=>d.endsWith('-01')),key=(first||days[3]).slice(0,7),week=days[0],journal=state.weekly?.[week],has=!!(journal?.title?.trim()||journal?.note?.trim()||journal?.goals?.length),active=selectedWeek===week;return `<div class="month-week ${active?'week-inspected':''}" data-week-start="${week}" data-month="${key}"><div class="month-rail">${first?`<strong>${Number(first.slice(5,7))}月</strong><small>${first.slice(0,4)}</small>`:''}<button type="button" class="week-journal-trigger ${has?'has-content':''}" data-open-week="${week}" aria-label="${esc(journal?.title?.trim()||'写周记')}" aria-pressed="${active}" title="${esc(journal?.title?.trim()||'写周记')}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 3.5h8l2 2V16.5H5zM8 8h4M8 11h4M8 14h2"/></svg></button></div>${days.map((d,index)=>dayButton(d,false,display,limits[index])).join('')}</div>`}
 function syncWeekPanel(){const week=mode==='month'&&selectedWeek&&!batch?selectedWeek:'';if(state&&($('#distribution-panel').dataset.week||'')!==week)renderScopedDistribution();const active=(mode==='month'||mode==='year')&&!!selectedWeek&&!batch;$('#weekly-workspace').hidden=!active;$('#month-inspector').hidden=active;$('#page-review').classList.toggle('week-selected',active);$$('[data-week-start]').forEach(row=>{const chosen=active&&row.dataset.weekStart===selectedWeek;row.classList.toggle('week-inspected',chosen);row.querySelector('[data-open-week]')?.setAttribute('aria-pressed',String(chosen))});paintYearWeek();$$('[data-overview-week]').forEach(button=>button.setAttribute('aria-pressed',String(active&&button.dataset.overviewWeek===selectedWeek)));if(active){$$('[data-date].inspected').forEach(el=>el.classList.remove('inspected'));weeklyUI.render()}}
 async function openWeek(date,reveal=false){if(!await leaveInspector())return;if(!await weeklyUI.select(date))return;selectedWeek=weekStart(date);batch=false;selected.clear();anchor=null;hideTooltip();if(reveal){if(mode==='year'){viewYear=Number(addDays(selectedWeek,3).slice(0,4));renderReview(true);requestAnimationFrame(()=>$('#year-calendar [data-date="'+selectedWeek+'"]')?.scrollIntoView({block:'nearest',inline:'nearest'}))}else{viewMonth=date.slice(0,7);renderReview(true)}}else{renderBatch();syncWeekPanel();rememberView()}renderWeeklyOverview()}
 function paintYearWeek(){const grid=$('#year-calendar .heat-grid');if(!grid)return;const index=selectedWeek?yearCells.findIndex(c=>c.date===selectedWeek):-1;grid.classList.toggle('has-week-highlight',mode==='year'&&index>=0&&!batch);if(index>=0)grid.style.setProperty('--selected-week-column',Math.floor(index/7))}
@@ -112,9 +186,26 @@ function renderWeeklyOverview(){const panel=$('#weekly-overview');panel.hidden=m
 
 
 function shiftedMonth(key,n){const [y,m]=key.split('-').map(Number);return monthKey(new Date(y,m-1+n,1))}
-let monthBase=viewMonth,monthRebuilding=false,monthPositionDate=null;
-function renderMonths(jump=true){const scroller=$('#month-calendar'),oldTop=scroller.scrollTop;monthRebuilding=true;if(jump){monthPositionDate=null;monthBase=viewMonth;monthOffsets=[-6,6]}const first=shiftedMonth(monthBase,monthOffsets[0]),last=shiftedMonth(monthBase,monthOffsets[1]);$('#month-list').innerHTML=monthWeeks(first,last).map(monthHTML).join('');if(jump){const target=$(`#month-list [data-date="${viewMonth}-01"]`);if(target)scroller.scrollTop=target.closest('.month-week').offsetTop-$('#month-list').offsetTop}else scroller.scrollTop=oldTop;monthRebuilding=false;$('#calendar-title').textContent=`${viewMonth} · 连续月历`;$('#calendar-help').textContent='上下滚动 · 选日期记录';renderInspector()}
-function renderCalendar(jump=true){const legend=$('.legend');if(mode==='month')$('.review-analytics').after(legend);else $('.calendar-bottom').append(legend);$('#month-project-names').hidden=mode!=='month';$('#month-project-names').classList.toggle('active',!!state.settings.showMonthProjects);$('#month-project-names').setAttribute('aria-pressed',!!state.settings.showMonthProjects);if(reviewLayoutMode!==mode){reviewLayoutMode=mode;if(mode==='year'){bindPreferencePanel($('#distribution-panel'),'year.distribution',true);bindPreferencePanel($('#deadline-panel'),'year.deadlines',false);bindPreferencePanel($('#weekly-overview'),'year.weekly',true)}else{for(const id of ['distribution-panel','deadline-panel','weekly-overview']){const panel=$('#'+id);panel.ontoggle=null;delete panel.dataset.uiPanel;panel.open=false}}}rebuildDayIndex();$('#year-calendar').hidden=mode!=='year';$('#month-workspace').hidden=mode!=='month';$('#page-review').classList.toggle('month-view',mode==='month');$('#year-label').hidden=mode!=='year';$('#month-label').hidden=mode!=='month';$('#year-input').value=viewYear;$('#month-input').value=viewMonth;$('#mode-year').classList.toggle('active',mode==='year');$('#mode-month').classList.toggle('active',mode==='month');$('#mode-year').setAttribute('aria-pressed',mode==='year');$('#mode-month').setAttribute('aria-pressed',mode==='month');if(mode==='year')renderYear(jump);else renderMonths(jump);renderInspector();renderBatch();if(mode==='month')sizeMonthViewport()}
+let monthBase=viewMonth,monthRebuilding=false,monthPositionDate=null,monthLayoutWidth=0;
+function renderMonthRows(first,last){
+ const list=$('#month-list'), style=getComputedStyle(list), display=monthDisplay();
+ monthLayoutWidth=list.clientWidth;
+ const cellWidth=(monthLayoutWidth-parseFloat(style.getPropertyValue('--month-rail-width'))-7*parseFloat(style.getPropertyValue('--month-grid-gap')))/7;
+ const details=display.deadlines||display.projects?display:null;
+ list.innerHTML=monthWeeks(first,last).map(days=>monthHTML(days,details,cellWidth)).join('');
+}
+new ResizeObserver(()=>{
+ if(!state||mode!=='month'||page!=='review')return;
+ const list=$('#month-list'),display=monthDisplay();
+ if(list.clientWidth&&list.clientWidth!==monthLayoutWidth&&display.deadlines&&display.projects)keepMonthPosition(()=>{
+  const inspected=list.querySelector('[data-date].inspected')?.dataset.date;
+  renderMonthRows(shiftedMonth(monthBase,monthOffsets[0]),shiftedMonth(monthBase,monthOffsets[1]));
+  refreshBatchSelection();
+  if(inspected)list.querySelector(`[data-date="${inspected}"]`)?.classList.add('inspected');
+ });
+}).observe($('#month-list'));
+function renderMonths(jump=true){const scroller=$('#month-calendar'),oldTop=scroller.scrollTop;monthRebuilding=true;if(jump){monthPositionDate=null;monthBase=viewMonth;monthOffsets=[-6,6]}const first=shiftedMonth(monthBase,monthOffsets[0]),last=shiftedMonth(monthBase,monthOffsets[1]);renderMonthRows(first,last);if(jump){const target=$(`#month-list [data-date="${viewMonth}-01"]`);if(target)scroller.scrollTop=target.closest('.month-week').offsetTop-$('#month-list').offsetTop}else scroller.scrollTop=oldTop;monthRebuilding=false;$('#calendar-title').textContent=`${viewMonth} · 连续月历`;$('#calendar-help').textContent='上下滚动 · 选日期记录';renderInspector()}
+function renderCalendar(jump=true){const legend=$('.legend');if(mode==='month')$('.review-analytics').after(legend);else $('.calendar-bottom').append(legend);renderMonthSplit();renderMonthDisplay();if(reviewLayoutMode!==mode){reviewLayoutMode=mode;if(mode==='year'){bindPreferencePanel($('#distribution-panel'),'year.distribution',true);bindPreferencePanel($('#deadline-panel'),'year.deadlines',false);bindPreferencePanel($('#weekly-overview'),'year.weekly',true)}else{for(const id of ['distribution-panel','deadline-panel','weekly-overview']){const panel=$('#'+id);panel.ontoggle=null;delete panel.dataset.uiPanel;panel.open=false}}}rebuildDayIndex();$('#year-calendar').hidden=mode!=='year';$('#month-workspace').hidden=mode!=='month';$('#page-review').classList.toggle('month-view',mode==='month');$('#year-label').hidden=mode!=='year';$('#month-label').hidden=mode!=='month';$('#year-input').value=viewYear;$('#month-input').value=viewMonth;$('#mode-year').classList.toggle('active',mode==='year');$('#mode-month').classList.toggle('active',mode==='month');$('#mode-year').setAttribute('aria-pressed',mode==='year');$('#mode-month').setAttribute('aria-pressed',mode==='month');if(mode==='year')renderYear(jump);else renderMonths(jump);renderInspector();renderBatch();if(mode==='month')sizeMonthViewport()}
 function sizeMonthViewport(){if(page!=='review'||mode!=='month')return;const sc=$('#month-calendar'),main=$('main'),bottom=$('.calendar-bottom'),footer=$('#review-bottom'),outer=el=>{const cs=getComputedStyle(el);return el.getBoundingClientRect().height+(parseFloat(cs.marginTop)||0)+(parseFloat(cs.marginBottom)||0)};const top=sc.getBoundingClientRect().top+main.scrollTop,reserve=outer(bottom)+outer(footer)+4;sc.style.height=Math.max(200,Math.min(innerHeight,main.getBoundingClientRect().bottom)-top-reserve)+'px'}
 window.addEventListener('resize',()=>requestAnimationFrame(sizeMonthViewport));
 function distributionTime(hours,long=false){const days=mode==='year'&&totalUnit==='days';return fmt(days?hours/24:hours)+(days?' 天':long?' 小时':'h')}
@@ -145,7 +236,7 @@ function renderBatch(){syncWeekPanel();const current=$('#batch-project').value;$
 function renderReview(jump=true){
  rememberView();yearWeekHover?.hide();if($('#weekly-workspace').parentElement!==$('#review-bottom'))$('#review-bottom').append($('#weekly-workspace'));syncWeekPanel();
  for(const key of ['year','month','time']){$('#mode-'+key).classList.toggle('active',mode===key);$('#mode-'+key).setAttribute('aria-pressed',String(mode===key))}
- const active=mode==='time';$('#tr-controls-host').hidden=!active;$('#page-review').classList.toggle('time-view',active);$('#time-workspace').hidden=!active;
+ const active=mode==='time';if(active){renderMonthDisplay();renderMonthSplit();}$('#tr-controls-host').hidden=!active;$('#page-review').classList.toggle('time-view',active);$('#time-workspace').hidden=!active;
 
  const inspector=$('#month-inspector'),host=$('.tr-inspector-host');
  if(active){
@@ -215,14 +306,78 @@ window.addEventListener('resize',alignDeadlineTitle);
 document.fonts?.ready.then(alignDeadlineTitle);
 async function openDeadline(pid,id=null){if(!await leaveDirtyNote())return;deadlineProject=pid;const d=project(pid).deadlines?.find(d=>d.id===id);$('#deadline-id').value=d?.id||'';$('#deadline-name').value=d?.name||'';$('#deadline-date').value=d?.date||today;$('#deadline-priority').value=d?.priority||'中';$('#deadline-done').checked=d?.done||false;$('#deadline-note').value=d?.note||'';refreshMarkdownEditors($('#deadline-dialog'),{reset:true});$('#delete-deadline').hidden=!d;$('#deadline-dialog').showModal();alignDeadlineTitle()}
 async function selectDate(date,event){if(event.ctrlKey||event.metaKey||event.shiftKey||batch){batch=true;if(event.shiftKey&&anchor){try{dateRange(anchor,date).forEach(d=>selected.add(d))}catch(e){toast(e.message,true)}}else{selected.has(date)?selected.delete(date):selected.add(date);anchor=date}renderBatch()}else if(mode==='month'||mode==='year'){if(!await leaveInspector())return;focusInspectorDate(date);renderInspector(true)}else await openRecord(date)}
-function tooltipFor(date){const {entries,m}=dayInfo(date),ddls=dayDeadlines(date);return [date,...ddls.map(({p,d})=>`${d.done?'✓':'◆'} ${d.name} · ${projectLabel(p)} · ${d.priority}${d.done?' · 已完成':''}`),...entries.map(e=>`${projectLabel(project(e.projectId))}：${entryLabel(e)}${e.note?' · '+e.note.slice(0,65):''}`),entries.length?`精确 ${fmt(m.exact)}h · 含估算 ${fmt(m.total)}h${m.missing?' · '+m.missing+' 条待配置':''}`:ddls.length?'点击查看截止节点':'暂无记录'].join('\n')}
 function hideTooltip(){$('#tooltip').hidden=true}
 // Interactions are delegated so selection and saved edits can refresh the calendars safely.
-$('.calendar-surface').addEventListener('click',async e=>{if(performance.now()<suppressCalendarClickUntil){suppressCalendarClickUntil=0;e.preventDefault();return}const week=e.target.closest('[data-open-week]');if(week){await openWeek(week.dataset.openWeek);return}const part=e.target.closest('[data-day-project]');if(part&&!batch&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey){if(!await leaveInspector())return;focusInspectorDate(part.dataset.projectDate);inspectorProject=part.dataset.dayProject;renderInspector(true);return}const ddl=e.target.closest('[data-open-day-ddl]');if(ddl){if(!await leaveInspector())return;focusInspectorDate(ddl.dataset.openDayDdl);renderInspector(true);return}const b=(e.target.closest('[data-date]')||e.target.closest('.month-day-wrap')?.querySelector('[data-date]'));if(b)selectDate(b.dataset.date,e)});
-function tooltipHTML(date){const {entries,m}=dayInfo(date),ddls=dayDeadlines(date),d=parseDate(date);return `<div class="tooltip-heading"><strong>${d.getMonth()+1}月${d.getDate()}日</strong><span>${d.getFullYear()} · ${new Intl.DateTimeFormat('zh-CN',{weekday:'short'}).format(d)}</span>${entries.length?`<b>${fmt(m.total)}h${m.estimated?' ≈':''}</b>`:''}</div>${ddls.length?`<div class="tooltip-group"><span class="tooltip-label">截止节点</span>${ddls.slice(0,6).map(({p,d})=>`<div class="tooltip-ddl ${d.done?'done':''}"><i></i><div><strong>${esc(d.name)}</strong><small>${esc(p.name)}</small>${d.note?`<div class="ddl-note markdown-body"><span class="ddl-note-prefix">备注：</span>${renderMarkdown(d.note)}</div>`:''}</div><span>${d.done?'完成':esc(d.priority)}</span></div>`).join('')}${ddls.length>6?`<small>另 ${ddls.length-6} 个节点</small>`:''}</div>`:''}${entries.length?`<div class="tooltip-group"><span class="tooltip-label">当日投入</span>${entries.slice(0,6).map(e=>`<div class="tooltip-entry"><div><i class="project-dot" style="--project-color:${esc(project(e.projectId)?.color)}"></i><strong>${esc(projectLabel(project(e.projectId)))}</strong><span>${esc(entryLabel(e))}</span></div>${e.note?`<div class="markdown-body tooltip-note">${renderMarkdown(e.note.slice(0,100))}</div>`:''}</div>`).join('')}</div>`:!ddls.length?'<p class="tooltip-empty">还没有记录</p>':''}`}
-function showTooltipFor(el,date){if(batch||calendarGesture)return;const t=$('#tooltip');t.innerHTML=tooltipHTML(date);t.hidden=false;const r=el.getBoundingClientRect();t.style.left=Math.max(8,Math.min(r.left,window.innerWidth-t.offsetWidth-8))+'px';t.style.top=Math.max(8,Math.min(window.innerHeight-t.offsetHeight-8,r.top>t.offsetHeight+12?r.top-t.offsetHeight-8:r.bottom+(mode==='year'?36:8)))+'px'}
-$('.calendar-surface').addEventListener('pointerover',e=>{const b=e.target.closest('[data-date],[data-open-day-ddl]');if(b)showTooltipFor(b,b.dataset.date||b.dataset.openDayDdl)});
-$('.calendar-surface').addEventListener('pointerout',e=>{const b=e.target.closest('[data-date],[data-open-day-ddl]');if(!b?.contains(e.relatedTarget))hideTooltip()});$('.calendar-surface').addEventListener('focusin',e=>{const b=e.target.closest('[data-date],[data-open-day-ddl]');if(b)showTooltipFor(b,b.dataset.date||b.dataset.openDayDdl)});$('.calendar-surface').addEventListener('focusout',hideTooltip);
+$('.calendar-surface').addEventListener('click',async e=>{if(performance.now()<suppressCalendarClickUntil){suppressCalendarClickUntil=0;e.preventDefault();return}const more=e.target.closest('.month-detail-more');if(more){toggleMonthDayDetails(more);return}const week=e.target.closest('[data-open-week]');if(week){await openWeek(week.dataset.openWeek);return}const part=e.target.closest('[data-day-project]');if(part&&!batch&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey){if(!await leaveInspector())return;focusInspectorDate(part.dataset.projectDate);inspectorProject=part.dataset.dayProject;renderInspector(true);return}const ddl=e.target.closest('[data-open-day-ddl]');if(ddl){if(!await leaveInspector())return;focusInspectorDate(ddl.dataset.openDayDdl);renderInspector(true);return}const b=(e.target.closest('[data-date]')||e.target.closest('.month-day-wrap')?.querySelector('[data-date]'));if(b)selectDate(b.dataset.date,e)});
+function toggleMonthDayDetails(button){
+ if(batch)return;
+ hideTooltip();
+ const expand=button.getAttribute('aria-expanded')!=='true';
+ const week=button.closest('.month-week');
+ const open=week.querySelector('.month-detail-more[aria-expanded="true"]');
+ if(open)setMonthDetailExpanded(open,false);
+ if(expand)setMonthDetailExpanded(button,true);
+ if(open){
+  // WebKit can keep a stretched grid row at its previous height after its contents shrink.
+  const id=button.getAttribute('aria-controls'),focused=document.activeElement===button;
+  const replacement=week.cloneNode(true);
+  week.replaceWith(replacement);
+  button=replacement.querySelector(`[aria-controls="${id}"]`);
+  if(focused)button.focus({preventScroll:true});
+ }
+ const calendar=$('#month-calendar');
+ const above=calendar.getBoundingClientRect().top-button.getBoundingClientRect().top;
+ if(above>0)calendar.scrollTop-=above+4;
+}
+function setMonthDetailExpanded(button,expanded){
+ const id=button.getAttribute('aria-controls');
+ if(expanded)expandedMonthGroups.add(id);
+ else expandedMonthGroups.delete(id);
+ button.setAttribute('aria-expanded',String(expanded));
+ button.setAttribute('aria-label',button.getAttribute('aria-label').replace(expanded?'展开':'收起',expanded?'收起':'展开'));
+ document.getElementById(id).hidden=!expanded;
+}
+function tooltipHTML(date,target){
+ const day=dayInfo(date),d=parseDate(date);
+ let entries=day.entries,ddls=dayDeadlines(date),m=day.m;
+ if(target.dataset.monthDeadline){
+  ddls=ddls.filter(({p,d})=>p.id===target.dataset.deadlineProject&&d.id===target.dataset.monthDeadline);
+  entries=[];
+ }else if(target.dataset.dayProject){
+  entries=entries.filter(e=>e.projectId===target.dataset.dayProject);
+  m=summarize(entries,estimates());
+  ddls=[];
+ }
+ const heading=`<div class="tooltip-heading"><strong>${d.getMonth()+1}月${d.getDate()}日</strong><span>${d.getFullYear()} · ${new Intl.DateTimeFormat('zh-CN',{weekday:'short'}).format(d)}</span>${entries.length?`<b>${fmt(m.total)}h${m.estimated?' ≈':''}</b>`:''}</div>`;
+ const deadlines=ddls.length?`<div class="tooltip-group"><span class="tooltip-label">截止节点</span>${ddls.slice(0,6).map(({p,d})=>`<div class="tooltip-ddl ${d.done?'done':''}"><i></i><div><strong>${esc(d.name)}</strong><small>${esc(p.name)}</small>${d.note?`<div class="ddl-note markdown-body"><span class="ddl-note-prefix">备注：</span>${renderMarkdown(d.note)}</div>`:''}</div><span>${d.done?'完成':esc(d.priority)}</span></div>`).join('')}${ddls.length>6?`<small>另 ${ddls.length-6} 个节点</small>`:''}</div>`:'';
+ const work=entries.length?`<div class="tooltip-group"><span class="tooltip-label">当日投入</span>${entries.slice(0,6).map(e=>`<div class="tooltip-entry"><div><i class="project-dot" style="--project-color:${esc(project(e.projectId)?.color)}"></i><strong>${esc(projectLabel(project(e.projectId)))}</strong><span>${esc(entryLabel(e))}</span></div>${e.note?`<div class="markdown-body tooltip-note">${renderMarkdown(e.note.slice(0,100))}</div>`:''}</div>`).join('')}</div>`:'';
+ return heading+deadlines+work+(deadlines||work?'':'<p class="tooltip-empty">还没有记录</p>');
+}
+function showTooltipFor(el){
+ if(batch||calendarGesture)return;
+ const date=el.dataset.projectDate||el.dataset.openDayDdl||el.dataset.date;
+ const t=$('#tooltip');
+ t.innerHTML=tooltipHTML(date,el);
+ t.hidden=false;
+ const r=el.getBoundingClientRect();
+ t.style.left=Math.max(8,Math.min(r.left,innerWidth-t.offsetWidth-8))+'px';
+ t.style.top=Math.max(8,Math.min(innerHeight-t.offsetHeight-8,r.top>t.offsetHeight+12?r.top-t.offsetHeight-8:r.bottom+(mode==='year'?36:8)))+'px';
+}
+const calendarTooltipTarget='[data-date],[data-open-day-ddl],[data-project-date]';
+const calendarSurface=$('.calendar-surface');
+calendarSurface.addEventListener('pointerover',e=>{
+ const target=e.target.closest(calendarTooltipTarget);
+ if(target&&!target.contains(e.relatedTarget))showTooltipFor(target);
+});
+calendarSurface.addEventListener('pointerout',e=>{
+ const target=e.target.closest(calendarTooltipTarget);
+ if(target&&!target.contains(e.relatedTarget))hideTooltip();
+});
+calendarSurface.addEventListener('focusin',e=>{
+ const target=e.target.closest(calendarTooltipTarget);
+ if(target?.matches(':focus-visible'))showTooltipFor(target);
+});
+calendarSurface.addEventListener('focusout',hideTooltip);
 
 yearWeekHover=setupYearWeekHover({calendar:$('#year-calendar'),getMode:()=>mode,isBusy:()=>batch||!!calendarGesture,onOpen:date=>openWeek(date,true),getTitle:date=>state?.weekly?.[date]?.title?.trim()||'写周记',weekStart});
 
@@ -387,7 +542,74 @@ function renderTimeSources(prefix){if(prefix==='batch')return;const c=$('#'+pref
 function syncDuration(prefix){const kind=$('#'+prefix+'-kind'),container=$('#'+prefix+'-duration');if(!container)return;$('#'+prefix+'-hours-label').hidden=false;container.classList.toggle('using-hours',kind.value==='hours');container.classList.toggle('is-empty',kind.value==='none');container.querySelector('.duration-clear').disabled=kind.disabled;container.querySelectorAll('[data-duration-kind]').forEach(b=>{b.classList.toggle('active',b.dataset.durationKind===kind.value);b.setAttribute('aria-pressed',String(b.dataset.durationKind===kind.value));b.disabled=kind.disabled;const value=state?estimates()[b.dataset.durationKind]:null;b.title=value==null?'估算小时未设置':`估算 ${value} 小时`;b.style.background=value==null?'var(--l0)':`var(--l${level(value,estimates())})`;b.style.color=level(value,estimates())>=4?'#fff':'var(--ink)';b.classList.toggle('estimate-missing',value==null)});$('#'+prefix+'-slider').value=$('#'+prefix+'-hours').value||0;renderTimeSources(prefix)}
 for(const prefix of ['record','inspector','batch'])setupDuration(prefix);
 document.addEventListener('click',e=>{const path=e.composedPath();$$('.project-picker[open]').forEach(d=>{if(!path.includes(d))d.open=false});if(mode==='month')for(const id of ['distribution-panel','deadline-panel']){const d=$('#'+id);if(d.open&&!d.contains(e.target))d.open=false}});
-$('#month-project-names').onclick=async()=>{if(!await flushDrafts())return;const next=clone(state);next.settings.showMonthProjects=!next.settings.showMonthProjects;await commit(next)};
+function renderMonthSplit(){
+ const wide=uiPreferences.flag('monthWide'),divider=$('#month-divider');
+ divider.hidden=mode!=='month';
+ divider.setAttribute('aria-pressed',String(wide));
+ $('#page-review').classList.toggle('month-wide',mode==='month'&&wide);
+}
+function keepMonthPosition(update){
+ const calendar=$('#month-calendar'),top=calendar.getBoundingClientRect().top;
+ const row=[...calendar.querySelectorAll('.month-week')].find(week=>week.getBoundingClientRect().bottom>top);
+ const offset=row?row.getBoundingClientRect().top-top:0;
+ const week=row?.dataset.weekStart;
+ hideTooltip();clearTimeout(scrollTimer);
+ update();
+ const next=week&&calendar.querySelector(`[data-week-start="${week}"]`);
+ if(next)calendar.scrollTop+=next.getBoundingClientRect().top-calendar.getBoundingClientRect().top-offset;
+ rememberView();
+}
+const monthDisplayButtons=[
+ {id:'month-deadline-toggle',key:'monthDeadlines',field:'deadlines'},
+ {id:'month-project-names',key:'monthProjects',field:'projects'}
+];
+function renderMonthDisplay(){
+ $('#month-display-controls').hidden=mode!=='month';
+ const display=monthDisplay();
+ for(const {id,field} of monthDisplayButtons){
+  const button=$('#'+id);
+  button.classList.toggle('active',display[field]);
+  button.setAttribute('aria-pressed',String(display[field]));
+ }
+ $('.ddl-legend-trigger').hidden=mode==='month'&&display.projects&&!display.deadlines;
+}
+for(const {id,key,field} of monthDisplayButtons){
+ $('#'+id).onclick=()=>keepMonthPosition(()=>{
+  uiPreferences.setFlag(key,!monthDisplay()[field]);
+  renderMonthDisplay();
+  renderMonths(false);
+  renderBatch();
+ });
+}
+function setMonthWide(wide){
+ if(wide===uiPreferences.flag('monthWide'))return;
+ keepMonthPosition(()=>{
+  uiPreferences.setFlag('monthWide',wide);
+  renderMonthSplit();
+  sizeMonthViewport();
+ });
+}
+const monthDivider=$('#month-divider');
+let dividerStart=null;
+monthDivider.onpointerdown=event=>{
+ if(event.button!==0||!event.isPrimary)return;
+ dividerStart=event.clientX;
+ monthDivider.setPointerCapture(event.pointerId);
+};
+monthDivider.onpointerup=event=>{
+ if(dividerStart===null)return;
+ const movement=event.clientX-dividerStart;
+ dividerStart=null;
+ if(Math.abs(movement)>=8)setMonthWide(movement>0);
+};
+monthDivider.onlostpointercapture=()=>{dividerStart=null};
+monthDivider.ondblclick=()=>setMonthWide(!uiPreferences.flag('monthWide'));
+monthDivider.onclick=event=>{if(event.detail===0)setMonthWide(!uiPreferences.flag('monthWide'))};
+monthDivider.onkeydown=event=>{
+ if(!['ArrowLeft','ArrowRight'].includes(event.key))return;
+ event.preventDefault();
+ setMonthWide(event.key==='ArrowRight');
+};
 for(const [button,field] of [['inspector-clear-note','inspector-note'],['inspector-clear-project-note','inspector-project-note'],['record-clear-note','record-note']])$('#'+button).onclick=()=>{$('#'+field).value='';$('#'+field).dispatchEvent(new Event('input',{bubbles:true}))};
 function calendarDateAt(x,y){const el=document.elementFromPoint(x,y)?.closest('[data-date],[data-open-day-ddl],[data-project-date]');return el&&$('.calendar-surface').contains(el)?el.dataset.date||el.dataset.openDayDdl||el.dataset.projectDate:null}
 function updateCalendarGesture(x,y){const g=calendarGesture;if(!g)return;if(Math.hypot(x-g.originX,y-g.originY)>4)g.moved=true;const date=calendarDateAt(x,y);if(date&&date!==g.lastDate){g.lastDate=date;selected=new Set(g.base);for(const d of dateRange(g.start,date)){if(g.erase)selected.delete(d);else selected.add(d)}}g.x=x;g.y=y;refreshBatchSelection()}

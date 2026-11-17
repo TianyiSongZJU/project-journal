@@ -1,7 +1,7 @@
 import './manual-colors.js';
 // Device-local presentation preferences. Never store editor contents or open menus here.
 const listKeys=new Set(['project-list','filter-project-list','record-project','inspector-project','dt-default-project','timeline-project','project-picker']);
-const flagKeys=new Set(['deadlineGrouped','reviewDone','reviewCompletedProjects','projectDone','inspectorDone','foldersGrouped','foldersCompleted','highlights','dayTasksDone','weeklyGoalsDone']);
+const flagKeys=new Set(['deadlineGrouped','reviewDone','reviewCompletedProjects','projectDone','inspectorDone','foldersGrouped','foldersCompleted','highlights','dayTasksDone','weeklyGoalsDone','monthDetails','monthDeadlines','monthProjects','monthWide']);
 const panelKeys=new Set(['year.distribution','year.deadlines','year.weekly','project.deadlines','project.records','auto.advanced','auto.history']);
 const object=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
 export const noteHeightRange={min:160,max:1200};

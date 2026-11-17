@@ -171,7 +171,8 @@
 :is(.native-windows,.native-mac) .inspector-node-copy { flex-direction:row; align-items:baseline; gap:8px; }
 :is(.native-windows,.native-mac) .inspector-node-copy>strong,:is(.native-windows,.native-mac) .inspector-node-copy>span { max-width:100%; font-family:inherit; }
 :is(.native-windows,.native-mac) #inspector-daily-fields>.editor-label { min-height:120px; }
-:is(.native-windows,.native-mac) .month-inspector { overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--tone-surface-c4cbb9,#c4cbb9) transparent; }
+:is(.native-windows,.native-mac) .month-inspector { overflow-y:auto; scrollbar-width:none; }
+:is(.native-windows,.native-mac) .month-inspector::-webkit-scrollbar { display:none; }
 :is(.native-windows,.native-mac) #inspector-daily-fields>.editor-label>span,:is(.native-windows,.native-mac) #inspector-project-fields>.editor-label>span { padding:0 10px; }
 :is(.native-windows,.native-mac) .month-inspector .editor-clear-actions { padding-left:10px; padding-right:10px; }
 :is(.native-windows,.native-mac) .month-inspector textarea,:is(.native-windows,.native-mac) .month-inspector .markdown-preview { padding:10px; border-color:var(--tone-line-e5e8df,#e5e8df); background:var(--tone-surface-f7f8f3,#f7f8f3); border-radius:7px; }
