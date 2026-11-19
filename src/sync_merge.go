@@ -14,13 +14,16 @@ import (
 )
 
 type mergeField struct {
-	Label string `json:"label"`
-	Value string `json:"value"`
+	Label  string       `json:"label"`
+	Value  string       `json:"value"`
+	Key    string       `json:"key,omitempty"`
+	Period *mergePeriod `json:"period,omitempty"`
 }
 type mergeItem struct {
 	ID       string       `json:"id"`
 	Category string       `json:"category"`
 	Title    string       `json:"title"`
+	Context  string       `json:"context,omitempty"`
 	Effect   string       `json:"effect"`
 	Current  []mergeField `json:"current,omitempty"`
 	Incoming []mergeField `json:"incoming,omitempty"`
@@ -31,6 +34,7 @@ type mergeItem struct {
 type mergePreview struct {
 	Revision       string      `json:"revision"`
 	SourceRevision string      `json:"sourceRevision"`
+	CurrentFile    string      `json:"currentFile,omitempty"`
 	Items          []mergeItem `json:"items"`
 }
 type mergeDraft struct {
@@ -39,7 +43,7 @@ type mergeDraft struct {
 	entries  map[string]Entry
 }
 
-func field(label, value string) mergeField { return mergeField{label, value} }
+func field(label, value string) mergeField { return mergeField{Label: label, Value: value} }
 func yesNo(value bool) string {
 	if value {
 		return "是"
@@ -65,7 +69,13 @@ func entryFields(e Entry) []mergeField {
 	return fields
 }
 func projectFields(p Project) []mergeField {
-	return []mergeField{field("名称", p.Name), field("分组", p.Group), field("颜色", p.Color), field("已完成", yesNo(p.Completed))}
+	return []mergeField{field("名称", p.Name), field("分组", p.Group), field("颜色", p.Color), field("状态", projectStatus(p.Completed)), field("项目编号", p.ID)}
+}
+func projectStatus(completed bool) string {
+	if completed {
+		return "已完成"
+	}
+	return "进行中"
 }
 func deadlineFields(d Deadline) []mergeField {
 	return []mergeField{field("名称", d.Name), field("日期", d.Date), field("优先级", d.Priority), field("已完成", yesNo(d.Done)), field("备注", d.Note)}
@@ -80,6 +90,10 @@ func weekFields(w WeekJournal) []mergeField {
 		goals = append(goals, mark+" "+g.Text)
 	}
 	return []mergeField{field("标题", w.Title), field("本周目标", strings.Join(goals, "\n")), field("本周手记", w.Note)}
+}
+func jsonText(value any) string {
+	raw, _ := json.MarshalIndent(value, "", "  ")
+	return string(raw)
 }
 func jsonEqual(a, b any) bool {
 	x, _ := json.Marshal(a)
@@ -102,8 +116,10 @@ func orderedMergeKeys[T any](a, b map[string]T) []string {
 func mergeItems(current, incoming State) []mergeItem {
 	items := []mergeItem{}
 	local, remote := map[string]Project{}, map[string]Project{}
+	localNames := map[string]bool{}
 	for _, p := range current.Projects {
 		local[p.ID] = p
+		localNames[p.Name] = true
 	}
 	for _, p := range incoming.Projects {
 		remote[p.ID] = p
@@ -146,20 +162,31 @@ func mergeItems(current, incoming State) []mergeItem {
 			meta := b
 			meta.Note = ""
 			meta.Deadlines = []Deadline{}
-			add("project/"+id, "项目", b.Name, nil, projectFields(b), func(d *mergeDraft) {
+			notice := "总体笔记、截止节点和每日记录可单独选择。"
+			if localNames[b.Name] {
+				notice = "当前已有同名项目。采用副本会新增一个独立项目。" + notice
+			}
+			add("project/"+id, "项目", projectDisplayName(b), nil, projectFields(b), func(d *mergeDraft) {
 				d.projects[id] = len(d.state.Projects)
 				d.state.Projects = append(d.state.Projects, meta)
-			}, nil, "笔记、节点和每日记录可单独选择。")
+			}, nil, notice)
+			items[len(items)-1].Context = "副本项目编号 " + id
 		case !hasB:
-			add("project/"+id, "项目", a.Name, projectFields(a), nil, nil, nil, "项目及相关内容保持原样。")
+			add("project/"+id, "项目", projectDisplayName(a), projectFields(a), nil, nil, nil, "保留当前项目及其关联记录。")
+			items[len(items)-1].Context = "当前项目编号 " + id
 			continue
 		default:
 			old, next := projectFields(a), projectFields(b)
 			if !jsonEqual(old, next) {
-				add("project/"+id, "项目", a.Name, old, next, func(d *mergeDraft) {
+				title := projectDisplayName(a)
+				if nextTitle := projectDisplayName(b); nextTitle != title {
+					title += " → " + nextTitle
+				}
+				add("project/"+id, "项目", title, old, next, func(d *mergeDraft) {
 					p := &d.state.Projects[d.projects[id]]
 					p.Name, p.Group, p.Color, p.Completed = b.Name, b.Group, b.Color, b.Completed
-				}, nil, "")
+				}, nil, "应用项目名称、分组、颜色和状态。关联笔记、节点和时间记录各自选择。")
+				items[len(items)-1].Context = "同一项目 · " + id
 			}
 		}
 		if a.Note != b.Note {
@@ -212,6 +239,9 @@ func mergeItems(current, incoming State) []mergeItem {
 			add("deadline/"+id+"/"+key, "截止节点", name(id)+" · "+title, before, after, apply, requires(id), "")
 		}
 	}
+	if order := projectOrderDifference(current.Projects, incoming.Projects, local, remote); order != nil {
+		items = append(items, *order)
+	}
 	left, right := map[string]Entry{}, map[string]Entry{}
 	byLeft, byRight := map[string][]Entry{}, map[string][]Entry{}
 	for _, e := range current.Entries {
@@ -223,25 +253,6 @@ func mergeItems(current, incoming State) []mergeItem {
 		byRight[e.Date] = append(byRight[e.Date], e)
 	}
 	timelineChanged := map[string]bool{}
-	timelineFields := func(day TimelineDay, entries []Entry) []mergeField {
-		fields := []mergeField{}
-		for _, set := range []struct {
-			label  string
-			blocks []TimelineBlock
-		}{{"划取时段", day.Blocks}, {"已计入时段", day.Applied}} {
-			lines := []string{}
-			for _, b := range set.blocks {
-				lines = append(lines, fmt.Sprintf("%02d:%02d–%02d:%02d · %s", b.Start/60, b.Start%60, b.End/60, b.End%60, name(b.ProjectID)))
-			}
-			fields = append(fields, field(set.label, strings.Join(lines, "\n")))
-		}
-		for _, e := range entries {
-			for _, f := range entryFields(e) {
-				fields = append(fields, field(name(e.ProjectID)+" · "+f.Label, f.Value))
-			}
-		}
-		return fields
-	}
 	for _, date := range orderedMergeKeys(current.TimelineDays, incoming.TimelineDays) {
 		a, okA := current.TimelineDays[date]
 		b, okB := incoming.TimelineDays[date]
@@ -250,7 +261,8 @@ func mergeItems(current, incoming State) []mergeItem {
 		}
 		timelineChanged[date] = true
 		var apply func(*mergeDraft)
-		notice := "整天的时间线及对应每日记录一起应用，避免重复计时。"
+		notice := "采用副本时，整天的时段和对应每日记录一起写入，保持计时一致。"
+		reasons := []string{}
 		needs := map[string]bool{}
 		for _, e := range byRight[date] {
 			for _, id := range requires(e.ProjectID) {
@@ -267,7 +279,9 @@ func mergeItems(current, incoming State) []mergeItem {
 			deps = append(deps, id)
 		}
 		sort.Strings(deps)
-		canApply := okB
+		if !okB {
+			reasons = append(reasons, "副本没有这一天的时间线")
+		}
 		// An absent block might be an unsynced local addition, not an intended deletion.
 		retains := func(before, after []TimelineBlock) bool {
 			ids := map[string]bool{}
@@ -281,20 +295,22 @@ func mergeItems(current, incoming State) []mergeItem {
 			}
 			return true
 		}
-		if !retains(a.Blocks, b.Blocks) || !retains(a.Applied, b.Applied) {
-			canApply = false
+		if okB && (!retains(a.Blocks, b.Blocks) || !retains(a.Applied, b.Applied)) {
+			reasons = append(reasons, "副本缺少当前已有的时段")
 		}
 		for _, dep := range deps {
 			if _, ok := remote[strings.TrimPrefix(dep, "project/")]; !ok {
-				canApply = false
+				reasons = append(reasons, "副本缺少时段所属项目")
+				break
 			}
 		}
 		for _, e := range byLeft[date] {
 			if _, ok := right[entryKey(e)]; !ok {
-				canApply = false
+				reasons = append(reasons, "副本缺少当前已有的每日记录")
+				break
 			}
 		}
-		if canApply {
+		if len(reasons) == 0 {
 			apply = func(d *mergeDraft) {
 				if d.state.TimelineDays == nil {
 					d.state.TimelineDays = map[string]TimelineDay{}
@@ -305,9 +321,15 @@ func mergeItems(current, incoming State) []mergeItem {
 				}
 			}
 		} else {
-			notice = "副本缺少本地已有的时间线或每日记录，此项仅供对比，避免覆盖本地内容。"
+			notice = strings.Join(reasons, "，") + "。当前这一天的时间线和每日记录会保留。"
 		}
-		add("timeline/"+date, "时间线", date, timelineFields(a, byLeft[date]), timelineFields(b, byRight[date]), apply, deps, notice)
+		before, after := timelineMergeFields(a, byLeft[date], local, remote), timelineMergeFields(b, byRight[date], remote, local)
+		if jsonEqual(before, after) {
+			before = append(before, field("时段内部标识", jsonText(a)))
+			after = append(after, field("时段内部标识", jsonText(b)))
+		}
+		add("timeline/"+date, "时间线", date, before, after, apply, deps, notice)
+		items[len(items)-1].Context = "按当天整组核对"
 	}
 	for _, key := range orderedMergeKeys(left, right) {
 		a, hasA := left[key]
@@ -331,6 +353,10 @@ func mergeItems(current, incoming State) []mergeItem {
 			after = entryFields(b)
 			apply = func(d *mergeDraft) { d.entries[key] = b }
 		}
+		if hasA && hasB && jsonEqual(before, after) {
+			before = append(before, field("记录原始值", jsonText(a)))
+			after = append(after, field("记录原始值", jsonText(b)))
+		}
 		add("entry/"+key, "每日记录", e.Date+" · "+name(e.ProjectID), before, after, apply, requires(e.ProjectID), "")
 	}
 	for _, date := range orderedMergeKeys(current.Weekly, incoming.Weekly) {
@@ -352,6 +378,10 @@ func mergeItems(current, incoming State) []mergeItem {
 				}
 				d.state.Weekly[date] = b
 			}
+		}
+		if hasA && hasB && jsonEqual(before, after) {
+			before = append(before, field("目标内部标识", jsonText(a.Goals)))
+			after = append(after, field("目标内部标识", jsonText(b.Goals)))
 		}
 		add("week/"+date, "周记", date, before, after, apply, nil, "")
 	}
@@ -408,31 +438,118 @@ func applyMergeItems(current State, items []mergeItem, selected []string) (State
 	return d.state, validate(d.state)
 }
 
-// Read only complete main snapshots. Partition conflict copies have no full state to compare.
-func (s *Store) readMergeCopy(name string) (State, string, error) {
-	if filepath.Base(name) != name || strings.ContainsAny(name, "/\\:") || !strings.HasPrefix(name, "项目手记") || name == "项目手记.json" || !strings.HasSuffix(strings.ToLower(name), ".json") {
-		return State{}, "", errors.New("只能对比完整的同步副本")
+func mergeSourceAllowed(name string) bool {
+	if name == "" || filepath.ToSlash(filepath.Clean(name)) != name || strings.ContainsAny(name, `\:`) ||
+		!strings.HasSuffix(strings.ToLower(name), ".json") || safeStoragePath(name) {
+		return false
 	}
-	path := storagePath(s.dir, name)
+	parts := strings.Split(name, "/")
+	for _, part := range parts {
+		if part == "" || strings.HasPrefix(part, ".") {
+			return false
+		}
+	}
+	if len(parts) == 1 {
+		return strings.HasPrefix(name, "项目手记") || strings.HasPrefix(name, "操作历史") || strings.HasPrefix(name, "线索处理")
+	}
+	switch parts[0] {
+	case "笔记", "时间记录", "周记":
+		return len(parts) == 2
+	case "自动记录":
+		stem := strings.TrimSuffix(parts[len(parts)-1], ".json")
+		return len(parts) <= 3 && stem != "索引" && !validDate(stem+"-01") && (len(parts) != 2 || !validID.MatchString(stem))
+	}
+	return false
+}
+
+func (s *Store) readMergeFile(name string) ([]byte, error) {
+	path := storagePath(s.dir, filepath.FromSlash(name))
+	for parent := filepath.Dir(path); parent != s.dir && parent != filepath.Dir(parent); parent = filepath.Dir(parent) {
+		info, err := os.Lstat(parent)
+		if err != nil || !info.IsDir() {
+			return nil, errors.New("副本目录无法读取")
+		}
+	}
 	info, e := os.Lstat(path)
 	if e != nil || !info.Mode().IsRegular() || info.Size() > 32<<20 {
-		return State{}, "", errors.New("副本无法读取或文件过大")
+		return nil, errors.New("副本无法读取或文件过大")
 	}
 	f, e := os.Open(path)
 	if e != nil {
-		return State{}, "", e
+		return nil, e
 	}
 	defer f.Close()
 	actual, e := f.Stat()
 	if e != nil || !os.SameFile(info, actual) {
-		return State{}, "", errConflict
+		return nil, errConflict
 	}
 	raw, e := io.ReadAll(io.LimitReader(f, (32<<20)+1))
 	if e != nil || len(raw) > 32<<20 {
-		return State{}, "", errors.New("副本无法读取或文件过大")
+		return nil, errors.New("副本无法读取或文件过大")
 	}
-	st, e := s.readDiskBytes(raw, true)
-	return st, revision(raw), e
+	return raw, nil
+}
+
+func (s *Store) readMergeItems(current State, name string) ([]mergeItem, string, string, error) {
+	if !mergeSourceAllowed(name) {
+		return nil, "", "", errors.New("不是可对比的同步副本")
+	}
+	raw, err := s.readMergeFile(name)
+	if err != nil {
+		return nil, "", "", err
+	}
+	source := revision(raw)
+	if !strings.Contains(name, "/") && strings.HasPrefix(name, "项目手记") {
+		incoming, err := s.readDiskBytes(raw, true)
+		if err == nil {
+			items := mergeItems(current, incoming)
+			items = append(items, historyMergeItems(current.History, incoming.History)...)
+			if !jsonEqual(current.Settings, incoming.Settings) {
+				items = append(items, mergeItem{ID: "settings", Category: "设置", Title: "项目手记设置", Effect: "review", Current: []mergeField{field("设置", jsonText(current.Settings))}, Incoming: []mergeField{field("设置", jsonText(incoming.Settings))}, Notice: "采用记录时仍保留当前应用设置。"})
+			}
+			return items, source, "项目手记.json", nil
+		}
+		return s.rawMergeItems(name, "项目手记.json", raw, "完整数据尚无法读取。以下是索引或文件原文，缺失的内容同步完成后才能合并。"), source, "项目手记.json", nil
+	}
+	if !strings.Contains(name, "/") && strings.HasPrefix(name, "操作历史") {
+		const canonical = "操作历史.json"
+		var incoming, before ChangeHistory
+		base, baseErr := s.readMergeFile(canonical)
+		if json.Unmarshal(raw, &incoming) == nil && usableHistory(&incoming) {
+			if baseErr == nil && json.Unmarshal(base, &before) == nil && usableHistory(&before) {
+				return historyMergeItems(&before, &incoming), source, canonical, nil
+			}
+			return historyMergeItems(nil, &incoming), source, canonical, nil
+		}
+	}
+	canonical, items, reason := partitionMergeItems(current, name, raw)
+	if reason == "" {
+		return items, source, canonical, nil
+	}
+	return s.rawMergeItems(name, canonical, raw, reason), source, canonical, nil
+}
+
+func (s *Store) rawMergeItems(name, canonical string, raw []byte, reason string) []mergeItem {
+	textField := func(data []byte) mergeField {
+		var formatted bytes.Buffer
+		if len(data) <= 400000 && json.Indent(&formatted, bytes.TrimSpace(data), "", "  ") == nil {
+			data = formatted.Bytes()
+		}
+		if len(data) > 400000 {
+			data = append(bytes.ToValidUTF8(data[:400000], []byte("�")), []byte("\n…其余内容请导出查看")...)
+		}
+		return field("文件原文", string(data))
+	}
+	var before []mergeField
+	if canonical != "" {
+		if current, err := s.readMergeFile(canonical); err == nil {
+			if bytes.Equal(current, raw) {
+				return []mergeItem{}
+			}
+			before = []mergeField{textField(current)}
+		}
+	}
+	return []mergeItem{{ID: "file", Category: "文件原文", Title: name, Effect: "review", Current: before, Incoming: []mergeField{textField(raw)}, Notice: reason}}
 }
 func (s *Store) previewMerge(name string) (mergePreview, error) {
 	s.mu.Lock()
@@ -441,15 +558,14 @@ func (s *Store) previewMerge(name string) (mergePreview, error) {
 	if e != nil {
 		return mergePreview{}, e
 	}
-	incoming, source, e := s.readMergeCopy(name)
+	items, source, currentFile, e := s.readMergeItems(current, name)
 	if e != nil {
 		return mergePreview{}, e
 	}
-	items := mergeItems(current, incoming)
 	if len(items) > 5000 {
 		return mergePreview{}, errors.New("差异过多，无法在一个窗口中完整对比，请先导出副本")
 	}
-	return mergePreview{Revision: rev, SourceRevision: source, Items: items}, nil
+	return mergePreview{Revision: rev, SourceRevision: source, CurrentFile: currentFile, Items: items}, nil
 }
 func (s *Store) mergeCopy(name, base, source string, selected []string) (string, error) {
 	s.mu.Lock()
@@ -461,14 +577,14 @@ func (s *Store) mergeCopy(name, base, source string, selected []string) (string,
 	if base != rev {
 		return "", errConflict
 	}
-	incoming, rawRev, e := s.readMergeCopy(name)
+	items, rawRev, _, e := s.readMergeItems(current, name)
 	if e != nil {
 		return "", e
 	}
 	if source != rawRev {
 		return "", errConflict
 	}
-	result, e := applyMergeItems(current, mergeItems(current, incoming), selected)
+	result, e := applyMergeItems(current, items, selected)
 	if e != nil {
 		return "", e
 	}

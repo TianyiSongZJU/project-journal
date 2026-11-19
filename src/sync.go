@@ -43,7 +43,7 @@ func (s *Store) syncCopies() []SyncCopy {
 		rel, _ := filepath.Rel(s.dir, path)
 		rel = logicalStoragePath(rel)
 		if f.IsDir() {
-			if rel == "." || rel == "笔记" || rel == "时间记录" || rel == "自动记录" || strings.HasPrefix(rel, "自动记录/") && strings.Count(rel, "/") == 1 {
+			if rel == "." || rel == "笔记" || rel == "周记" || rel == "时间记录" || rel == "自动记录" || strings.HasPrefix(rel, "自动记录/") && strings.Count(rel, "/") == 1 {
 				return nil
 			}
 			return filepath.SkipDir
